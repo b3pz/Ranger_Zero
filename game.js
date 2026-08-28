@@ -5,6 +5,56 @@ if(!gl){document.body.innerHTML="<pre style='color:#fff'>WebGL non disponibile.<
 gl.clearColor(.035,.04,.055,1);
 
 // ============================================================
+// AUDIO — tutto sintetizzato al volo (oscillatori Web Audio), nessun file
+// da scaricare. Si sblocca al primo click/tasto (i browser bloccano
+// l'audio finche' l'utente non interagisce), vedi unlockAudio().
+// ============================================================
+let actx=null;
+function unlockAudio(){
+ if(actx)return;
+ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ actx=null; }
+}
+function tone(freq,dur,type,peak,sweepTo){
+ if(!actx)return;
+ const t0=actx.currentTime;
+ const osc=actx.createOscillator(), gain=actx.createGain();
+ osc.type=type||"square"; osc.frequency.setValueAtTime(freq,t0);
+ if(sweepTo)osc.frequency.exponentialRampToValueAtTime(Math.max(20,sweepTo),t0+dur);
+ gain.gain.setValueAtTime(0,t0);
+ gain.gain.linearRampToValueAtTime(peak||.10,t0+.012);
+ gain.gain.exponentialRampToValueAtTime(.001,t0+dur);
+ osc.connect(gain); gain.connect(actx.destination);
+ osc.start(t0); osc.stop(t0+dur+.02);
+}
+function noiseBurst(dur,peak){
+ if(!actx)return;
+ const t0=actx.currentTime;
+ const bufSize=actx.sampleRate*dur;
+ const buf=actx.createBuffer(1,bufSize,actx.sampleRate);
+ const data=buf.getChannelData(0);
+ for(let i=0;i<bufSize;i++)data[i]=(Math.random()*2-1)*(1-i/bufSize);
+ const src=actx.createBufferSource(); src.buffer=buf;
+ const gain=actx.createGain(); gain.gain.setValueAtTime(peak||.12,t0);
+ gain.gain.exponentialRampToValueAtTime(.001,t0+dur);
+ src.connect(gain); gain.connect(actx.destination);
+ src.start(t0);
+}
+const sfx={
+ uiBlip:()=>tone(740,.06,"square",.05),
+ attack:()=>{tone(180,.09,"square",.09,90);noiseBurst(.05,.06);},
+ hitEnemy:()=>tone(320,.07,"sawtooth",.08,140),
+ hitPlayer:()=>{tone(110,.16,"sawtooth",.11,60);noiseBurst(.10,.08);},
+ dodge:()=>tone(500,.10,"sine",.06,900),
+ special:()=>{tone(220,.35,"sawtooth",.13,700);setTimeout(()=>tone(880,.18,"square",.08),90);},
+ enemyDefeat:()=>{tone(300,.22,"square",.09,70);},
+ transform:()=>{tone(140,.22,"sawtooth",.12,650);setTimeout(()=>tone(760,.12,"square",.09),140);},
+ alarm:()=>{tone(660,.16,"square",.10,440);setTimeout(()=>tone(660,.16,"square",.10,440),240);},
+ giantHit:()=>tone(150,.20,"sawtooth",.12,80),
+ win:()=>{[0,140,280].forEach((d,i)=>setTimeout(()=>tone(440+i*220,.22,"square",.09),d));},
+ lose:()=>{tone(220,.5,"sawtooth",.11,60);},
+};
+
+// ============================================================
 // mat4 minimale
 // ============================================================
 const mat4={
@@ -374,34 +424,67 @@ function partMeshFor(pal){
   head:boxMesh(pal.skin), visor:boxMesh(pal.visor),
   hair:boxMesh([.14,.11,.10]), eye:boxMesh([.05,.05,.06]),
   helmetShell:boxMesh(pal.helmetShell), helmetVisor:boxMesh(pal.visor), helmetCrest:boxMesh(pal.accent),
+  horn:boxMesh(pal.accent), shoulderPad:boxMesh(pal.accent),
   upperArm:boxMesh(pal.suit), lowerArm:boxMesh(pal.skin), glove:boxMesh(pal.accent),
   upperLeg:boxMesh(pal.suit), lowerLeg:boxMesh(pal.boot),
+  bladeCore:boxMesh([.85,.92,.98]), bladeEdge:boxMesh(pal.accent), bladeHilt:boxMesh([.15,.14,.16]),
  };
  meshCache[key]=m;
  return m;
 }
-function buildBodyParts(pal,walkPhase,speedFactor,helmet){
+// kind: "ranger" (default, eroico), "scagnozzo" (sagoma diversa: niente
+// cresta, visiera a fessura, un po' curvo — si legge subito come nemico
+// generico, non come "un altro Ranger"), "raccoglitore" (corna al posto
+// della cresta, spallacci asimmetrici — armatura raccogliticcia, non di
+// serie). attackPhase (0..1, opzionale) fa scattare in avanti il braccio
+// destro per un pugno leggibile invece di restare fermo mentre "attacca".
+function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weaponOut){
+ kind=kind||"ranger";
  const pm=partMeshFor(pal);
  const swing=Math.sin(walkPhase)*.55*speedFactor;
  const swingOpp=Math.sin(walkPhase+Math.PI)*.55*speedFactor;
  const bob=Math.abs(Math.cos(walkPhase))*.045*speedFactor;
+ const hunch=kind==="scagnozzo"?.10:0;
+ const torsoW=kind==="raccoglitore"?.54:kind==="scagnozzo"?.50:.46;
  const parts=[
-  {mesh:pm.torso, mtx:mul(mat4.translate(0,1.05+bob,0),mat4.scale(.46,.62,.28))},
+  {mesh:pm.torso, mtx:mul(mat4.translate(0,1.05+bob-hunch*.3,0),mat4.rotX(hunch),mat4.scale(torsoW,.62,.28))},
   {mesh:pm.belt,  mtx:mul(mat4.translate(0,.76+bob,0),mat4.scale(.48,.10,.30))},
  ];
- if(helmet){
+ if(kind==="raccoglitore"){
+  // spallacci asimmetrici: uno più grande dell'altro, come pezzi di
+  // armature diverse tenute insieme alla bell'e meglio.
+  parts.push({mesh:pm.shoulderPad, mtx:mul(mat4.translate(.40,1.42+bob,0),mat4.scale(.22,.16,.24))});
+  parts.push({mesh:pm.shoulderPad, mtx:mul(mat4.translate(-.38,1.38+bob,0),mat4.scale(.15,.11,.17))});
+ }
+ if(helmet&&kind==="ranger"){
   parts.push({mesh:pm.helmetShell, mtx:mul(mat4.translate(0,1.57+bob,0),mat4.scale(.33,.33,.33))});
   parts.push({mesh:pm.helmetVisor, mtx:mul(mat4.translate(0,1.55+bob,.155),mat4.scale(.26,.14,.05))});
   parts.push({mesh:pm.helmetCrest, mtx:mul(mat4.translate(0,1.80+bob,-.02),mat4.scale(.08,.10,.34))});
+ }else if(kind==="scagnozzo"){
+  // niente cresta, visiera a fessura sottile, testa leggermente incassata:
+  // deliberatamente meno "eroico", piu' anonimo/usa e getta.
+  parts.push({mesh:pm.helmetShell, mtx:mul(mat4.translate(0,1.52+bob-hunch*.4,0),mat4.rotX(hunch*.6),mat4.scale(.30,.28,.30))});
+  parts.push({mesh:pm.helmetVisor, mtx:mul(mat4.translate(0,1.51+bob-hunch*.4,.145),mat4.rotX(hunch*.6),mat4.scale(.22,.05,.05))});
+ }else if(kind==="raccoglitore"){
+  // corna al posto della cresta, elmo piu' squadrato/pesante
+  parts.push({mesh:pm.helmetShell, mtx:mul(mat4.translate(0,1.60+bob,0),mat4.scale(.36,.35,.35))});
+  parts.push({mesh:pm.helmetVisor, mtx:mul(mat4.translate(0,1.58+bob,.165),mat4.scale(.27,.13,.05))});
+  parts.push({mesh:pm.horn, mtx:mul(mat4.translate(-.16,1.86+bob,0),mat4.rotZ(.35),mat4.scale(.06,.20,.06))});
+  parts.push({mesh:pm.horn, mtx:mul(mat4.translate(.16,1.86+bob,0),mat4.rotZ(-.35),mat4.scale(.06,.20,.06))});
  }else{
   parts.push({mesh:pm.head,  mtx:mul(mat4.translate(0,1.55+bob,0),mat4.scale(.30,.30,.30))});
   parts.push({mesh:pm.hair,  mtx:mul(mat4.translate(0,1.665+bob,-.01),mat4.scale(.305,.14,.30))});
   parts.push({mesh:pm.eye,   mtx:mul(mat4.translate(-.08,1.565+bob,.148),mat4.scale(.045,.045,.03))});
   parts.push({mesh:pm.eye,   mtx:mul(mat4.translate(.08,1.565+bob,.148),mat4.scale(.045,.045,.03))});
  }
+ // braccio destro: pugno in avanti se attackPhase e' passato (0->1->0),
+ // altrimenti la normale oscillazione di camminata.
+ const punch=attackPhase?Math.sin(Math.min(1,attackPhase)*Math.PI):0;
+ const rArmRot=attackPhase? -1.9*punch : swing*.8;
+ const rArmFwd=attackPhase? .30*punch : 0;
  parts.push(
-  {mesh:pm.upperArm, mtx:mul(mat4.translate(.34,1.30+bob,0),mat4.rotX(swing*.8),mat4.translate(0,-.20,0),mat4.scale(.16,.40,.16))},
-  {mesh:pm.lowerArm, mtx:mul(mat4.translate(.34,1.30+bob,0),mat4.rotX(swing*.8),mat4.translate(0,-.46,0),mat4.scale(.14,.30,.14))},
+  {mesh:pm.upperArm, mtx:mul(mat4.translate(.34,1.30+bob,0),mat4.rotX(rArmRot),mat4.translate(0,-.20,rArmFwd),mat4.scale(.16,.40,.16))},
+  {mesh:pm.lowerArm, mtx:mul(mat4.translate(.34,1.30+bob,0),mat4.rotX(rArmRot),mat4.translate(0,-.46,rArmFwd*1.6),mat4.scale(.14,.30,.14))},
   {mesh:pm.upperArm, mtx:mul(mat4.translate(-.34,1.30+bob,0),mat4.rotX(swingOpp*.8),mat4.translate(0,-.20,0),mat4.scale(.16,.40,.16))},
   {mesh:pm.lowerArm, mtx:mul(mat4.translate(-.34,1.30+bob,0),mat4.rotX(swingOpp*.8),mat4.translate(0,-.46,0),mat4.scale(.14,.30,.14))},
   {mesh:pm.upperLeg, mtx:mul(mat4.translate(.16,.74+bob,0),mat4.rotX(swingOpp),mat4.translate(0,-.24,0),mat4.scale(.19,.48,.19))},
@@ -409,10 +492,19 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet){
   {mesh:pm.upperLeg, mtx:mul(mat4.translate(-.16,.74+bob,0),mat4.rotX(swing),mat4.translate(0,-.24,0),mat4.scale(.19,.48,.19))},
   {mesh:pm.lowerLeg, mtx:mul(mat4.translate(-.16,.74+bob,0),mat4.rotX(swing),mat4.translate(0,-.56,0),mat4.scale(.17,.34,.19))},
  );
+ if(weaponOut){
+  // lama energetica agganciata alla mano destra, inclinata in avanti come
+  // se fosse impugnata pronta a colpire — compare solo durante l'attacco
+  // speciale, cosi' si legge subito come "questo e' diverso dal solito".
+  const gm=mul(mat4.translate(.34,1.30+bob,0),mat4.rotX(rArmRot),mat4.translate(0,-.80,rArmFwd*1.6),mat4.rotX(-.55));
+  parts.push({mesh:pm.bladeHilt, mtx:mul(gm,mat4.translate(0,.06,0),mat4.scale(.07,.14,.09))});
+  parts.push({mesh:pm.bladeEdge, mtx:mul(gm,mat4.translate(0,-.34,0),mat4.scale(.09,.55,.045))});
+  parts.push({mesh:pm.bladeCore, mtx:mul(gm,mat4.translate(0,-.34,.005),mat4.scale(.035,.50,.02))});
+ }
  return parts;
 }
-function buildCharacterBuffers(pal,walkPhase,speedFactor,helmet){
- return bakeParts(buildBodyParts(pal,walkPhase,speedFactor,helmet));
+function buildCharacterBuffers(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weaponOut){
+ return bakeParts(buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weaponOut));
 }
 
 // squadra: 4 Ranger fermi con casco completo, colori da bibbia personaggi,
@@ -495,19 +587,115 @@ const PAL_SCAGNOZZO=makePalette([.22,.20,.18],[.42,.38,.30],[.55,.42,.30]);
 // non un'armatura di serie come quella della squadra.
 const PAL_RACCOGLITORE=makePalette([.48,.36,.10],[.62,.48,.14],[.35,.28,.22]);
 
-const scagnozzoBuf=makeBuffer(buildCharacterBuffers(PAL_SCAGNOZZO,0,0,true));
-const raccoglitoreBuf=makeBuffer(buildCharacterBuffers(PAL_RACCOGLITORE,0,0,true));
+const scagnozzoBuf=makeBuffer(buildCharacterBuffers(PAL_SCAGNOZZO,0,0,true,"scagnozzo"));
+const raccoglitoreBuf=makeBuffer(buildCharacterBuffers(PAL_RACCOGLITORE,0,0,true,"raccoglitore"));
+
+// ============================================================
+// FASE 2 — IL COLOSSO: i 5 Ranger si combinano (implicito, non
+// animato/modellato — vedi nota sotto), Il Raccoglitore diventa gigante,
+// scontro finale in prima persona fissa (niente camminata: solo mira e
+// attacco, per tenerlo semplice come richiesto). Il "video" della
+// combinazione e' una breve sequenza scriptata con testo + il nemico che
+// cresce, non un vero filmato — costruire un modello animato dei 5 Ranger
+// che si fondono sarebbe un progetto a se'; la telecamera in prima persona
+// aggira elegantemente il problema (non serve renderizzare il Colosso
+// stesso, solo il suo punto di vista).
+// ============================================================
+let colosso=null;
+const COLOSSO_EYE_Y=6.5;
+const COLOSSO_CAM_Z=ARENA_CZ+11;
+const COLOSSO_GIANT_Z=SEA_EDGE_Z-9;
+function startColossoSequence(){
+ if(colosso)return;
+ zone="colosso";
+ colosso={phase:"cutscene",t:0,giantHp:400,giantHpMax:400,playerHp:100,playerHpMax:100,
+  giantScale:1.55,attackCd:2.6,punchT:0,beamT:0,shakeT:0,beamBursts:[]};
+ missionHintEl.textContent="I RANGER SI COMBINANO...";
+ missionHintEl.classList.add("show");
+ colossoHpWrapEl.classList.add("show");
+}
+function colossoPunch(){
+ if(!colosso||colosso.phase!=="fight"||colosso.punchT>0||colosso.beamT>0)return;
+ colosso.punchT=.32;
+ colosso.giantHp=Math.max(0,colosso.giantHp-18);
+ player.energy=Math.min(player.energyMax,player.energy+9);
+ colosso.beamBursts.push({t:0,kind:"punch"});
+ sfx.giantHit();
+ if(colosso.giantHp<=0)colossoWin();
+}
+function colossoSpecial(){
+ if(!colosso||colosso.phase!=="fight"||player.energy<player.energyMax||colosso.beamT>0||colosso.punchT>0)return;
+ colosso.beamT=.5;
+ player.energy=0;
+ colosso.giantHp=Math.max(0,colosso.giantHp-70);
+ specialFlashEl.style.opacity=.95;
+ setTimeout(()=>{specialFlashEl.style.opacity=0;},140);
+ colosso.beamBursts.push({t:0,kind:"beam"});
+ sfx.special();
+ if(colosso.giantHp<=0)colossoWin();
+}
+function colossoWin(){
+ colosso.phase="won";
+ missionHintEl.textContent="IL RACCOGLITORE E' STATO RESPINTO";
+ sfx.win();
+ setTimeout(()=>{ colossoOutcomeEl.querySelector("h1").textContent="VITTORIA";
+  colossoOutcomeEl.querySelector("p").textContent="Il Colosso ha respinto Il Raccoglitore nel mare.";
+  colossoOutcomeEl.classList.add("show","win"); },900);
+}
+function colossoLose(){
+ colosso.phase="lost";
+ colossoOutcomeEl.querySelector("h1").textContent="IL COLOSSO CROLLA";
+ colossoOutcomeEl.querySelector("p").textContent="Riprova — Il Raccoglitore non aspetta.";
+ colossoOutcomeEl.classList.remove("win");
+ colossoOutcomeEl.classList.add("show");
+ sfx.lose();
+}
+function updateColosso(dt){
+ if(!colosso)return;
+ colosso.t+=dt;
+ if(colosso.phase==="cutscene"){
+  colosso.giantScale=1.55+Math.min(1,colosso.t/2.6)*5.8;
+  if(colosso.t>1.4)missionHintEl.textContent="IL COLOSSO E' PRONTO";
+  if(colosso.t>2.8){
+   colosso.phase="fight";
+   missionHintEl.classList.remove("show");
+  }
+  return;
+ }
+ if(colosso.phase!=="fight")return;
+ colosso.punchT=Math.max(0,colosso.punchT-dt);
+ colosso.beamT=Math.max(0,colosso.beamT-dt);
+ colosso.shakeT=Math.max(0,colosso.shakeT-dt);
+ colosso.attackCd-=dt;
+ for(let i=colosso.beamBursts.length-1;i>=0;i--){colosso.beamBursts[i].t+=dt;if(colosso.beamBursts[i].t>.4)colosso.beamBursts.splice(i,1);}
+ if(colosso.attackCd<=0){
+  colosso.attackCd=2.6;
+  colosso.shakeT=.35;
+  colosso.playerHp=Math.max(0,colosso.playerHp-16);
+  sfx.hitPlayer();
+  if(colosso.playerHp<=0)colossoLose();
+ }
+}
+document.getElementById("colossoOutcomeBtn").addEventListener("click",()=>{
+ colossoOutcomeEl.classList.remove("show");
+ if(colosso&&colosso.phase==="lost"){
+  colosso.phase="fight";colosso.giantHp=colosso.giantHpMax*.5;colosso.playerHp=colosso.playerHpMax;colosso.attackCd=2.6;
+ }else{
+  colosso=null;missionHintEl.classList.remove("show");colossoHpWrapEl.classList.remove("show");
+  enterTorre();
+ }
+});
 
 let enemies=[];
 function spawnWave(){
  enemies=[
-  {type:"scagnozzo",buf:scagnozzoBuf,x:ARENA_CX-4,z:ARENA_CZ-2,yaw:0,hp:30,hpMax:30,state:"idle",cd:0,scale:1,alpha:1,dead:false},
-  {type:"scagnozzo",buf:scagnozzoBuf,x:ARENA_CX+4,z:ARENA_CZ-2,yaw:0,hp:30,hpMax:30,state:"idle",cd:0,scale:1,alpha:1,dead:false},
-  {type:"scagnozzo",buf:scagnozzoBuf,x:ARENA_CX,z:ARENA_CZ-6,yaw:0,hp:30,hpMax:30,state:"idle",cd:1.2,scale:1,alpha:1,dead:false},
+  {type:"scagnozzo",pal:PAL_SCAGNOZZO,x:ARENA_CX-4,z:ARENA_CZ-2,yaw:0,hp:30,hpMax:30,state:"idle",cd:0,scale:1,alpha:1,dead:false,walkPhaseE:0,hitFlash:0,attackFlashT:0},
+  {type:"scagnozzo",pal:PAL_SCAGNOZZO,x:ARENA_CX+4,z:ARENA_CZ-2,yaw:0,hp:30,hpMax:30,state:"idle",cd:0,scale:1,alpha:1,dead:false,walkPhaseE:0,hitFlash:0,attackFlashT:0},
+  {type:"scagnozzo",pal:PAL_SCAGNOZZO,x:ARENA_CX,z:ARENA_CZ-6,yaw:0,hp:30,hpMax:30,state:"idle",cd:1.2,scale:1,alpha:1,dead:false,walkPhaseE:0,hitFlash:0,attackFlashT:0},
   // Il Raccoglitore parte vicino alla riva — non ancora "uscito dal mare"
   // in senso vero e proprio (quello arriva con la fase 2), ma gia'
   // posizionato li' per quando costruiremo l'emersione.
-  {type:"raccoglitore",buf:raccoglitoreBuf,x:ARENA_CX,z:SEA_EDGE_Z+1.5,yaw:0,hp:160,hpMax:160,state:"idle",cd:2,scale:1.55,alpha:1,dead:false,retreated:false},
+  {type:"raccoglitore",pal:PAL_RACCOGLITORE,x:ARENA_CX,z:SEA_EDGE_Z+1.5,yaw:0,hp:160,hpMax:160,state:"idle",cd:2,scale:1.55,alpha:1,dead:false,retreated:false,walkPhaseE:0,hitFlash:0,attackFlashT:0},
  ];
 }
 
@@ -515,17 +703,35 @@ function spawnWave(){
 // stato di gioco
 // ============================================================
 const player={x:0,z:5.5,yaw:0,speed:2.6,walkPhase:0,transformed:false,helmet:false,
- hp:100,hpMax:100,energy:0,energyMax:100,attackT:0,dodgeT:0,dodgeCd:0,invuln:0,hitFlashT:0};
+ hp:100,hpMax:100,energy:0,energyMax:100,attackT:0,dodgeT:0,dodgeCd:0,invuln:0,hitFlashT:0,specialT:0};
 const camState={dist:4.2,height:2.1,yawOffset:0};
 const keys={};
 const flashEl=document.getElementById("flash");
-const transformCardEl=document.getElementById("transformCard");
+const specialFlashEl=document.getElementById("specialFlash");
 const titleEl=document.getElementById("titleScreen");
 const hudEl=document.getElementById("gameHud");
 const energyFillEl=document.getElementById("energyFill");
 const hpFillEl=document.getElementById("hpFill");
 const missionHintEl=document.getElementById("missionHint");
+const dmgVignetteEl=document.getElementById("dmgVignette");
+const gameOverEl=document.getElementById("gameOver");
+const colossoHpWrapEl=document.getElementById("colossoHpWrap");
+const colossoHpFillEl=document.getElementById("colossoHpFill");
+const colossoOutcomeEl=document.getElementById("colossoOutcome");
 let gameStarted=false;
+let gameOverActive=false;
+function triggerGameOver(){
+ if(gameOverActive)return;
+ gameOverActive=true;
+ gameOverEl.classList.add("show");
+ sfx.lose();
+}
+document.getElementById("gameOverBtn").addEventListener("click",()=>{
+ gameOverActive=false;
+ gameOverEl.classList.remove("show");
+ player.hp=player.hpMax;
+ enterArena(); // ricomincia direttamente la missione, senza dover rifare l'intro
+});
 
 // Zone: "torre" (sala di comando) oppure "arena" (missione di combattimento).
 // Ognuna ha i propri confini per il movimento/telecamera, cosi' non serve
@@ -534,6 +740,7 @@ let zone="torre";
 const ZONES={
  torre:{w:ROOM_W,d:ROOM_D,cx:0,cz:0},
  arena:{w:26,d:26,cx:0,cz:-60},
+ colosso:{w:26,d:26,cx:0,cz:-60},
 };
 function zoneBounds(){
  const z=ZONES[zone];
@@ -560,21 +767,88 @@ function enterTorre(){
  missionHintEl.classList.remove("show");
 }
 
+// ------------------------------------------------------------
+// Dialoghi: box in basso, un rigo alla volta, avanti con click o SPAZIO.
+// Usato per l'intro (Oculo che finisce di spiegare, due chiacchiere con la
+// squadra, l'allarme) — la stessa coda puo' servire anche in futuro per
+// altre scene scriptate.
+// ------------------------------------------------------------
+const dialogueBoxEl=document.getElementById("dialogueBox");
+const dialogueNameEl=document.getElementById("dialogueName");
+const dialogueTextEl=document.getElementById("dialogueText");
+let dialogueQueue=[], dialogueIndex=0, dialogueActive=false, dialogueOnEnd=null;
+function playDialogue(lines,onEnd){
+ dialogueQueue=lines; dialogueIndex=0; dialogueActive=true; dialogueOnEnd=onEnd||null;
+ dialogueBoxEl.classList.add("show");
+ showDialogueLine();
+}
+function showDialogueLine(){
+ const l=dialogueQueue[dialogueIndex];
+ dialogueNameEl.textContent=l.speaker;
+ dialogueNameEl.className=l.speaker==="OCULO"?"oculo":"";
+ dialogueTextEl.textContent=l.text;
+}
+function advanceDialogue(){
+ if(!dialogueActive)return;
+ sfx.uiBlip();
+ dialogueIndex++;
+ if(dialogueIndex>=dialogueQueue.length){
+  dialogueActive=false;
+  dialogueBoxEl.classList.remove("show");
+  const cb=dialogueOnEnd; dialogueOnEnd=null;
+  if(cb)cb();
+ }else{
+  showDialogueLine();
+ }
+}
+dialogueBoxEl.addEventListener("click",advanceDialogue);
+
+// Intro: Oculo finisce di spiegare perche' il protagonista e' li', due
+// battute con la squadra (con dentro un riferimento discreto a IT SHIFT —
+// "badge", "sessione", roba amministrativa che non dovrebbe esistere qui),
+// poi l'allarme che porta dritti al combattimento in spiaggia.
+const introLines=[
+ {speaker:"OCULO",text:"...e con questo, il quadro e' completo. La Torre veglia da molto prima di te. Quando un posto si libera, ne troviamo un altro pronto a occuparlo."},
+ {speaker:"OCULO",text:"Benvenuto, unita' Zero."},
+ {speaker:"ARCO",text:"Non fare quella faccia. Ci siamo passati tutti. Io sono Arco, comando la squadra sul campo — resta vicino e vai bene."},
+ {speaker:"MERIDIANA",text:"Meridiana. Non serve che tu ci creda subito. Vedrai con che squadra hai a che fare quando contera' davvero."},
+ {speaker:"MERIDIANA",text:"Ogni tanto Oculo tira fuori vecchi registri da prima di noi. Sessioni, badge, roba amministrativa. Non ci penso troppo."},
+ {speaker:"TIC",text:"IO SONO TIC! Supporto tattico, morale, e tecnicamente l'unico qui che si ricorda gli anniversari."},
+ {speaker:"OCULO",text:"Allarme. Presenza ostile sulla costa sud — scagnozzi, e qualcosa di piu' grande dietro di loro."},
+ {speaker:"OCULO",text:"Squadra, in posizione. Zero — trasformati, e vai."},
+];
+function startIntro(){
+ playDialogue(introLines,()=>{
+  missionHintEl.textContent="ALLARME — TRASFORMAZIONE IN CORSO";
+  missionHintEl.classList.add("show");
+  sfx.alarm();
+  startTransformation();
+  setTimeout(()=>{
+   missionHintEl.textContent="TRASFERIMENTO IN CORSO";
+   setTimeout(()=>{ enterArena(); },700);
+  },2300);
+ });
+}
+
 function beginGame(){
  if(gameStarted)return;
+ unlockAudio();
  gameStarted=true;
  titleEl.style.display="none";
  hudEl.style.display="block";
  document.body.classList.add("started");
+ startIntro();
 }
 titleEl.addEventListener("click",beginGame);
 window.addEventListener("keydown",e=>{
  keys[e.code]=true;
  if(e.code==="Space"&&!gameStarted){beginGame();return;}
+ if(e.code==="Space"&&dialogueActive){advanceDialogue();return;}
+ if(gameOverActive)return;
  if(e.code==="KeyT")startTransformation();
- if(e.code==="KeyM"&&gameStarted&&!transformState){ if(zone==="torre")enterArena(); else enterTorre(); }
- if(e.code==="KeyF")tryAttack();
- if(e.code==="KeyC")trySpecial();
+ if(e.code==="KeyM"&&gameStarted&&!transformState&&!dialogueActive){ if(zone==="torre")enterArena(); else enterTorre(); }
+ if(e.code==="KeyF"){ if(zone==="colosso")colossoPunch(); else tryAttack(); }
+ if(e.code==="KeyC"){ if(zone==="colosso")colossoSpecial(); else trySpecial(); }
  if(e.code==="ShiftLeft"||e.code==="ShiftRight")tryDodge();
 });
 window.addEventListener("keyup",e=>{keys[e.code]=false;});
@@ -590,26 +864,23 @@ let transformState=null; // null oppure {t, toRanger}
 function startTransformation(){
  if(transformState)return;
  transformState={t:0, toRanger:!player.transformed};
+ sfx.transform();
 }
 function updateTransformation(dt){
- if(!transformState){transformCardEl.classList.remove("show");return;}
+ if(!transformState)return;
  transformState.t+=dt;
  const t=transformState.t;
- // due lampi rapidi, poi la palette cambia, poi un lampo finale piu' lungo
+ // via la card (era brutta anche corretta): ora solo due lampi rapidi e
+ // via, la telecamera fa il resto del lavoro stringendosi sul personaggio.
  flashEl.style.opacity =
-  (t>.15&&t<.28)?.85 :
-  (t>.45&&t<.55)?.9 :
-  (t>1.35&&t<1.75)?Math.max(0,1-(t-1.35)/.4) : 0;
- // la card eroica compare solo diventando Ranger (non tornando civile),
- // tra il secondo lampo e l'ultimo, cosi' accompagna il cambio invece di
- // saltare fuori a caso.
- if(transformState.toRanger&&t>.55&&t<1.55)transformCardEl.classList.add("show");
- else transformCardEl.classList.remove("show");
- if(t>.9&&player.transformed!==transformState.toRanger){
+  (t>.10&&t<.20)?.9 :
+  (t>.30&&t<.42)?1 :
+  (t>.42&&t<.70)?Math.max(0,1-(t-.42)/.28) : 0;
+ if(t>.36&&player.transformed!==transformState.toRanger){
   player.transformed=transformState.toRanger;
   player.helmet=transformState.toRanger;
  }
- if(t>2.1)transformState=null;
+ if(t>.9)transformState=null;
 }
 
 // ------------------------------------------------------------
@@ -625,6 +896,7 @@ function facingDot(fromX,fromZ,fromYaw,toX,toZ){
 function tryAttack(){
  if(!player.transformed||transformState||player.attackT>0||player.dodgeT>0)return;
  player.attackT=.34;
+ sfx.attack();
  for(const en of enemies){
   if(en.dead)continue;
   const f=facingDot(player.x,player.z,player.yaw,en.x,en.z);
@@ -634,30 +906,47 @@ function tryAttack(){
   }
  }
 }
+let specialBursts=[];
 function trySpecial(){
  if(!player.transformed||transformState||player.energy<player.energyMax||player.attackT>0)return;
  player.attackT=.5;
+ player.specialT=1.0;
  player.energy=0;
+ sfx.special();
+ specialFlashEl.style.opacity=.9;
+ setTimeout(()=>{specialFlashEl.style.opacity=0;},110);
+ let hitAny=false;
  for(const en of enemies){
   if(en.dead)continue;
   const f=facingDot(player.x,player.z,player.yaw,en.x,en.z);
-  if(f.dist<2.6&&f.dot>.25)damageEnemy(en,42);
+  if(f.dist<2.6&&f.dot>.25){
+   damageEnemy(en,42);
+   specialBursts.push({x:en.x,y:1.1,z:en.z,t:0});
+   hitAny=true;
+  }
  }
+ if(!hitAny)specialBursts.push({x:player.x+Math.sin(player.yaw)*1.6,y:1.1,z:player.z+Math.cos(player.yaw)*1.6,t:0});
 }
 function tryDodge(){
  if(!player.transformed||transformState||player.dodgeCd>0)return;
  player.dodgeT=.28;player.dodgeCd=.85;player.invuln=.34;
+ sfx.dodge();
 }
 function damageEnemy(en,amt){
  en.hp-=amt;en.hitFlash=.15;
  if(en.hp<=0){
+  sfx.enemyDefeat();
   if(en.type==="raccoglitore"&&!en.retreated){
-   // Il Raccoglitore non muore qui: si ritira, come da copione — tornera'
-   // in scala gigante nella fase successiva (non ancora costruita).
+   // Il Raccoglitore non muore qui: si ritira verso il mare, e da li'
+   // parte la fase 2 — cresce gigante, i 5 Ranger si combinano nel
+   // Colosso, scontro finale in prima persona.
    en.retreated=true;en.state="retreat";
+   setTimeout(startColossoSequence,900);
   }else{
    en.dead=true;
   }
+ }else{
+  sfx.hitEnemy();
  }
 }
 function updateEnemies(dt){
@@ -679,6 +968,7 @@ function updateEnemies(dt){
   if(distToPlayer>wantRange+.15){
    const spd=(en.type==="raccoglitore"?1.5:1.9)*dt;
    en.x+=Math.sin(en.yaw)*spd; en.z+=Math.cos(en.yaw)*spd;
+   en.walkPhaseE+=dt*7.5;
   }else if(en.cd<=0){
    en.cd=en.type==="raccoglitore"?1.7:2.1;
    en.attackFlashT=.5;
@@ -686,9 +976,30 @@ function updateEnemies(dt){
     const dmg=en.type==="raccoglitore"?14:7;
     player.hp=Math.max(0,player.hp-dmg);
     player.hitFlashT=.3;
+    sfx.hitPlayer();
    }
   }
   if(en.attackFlashT>0)en.attackFlashT-=dt;
+ }
+ // separazione nemico-nemico: prima potevano accavallarsi tutti nello
+ // stesso punto avvicinandosi al giocatore. Ora si spingono via a vicenda
+ // se si sovrappongono troppo.
+ for(let i=0;i<enemies.length;i++){
+  const a=enemies[i];
+  if(a.dead||a.state==="retreat")continue;
+  const ra=(a.type==="raccoglitore"?.55:.40)*a.scale;
+  for(let j=i+1;j<enemies.length;j++){
+   const b=enemies[j];
+   if(b.dead||b.state==="retreat")continue;
+   const rb=(b.type==="raccoglitore"?.55:.40)*b.scale;
+   const dx=b.x-a.x, dz=b.z-a.z, dist=Math.hypot(dx,dz)||.001;
+   const minDist=ra+rb;
+   if(dist<minDist){
+    const push=(minDist-dist)/2, nx=dx/dist, nz=dz/dist;
+    a.x-=nx*push; a.z-=nz*push;
+    b.x+=nx*push; b.z+=nz*push;
+   }
+  }
  }
 }
 
@@ -700,11 +1011,16 @@ function resize(){
 window.addEventListener("resize",resize);
 resize();
 
+// impatto dell'attacco speciale: una piccola forma chiara che si espande e
+// sparisce, riusata per ogni scoppio invece di ricostruire geometria nuova.
+const burstMesh=boxMesh([1,.92,.55]);
+const burstBuf=makeBuffer(burstMesh);
+
 let last=performance.now();
 function frame(now){
  const dt=Math.min(.05,(now-last)/1000);last=now;
  updateTransformation(dt);
- const inputLocked=!!transformState||!gameStarted;
+ const inputLocked=!!transformState||!gameStarted||dialogueActive||gameOverActive||zone==="colosso";
  if(gameStarted)energyFillEl.style.width=(74+Math.sin(now/900)*4)+"%";
 
  // rotazione del personaggio (A/D) — indipendente dal movimento, niente
@@ -753,33 +1069,66 @@ function frame(now){
  player.x=Math.max(zb.xmin,Math.min(zb.xmax,player.x));
  player.z=Math.max(zb.zmin,Math.min(zb.zmax,player.z));
 
+ // collisione giocatore-nemico: prima si camminava dritti attraverso gli
+ // scagnozzi come se non ci fossero. Ora il giocatore viene spinto fuori
+ // se si sovrappone troppo a un nemico vivo (non in ritirata).
+ if(zone==="arena"){
+  const pr=.32;
+  for(const en of enemies){
+   if(en.dead||en.state==="retreat")continue;
+   const er=(en.type==="raccoglitore"?.55:.40)*en.scale;
+   const dx=player.x-en.x, dz=player.z-en.z, dist=Math.hypot(dx,dz)||.001;
+   const minDist=pr+er;
+   if(dist<minDist){
+    const push=minDist-dist, nx=dx/dist, nz=dz/dist;
+    player.x+=nx*push; player.z+=nz*push;
+   }
+  }
+  player.x=Math.max(zb.xmin,Math.min(zb.xmax,player.x));
+  player.z=Math.max(zb.zmin,Math.min(zb.zmax,player.z));
+ }
+
  // timer di combattimento
  player.attackT=Math.max(0,player.attackT-dt);
  player.dodgeT=Math.max(0,player.dodgeT-dt);
  player.dodgeCd=Math.max(0,player.dodgeCd-dt);
  player.invuln=Math.max(0,player.invuln-dt);
  player.hitFlashT=Math.max(0,player.hitFlashT-dt);
+ player.specialT=Math.max(0,player.specialT-dt);
+ for(let i=specialBursts.length-1;i>=0;i--){specialBursts[i].t+=dt;if(specialBursts[i].t>.5)specialBursts.splice(i,1);}
  if(zone==="arena"&&gameStarted&&!transformState)updateEnemies(dt);
+ if(zone==="colosso")updateColosso(dt);
 
  player.walkPhase+=dt*(moving?8.5:0);
  const pal=player.transformed?PAL_ZERO:PAL_CIVILE;
- const zoomIn=transformState?Math.min(1,transformState.t/.6):0;
- const attackLean=player.attackT>0?Math.sin((.34-player.attackT)/.34*Math.PI)*.35:0;
- const charMesh=buildCharacterBuffers(pal,player.walkPhase,moving?1:0,player.helmet);
+ const zoomIn=transformState?Math.min(1,transformState.t/.35):0;
+ const ATTACK_DUR=.34;
+ const attackPhase=player.attackT>0?1-player.attackT/ATTACK_DUR:0;
+ const charMesh=buildCharacterBuffers(pal,player.walkPhase,moving?1:0,player.helmet,"ranger",player.attackT>0?attackPhase:0,player.specialT>0);
  const charBuf=makeBuffer(charMesh);
 
+ let eye,target;
+ if(zone==="colosso"){
+  // prima persona fissa: il Colosso non cammina, si mira e si attacca e
+  // basta, come richiesto per tenere semplice lo scontro finale.
+  const shake=colosso&&colosso.shakeT>0?colosso.shakeT*3:0;
+  const sway=Math.sin(now/900)*.04;
+  eye=[Math.sin(now/300)*shake*.3, COLOSSO_EYE_Y+Math.sin(now/300)*shake*.2, COLOSSO_CAM_Z];
+  target=[Math.sin(now/300)*shake*.3+sway*4, COLOSSO_EYE_Y-1.5, COLOSSO_GIANT_Z];
+ }else{
  // camera terza persona dietro il personaggio, con collisione contro i
  // muri: prima "sbatteva" dentro la geometria quando ci si girava vicino
  // a una parete. Ora la posizione ideale viene bloccata dentro i bordi
  // della zona attuale con un margine, cosi' l'occhio non entra mai nel muro.
  const camYaw=player.yaw+camState.yawOffset;
- const dist=camState.dist*(1-zoomIn*.55);
+ const dist=camState.dist*(1-zoomIn*.72);
  let eyeX=player.x - Math.sin(camYaw)*dist;
  let eyeZ=player.z - Math.cos(camYaw)*dist;
  eyeX=Math.max(zb.camXmin,Math.min(zb.camXmax,eyeX));
  eyeZ=Math.max(zb.camZmin,Math.min(zb.camZmax,eyeZ));
- const eye=[eyeX,camState.height,eyeZ];
- const target=[player.x,1.1+zoomIn*.35,player.z];
+ eye=[eyeX,camState.height,eyeZ];
+ target=[player.x,1.1+zoomIn*.35,player.z];
+ }
  const view=mat4.lookAt(eye,target,[0,1,0]);
  const proj=mat4.perspective(60*Math.PI/180, c.width/c.height, .1, 100);
  const vp=mat4.multiply(proj,view);
@@ -813,7 +1162,7 @@ function frame(now){
   const ticY=ticHome.y+Math.sin(now/500)*.10;
   const ticModel=mul(mat4.translate(ticHome.x,ticY,ticHome.z),mat4.rotY(now/900));
   drawBuffer(ticBuf,ticModel,vp);
- }else{
+ }else if(zone==="arena"){
   drawBuffer(arenaFloorBuf,mat4.identity(),vp);
   drawBuffer(arenaSeaBuf,mat4.identity(),vp);
   drawBuffer(arenaPropBuf,mat4.identity(),vp);
@@ -822,20 +1171,69 @@ function frame(now){
    if(en.dead)continue;
    const hitPulse=en.hitFlash>0?1+en.hitFlash*1.6:1;
    const s=en.scale*hitPulse;
+   const enAttackPhase=en.attackFlashT>0?1-en.attackFlashT/.5:0;
+   const enMoving=en.state!=="retreat"&&facingDot(en.x,en.z,en.yaw,player.x,player.z).dist>(en.type==="raccoglitore"?2.05:1.65);
+   const enMesh=buildCharacterBuffers(en.pal,en.walkPhaseE,enMoving?1:0,true,en.type,en.attackFlashT>0?enAttackPhase:0);
+   const enBuf=makeBuffer(enMesh);
    const enModel=mul(mat4.translate(en.x,0,en.z),mat4.rotY(en.yaw),mat4.scale(s,s,s));
-   drawBuffer(en.buf,enModel,vp,en.alpha);
+   drawBuffer(enBuf,enModel,vp,en.alpha);
+   gl.deleteBuffer(enBuf.posB);gl.deleteBuffer(enBuf.nrmB);gl.deleteBuffer(enBuf.colB);
+  }
+ }else if(zone==="colosso"&&colosso){
+  drawBuffer(arenaFloorBuf,mat4.identity(),vp);
+  drawBuffer(arenaSeaBuf,mat4.identity(),vp);
+  // Il Raccoglitore gigante, sempre rivolto verso la telecamera (verso il
+  // Colosso), cresce durante la cutscene e resta fisso a scala massima
+  // durante il combattimento.
+  const giantWobble=1+Math.sin(now/260)*.02;
+  const gm=mul(mat4.translate(ARENA_CX,0,COLOSSO_GIANT_Z),mat4.rotY(Math.PI),mat4.scale(colosso.giantScale*giantWobble,colosso.giantScale,colosso.giantScale*giantWobble));
+  const giantMesh=buildCharacterBuffers(PAL_RACCOGLITORE,now/450,0,true,"raccoglitore",0);
+  const giantBuf=makeBuffer(giantMesh);
+  drawBuffer(giantBuf,gm,vp);
+  gl.deleteBuffer(giantBuf.posB);gl.deleteBuffer(giantBuf.nrmB);gl.deleteBuffer(giantBuf.colB);
+
+  if(colosso.phase==="fight"){
+   // effetti: pugno = piccolo scoppio, speciale = fascio di luce dal Colosso al bersaglio
+   for(const b of colosso.beamBursts){
+    if(b.kind==="punch"){
+     const p=b.t/.4, sc=.4+p*2.2, a=Math.max(0,1-p);
+     drawBuffer(burstBuf, mul(mat4.translate(ARENA_CX,COLOSSO_EYE_Y-1.5,COLOSSO_GIANT_Z+4),mat4.scale(sc,sc,sc)), vp, a*.9);
+    }else{
+     const p=b.t/.4, a=Math.max(0,1-p);
+     const beamLen=(COLOSSO_CAM_Z-COLOSSO_GIANT_Z)/2;
+     drawBuffer(burstBuf, mul(mat4.translate(ARENA_CX,COLOSSO_EYE_Y-1.5,(COLOSSO_CAM_Z+COLOSSO_GIANT_Z)/2),mat4.rotX(Math.PI/2),mat4.scale(.5,beamLen,.5)), vp, a*.85);
+    }
+   }
   }
  }
 
- const charModel=mul(mat4.translate(player.x,0,player.z),mat4.rotY(player.yaw),mat4.rotX(-attackLean*0));
- drawBuffer(charBuf,charModel,vp);
+ if(zone!=="colosso"){
+  const charModel=mul(mat4.translate(player.x,0,player.z),mat4.rotY(player.yaw));
+  drawBuffer(charBuf,charModel,vp);
+ }
+
+ // scoppi dell'attacco speciale: si espandono e sfumano nel giro di mezzo secondo
+ for(const b of specialBursts){
+  const p=b.t/.5;
+  const sc=.15+p*1.1;
+  const a=Math.max(0,1-p);
+  drawBuffer(burstBuf, mul(mat4.translate(b.x,b.y,b.z),mat4.rotY(p*4),mat4.scale(sc,sc,sc)), vp, a*.9);
+ }
 
  gl.deleteBuffer(charBuf.posB);gl.deleteBuffer(charBuf.nrmB);gl.deleteBuffer(charBuf.colB);
 
- // HUD: barra energia + barra vita
+ // HUD: barra energia + barra vita + vignetta danno
  if(gameStarted){
   energyFillEl.style.width=(player.energy/player.energyMax*100)+"%";
-  hpFillEl.style.width=Math.max(0,player.hp/player.hpMax*100)+"%";
+  if(zone==="colosso"&&colosso){
+   hpFillEl.style.width=Math.max(0,colosso.playerHp/colosso.playerHpMax*100)+"%";
+   colossoHpFillEl.style.width=Math.max(0,colosso.giantHp/colosso.giantHpMax*100)+"%";
+   dmgVignetteEl.style.opacity=colosso.shakeT>0?Math.min(1,colosso.shakeT/.35)*.8:0;
+  }else{
+   hpFillEl.style.width=Math.max(0,player.hp/player.hpMax*100)+"%";
+   dmgVignetteEl.style.opacity=player.hitFlashT>0?Math.min(1,player.hitFlashT/.3)*.85:0;
+   if(player.hp<=0&&!gameOverActive)triggerGameOver();
+  }
  }
 
  requestAnimationFrame(frame);
@@ -843,5 +1241,8 @@ function frame(now){
 requestAnimationFrame(frame);
 
 // esposto per test/debug
-window.__rz={player,camState,startTransformation,enterArena,enterTorre,get enemies(){return enemies},get zone(){return zone}};
+window.__rz={player,camState,startTransformation,enterArena,enterTorre,advanceDialogue,triggerGameOver,
+ startColossoSequence,colossoPunch,colossoSpecial,
+ get enemies(){return enemies},get zone(){return zone},get dialogueActive(){return dialogueActive},
+ get dialogueIndex(){return dialogueIndex},get gameOverActive(){return gameOverActive},get colosso(){return colosso}};
 })();
