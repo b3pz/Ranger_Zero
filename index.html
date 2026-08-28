@@ -15,6 +15,8 @@
   #flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .08s linear}
   #specialFlash{position:absolute;inset:0;background:radial-gradient(circle,#fff6cc 0%,#ffb84a 55%,transparent 80%);
     opacity:0;pointer-events:none;transition:opacity .11s ease-out;mix-blend-mode:screen}
+  #teleportFlash{position:absolute;inset:0;background:radial-gradient(circle,#eafcff 0%,#25c9d6 45%,transparent 78%);
+    opacity:0;pointer-events:none;transition:opacity .26s ease-out;mix-blend-mode:screen}
 
   #fileWarning{position:absolute;left:50%;bottom:60px;transform:translateX(-50%);max-width:min(90vw,560px);
     background:rgba(10,4,4,.94);border:1px solid rgba(255,110,80,.6);color:#ffcaa8;font-size:12px;
@@ -72,6 +74,28 @@
     font:700 14px "Courier New",Courier,monospace;letter-spacing:1px;padding:10px 24px;cursor:pointer}
   #colossoOutcome button:hover{background:rgba(255,210,74,.3)}
 
+  #choiceScreen{position:absolute;inset:0;background:rgba(2,2,4,.92);display:none;align-items:center;
+    justify-content:center;flex-direction:column;z-index:96;text-align:center;padding:0 20px}
+  #choiceScreen.show{display:flex}
+  #choiceScreen h2{color:#ff8a6b;font-size:22px;letter-spacing:3px;margin:0 0 30px;text-shadow:2px 2px #000}
+  #choiceRow{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
+  .choiceBtn{background:rgba(20,20,28,.9);border:1px solid rgba(140,180,255,.4);color:#dfe8ff;
+    font:700 13px "Courier New",Courier,monospace;letter-spacing:.5px;padding:16px 20px;cursor:pointer;
+    max-width:230px;text-align:left;line-height:1.5}
+  .choiceBtn:hover{background:rgba(50,60,90,.9);border-color:#7fc4ff}
+  .choiceBtn .lbl{display:block;color:#7fc4ff;font-size:11px;letter-spacing:1px;margin-bottom:6px}
+
+  #endingScreen{position:absolute;inset:0;background:#000;display:none;align-items:center;
+    justify-content:center;flex-direction:column;z-index:99;text-align:center}
+  #endingScreen.show{display:flex}
+  #endingScreen h1{font-size:40px;letter-spacing:5px;margin:0 0 16px;text-shadow:3px 3px #000}
+  #endingScreen p{color:#aab4cc;font-size:13px;max-width:520px;line-height:1.6;margin:0 0 10px}
+  #endingScreen .code{color:#4a5a7a;font-size:11px;margin-top:22px;letter-spacing:1px}
+  #endingScreen.good h1{color:#7fe0a0}
+  #endingScreen.normal h1{color:#e0c060}
+  #endingScreen.evil h1{color:#ff5a5a}
+  #cliffFlash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+
   #titleScreen{position:absolute;inset:0;background:#000 url('title_cover.png') center center/cover no-repeat;
     display:flex;align-items:flex-end;cursor:pointer;z-index:50}
   #titleScreen .prompt{width:100%;text-align:center;padding-bottom:9vh;color:#ffe27a;font-weight:700;
@@ -89,6 +113,8 @@
     justify-content:center;color:#ffe9b0;font-size:12px;font-weight:700;letter-spacing:1px;text-shadow:1px 1px #000}
   #hudText .small{color:#8fb8d8;font-size:10px;font-weight:400;margin-top:4px}
   body.started #hud{display:none}
+  body.started #tag{display:none}
+  body.dialogue-active #hint{display:none}
 
   #hpBar{position:absolute;left:14px;top:calc(14px + min(38vw,430px) * 360 / 1080 + 8px);width:min(38vw,430px);
     display:none;align-items:center;gap:8px}
@@ -107,6 +133,7 @@
 <canvas id="c"></canvas>
 <div id="flash"></div>
 <div id="specialFlash"></div>
+<div id="teleportFlash"></div>
 <div id="fileWarning"><b>Le texture 3D non si caricano.</b> Stai aprendo il file direttamente (doppio click):
 i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del gioco e lancia
 <b>python3 -m http.server 8000</b>, poi vai su <b>http://localhost:8000</b> nel browser.</div>
@@ -130,6 +157,16 @@ i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del 
   <p>...</p>
   <button id="colossoOutcomeBtn" type="button">&gt; CONTINUA</button>
 </div>
+<div id="choiceScreen">
+  <h2>OCULO SI RIVOLGE A TE.</h2>
+  <div id="choiceRow"></div>
+</div>
+<div id="endingScreen">
+  <h1>...</h1>
+  <p>...</p>
+  <div class="code">LMN_02 // SESSIONE REGISTRATA</div>
+</div>
+<div id="cliffFlash"></div>
 <div id="gameHud">
   <div id="energyTrack"><div id="energyFill"></div></div>
   <div id="hudText">RANGER ZERO<div class="small">LA TORRE // SALA DI COMANDO</div></div>

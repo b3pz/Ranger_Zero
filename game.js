@@ -50,6 +50,7 @@ const sfx={
  transform:()=>{tone(140,.22,"sawtooth",.12,650);setTimeout(()=>tone(760,.12,"square",.09),140);},
  alarm:()=>{tone(660,.16,"square",.10,440);setTimeout(()=>tone(660,.16,"square",.10,440),240);},
  giantHit:()=>tone(150,.20,"sawtooth",.12,80),
+ teleport:()=>{tone(300,.28,"sine",.09,1100);setTimeout(()=>tone(900,.10,"sine",.06,1400),120);},
  win:()=>{[0,140,280].forEach((d,i)=>setTimeout(()=>tone(440+i*220,.22,"square",.09),d));},
  lose:()=>{tone(220,.5,"sawtooth",.11,60);},
 };
@@ -519,6 +520,15 @@ const teamMembers=[
  {buf:ranger3Buf,   x: 1.2, z:-ROOM_D/2+3.3, yaw:-.10},
  {buf:ranger4Buf,   x: 3.6, z:-ROOM_D/2+3.9, yaw:-.25},
 ];
+// Posizioni usate per far girare la telecamera verso chi sta parlando
+// durante i dialoghi, cosi' si capisce subito chi e' senza dover indovinare
+// dal solo nome scritto nel balloon.
+const DIALOGUE_FOCUS_POS={
+ OCULO:{x:0,y:2.35,z:-ROOM_D/2+.30},
+ ARCO:{x:teamMembers[0].x,y:1.5,z:teamMembers[0].z},
+ MERIDIANA:{x:teamMembers[1].x,y:1.5,z:teamMembers[1].z},
+ TIC:{x:-5.6,y:2.3,z:-2.6},
+};
 
 // TIC: drone assistente — corpo a disco, cupola, un solo occhio ciclopico,
 // due piccoli pod laterali. Silhouette volutamente diversa da un Ranger
@@ -536,6 +546,16 @@ const ticParts=[
 ];
 const ticBuf=makeBuffer(bakeParts(ticParts));
 const ticHome={x:-5.6,y:2.55,z:-2.6};
+// Percorso di pattuglia tra i pannelli laterali, cosi' TIC sembra
+// controllare davvero la sala invece di restare fermo in un punto.
+const TIC_PATROL=[
+ {x:-ROOM_W/2+1.3, z:-5.2},
+ {x:-ROOM_W/2+1.3, z: 1.0},
+ {x:-2.0, z:-1.5},
+ {x: ROOM_W/2-1.3, z: 1.0},
+ {x: ROOM_W/2-1.3, z:-5.2},
+ {x: 0, z:-3.5},
+];
 
 // ============================================================
 // ARENA — spiaggia vicino al mare per il primo combattimento, separata da
@@ -576,6 +596,27 @@ const arenaEdgeBuf=makeBuffer(bakeParts([
  {mesh:boxMesh([.45,.40,.30]),mtx:mul(mat4.translate(ARENA_CX+ARENA_W/2,.5,ARENA_CZ),mat4.scale(.3,1.0,ARENA_D))},
 ]));
 
+// Cielo: prima sopra la spiaggia c'era il vuoto nero, ora una parete di
+// fondo a bande (stesso trucco della sala di comando) dietro il mare, piu'
+// due pareti laterali piu' basse, cosi' l'orizzonte si chiude invece di
+// sparire nel nulla.
+const skyBands=[[.08,.10,.20],[.14,.16,.30],[.30,.24,.30],[.55,.38,.28],[.70,.48,.30]];
+const SKY_H=30, SKY_Y0=-2;
+function buildSkyWall(x,z,w,rotY){
+ const parts=[];
+ for(let i=0;i<skyBands.length;i++){
+  const bh=SKY_H/skyBands.length;
+  parts.push({mesh:boxMesh(skyBands[i]),mtx:mul(mat4.translate(x,SKY_Y0+bh*i+bh/2,z),mat4.rotY(rotY),mat4.scale(w,bh+.05,.4))});
+ }
+ return parts;
+}
+const arenaSkyBuf=makeBuffer(bakeParts([
+ ...buildSkyWall(ARENA_CX,ARENA_CZ-ARENA_D/2-2,ARENA_W+30,0),
+ ...buildSkyWall(ARENA_CX-ARENA_W/2-2,ARENA_CZ,ARENA_D+30,Math.PI/2),
+ ...buildSkyWall(ARENA_CX+ARENA_W/2+2,ARENA_CZ,ARENA_D+30,Math.PI/2),
+ ...buildSkyWall(ARENA_CX,ARENA_CZ+ARENA_D/2+2,ARENA_W+30,0),
+]));
+
 // ============================================================
 // NEMICI — scagnozzi (deboli, in gruppo) e Il Raccoglitore (piu' forte,
 // scala umana per questo primo scontro; diventera' gigante in una fase
@@ -605,14 +646,22 @@ let colosso=null;
 const COLOSSO_EYE_Y=6.5;
 const COLOSSO_CAM_Z=ARENA_CZ+11;
 const COLOSSO_GIANT_Z=SEA_EDGE_Z-9;
+let colossoTeamPos=null;
 function startColossoSequence(){
  if(colosso)return;
- zone="colosso";
- colosso={phase:"cutscene",t:0,giantHp:400,giantHpMax:400,playerHp:100,playerHpMax:100,
+ colosso={phase:"converge",t:0,giantHp:400,giantHpMax:400,playerHp:100,playerHpMax:100,
   giantScale:1.55,attackCd:2.6,punchT:0,beamT:0,shakeT:0,beamBursts:[]};
  missionHintEl.textContent="I RANGER SI COMBINANO...";
  missionHintEl.classList.add("show");
  colossoHpWrapEl.classList.add("show");
+ sfx.teleport();
+ // i 4 compagni "volano" verso il giocatore da punti sparsi della
+ // spiaggia — prima la combinazione era solo un testo, ora si vede
+ // davvero la squadra convergere prima del lampo.
+ colossoTeamPos=teamMembers.map((m,i)=>({
+  startX:player.x+Math.cos(i*1.6)*7, startZ:player.z+Math.sin(i*1.6)*7,
+  x:0,z:0,pal:[PAL_ARCO,PAL_MERIDIANA,PAL_RANGER3,PAL_RANGER4][i],
+ }));
 }
 function colossoPunch(){
  if(!colosso||colosso.phase!=="fight"||colosso.punchT>0||colosso.beamT>0)return;
@@ -653,6 +702,24 @@ function colossoLose(){
 function updateColosso(dt){
  if(!colosso)return;
  colosso.t+=dt;
+ if(colosso.phase==="converge"){
+  const p=Math.min(1,colosso.t/1.5);
+  const ease=1-Math.pow(1-p,3);
+  for(const tp of colossoTeamPos){
+   tp.x=tp.startX+(player.x-tp.startX)*ease;
+   tp.z=tp.startZ+(player.z-tp.startZ)*ease;
+  }
+  if(colosso.t>1.5){
+   colosso.phase="cutscene";
+   colosso.t=0;
+   colossoTeamPos=null;
+   zone="colosso";
+   flashEl.style.opacity=1;
+   setTimeout(()=>{flashEl.style.opacity=0;},220);
+   sfx.transform();
+  }
+  return;
+ }
  if(colosso.phase==="cutscene"){
   colosso.giantScale=1.55+Math.min(1,colosso.t/2.6)*5.8;
   if(colosso.t>1.4)missionHintEl.textContent="IL COLOSSO E' PRONTO";
@@ -682,7 +749,9 @@ document.getElementById("colossoOutcomeBtn").addEventListener("click",()=>{
   colosso.phase="fight";colosso.giantHp=colosso.giantHpMax*.5;colosso.playerHp=colosso.playerHpMax;colosso.attackCd=2.6;
  }else{
   colosso=null;missionHintEl.classList.remove("show");colossoHpWrapEl.classList.remove("show");
+  archivioUnlocked=true;
   enterTorre();
+  setTimeout(startArchiveSequence,500);
  }
 });
 
@@ -700,14 +769,62 @@ function spawnWave(){
 }
 
 // ============================================================
+// ARCHIVIO — terza stanza della Torre, si sblocca dopo il Colosso. Elmi
+// danneggiati appesi (con gli stessi colori della squadra + il rosso
+// ruggine di Zero, per far capire senza dirlo che sono i resti delle
+// vecchie squadre) e un terminale con il registro delle squadre precedenti.
+// ============================================================
+const ARCHIVIO_CX=40, ARCHIVIO_CZ=0, ARCHIVIO_W=9, ARCHIVIO_D=12;
+const archivioFloorBuf=makeBuffer(bakeParts([
+ {mesh:boxMesh([.07,.07,.08]),mtx:mul(mat4.translate(ARCHIVIO_CX,-.1,ARCHIVIO_CZ),mat4.scale(ARCHIVIO_W,.2,ARCHIVIO_D))},
+]));
+const archivioWallCol=[.08,.08,.10];
+const archivioWallParts=[
+ {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX,2.2,ARCHIVIO_CZ-ARCHIVIO_D/2),mat4.scale(ARCHIVIO_W,4.4,.3))},
+ {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX,2.2,ARCHIVIO_CZ+ARCHIVIO_D/2),mat4.scale(ARCHIVIO_W,4.4,.3))},
+ {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2,2.2,ARCHIVIO_CZ),mat4.scale(.3,4.4,ARCHIVIO_D))},
+ {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX+ARCHIVIO_W/2,2.2,ARCHIVIO_CZ),mat4.scale(.3,4.4,ARCHIVIO_D))},
+ {mesh:boxMesh([.05,.05,.06]),mtx:mul(mat4.translate(ARCHIVIO_CX,4.5,ARCHIVIO_CZ),mat4.scale(ARCHIVIO_W,.3,ARCHIVIO_D))},
+];
+// elmi danneggiati appesi lungo la parete est — colori delle vecchie
+// squadre, volutamente spenti/sporchi invece che brillanti come quelli
+// della squadra attuale.
+const oldHelmetPalettes=[
+ [.42,.10,.08],[.30,.40,.44],[.20,.12,.24],[.10,.24,.16],[.35,.18,.10],[.28,.28,.30],
+];
+const archivioHelmetParts=[];
+for(let i=0;i<oldHelmetPalettes.length;i++){
+ const hz=ARCHIVIO_CZ-ARCHIVIO_D/2+1.4+i*1.7;
+ const hx=ARCHIVIO_CX+ARCHIVIO_W/2-.6;
+ archivioHelmetParts.push({mesh:boxMesh([.10,.10,.11]),mtx:mul(mat4.translate(hx,2.9,hz),mat4.scale(.04,.5,.04))}); // gancio
+ archivioHelmetParts.push({mesh:boxMesh(oldHelmetPalettes[i]),mtx:mul(mat4.translate(hx,2.35,hz),mat4.rotZ((i%2?1:-1)*.12),mat4.scale(.30,.32,.32))});
+}
+const archivioHelmetBuf=makeBuffer(bakeParts(archivioHelmetParts));
+// terminale col registro delle squadre — il testo vero e' nel dialogo, qui
+// solo l'oggetto fisico (schermo acceso, colore malato).
+const archivioTerminalBuf=makeBuffer(bakeParts([
+ {mesh:boxMesh([.14,.15,.17]),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2+.9,.5,ARCHIVIO_CZ),mat4.scale(.7,1.0,.6))},
+ {mesh:boxMesh([.35,.55,.25]),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2+.9,1.15,ARCHIVIO_CZ),mat4.rotX(-.3),mat4.scale(.55,.42,.04))},
+]));
+const archivioWallBuf=makeBuffer(bakeParts(archivioWallParts));
+let archivioUnlocked=false;
+function enterArchivio(){
+ zone="archivio";
+ player.x=ARCHIVIO_CX; player.z=ARCHIVIO_CZ+ARCHIVIO_D/2-1.5; player.yaw=Math.PI;
+ teleportFlash();
+}
+DIALOGUE_FOCUS_POS.REGISTRO={x:ARCHIVIO_CX-ARCHIVIO_W/2+.9,y:1.3,z:ARCHIVIO_CZ};
+
+// ============================================================
 // stato di gioco
 // ============================================================
-const player={x:0,z:5.5,yaw:0,speed:2.6,walkPhase:0,transformed:false,helmet:false,
+const player={x:0,z:4.0,yaw:Math.PI,speed:2.6,walkPhase:0,transformed:false,helmet:false,
  hp:100,hpMax:100,energy:0,energyMax:100,attackT:0,dodgeT:0,dodgeCd:0,invuln:0,hitFlashT:0,specialT:0};
 const camState={dist:4.2,height:2.1,yawOffset:0};
 const keys={};
 const flashEl=document.getElementById("flash");
 const specialFlashEl=document.getElementById("specialFlash");
+const teleportFlashEl=document.getElementById("teleportFlash");
 const titleEl=document.getElementById("titleScreen");
 const hudEl=document.getElementById("gameHud");
 const energyFillEl=document.getElementById("energyFill");
@@ -741,6 +858,7 @@ const ZONES={
  torre:{w:ROOM_W,d:ROOM_D,cx:0,cz:0},
  arena:{w:26,d:26,cx:0,cz:-60},
  colosso:{w:26,d:26,cx:0,cz:-60},
+ archivio:{w:ARCHIVIO_W,d:ARCHIVIO_D,cx:ARCHIVIO_CX,cz:ARCHIVIO_CZ},
 };
 function zoneBounds(){
  const z=ZONES[zone];
@@ -760,11 +878,18 @@ function enterArena(){
  spawnWave();
  missionHintEl.textContent="MISSIONE: sconfiggi gli scagnozzi e Il Raccoglitore";
  missionHintEl.classList.add("show");
+ teleportFlash();
 }
 function enterTorre(){
  zone="torre";
- player.x=0; player.z=5.5; player.yaw=0;
+ player.x=0; player.z=4.0; player.yaw=Math.PI;
  missionHintEl.classList.remove("show");
+ teleportFlash();
+}
+function teleportFlash(){
+ sfx.teleport();
+ teleportFlashEl.style.opacity=1;
+ setTimeout(()=>{teleportFlashEl.style.opacity=0;},260);
 }
 
 // ------------------------------------------------------------
@@ -776,10 +901,11 @@ function enterTorre(){
 const dialogueBoxEl=document.getElementById("dialogueBox");
 const dialogueNameEl=document.getElementById("dialogueName");
 const dialogueTextEl=document.getElementById("dialogueText");
-let dialogueQueue=[], dialogueIndex=0, dialogueActive=false, dialogueOnEnd=null;
+let dialogueQueue=[], dialogueIndex=0, dialogueActive=false, dialogueOnEnd=null, dialogueFocus=null;
 function playDialogue(lines,onEnd){
  dialogueQueue=lines; dialogueIndex=0; dialogueActive=true; dialogueOnEnd=onEnd||null;
  dialogueBoxEl.classList.add("show");
+ document.body.classList.add("dialogue-active");
  showDialogueLine();
 }
 function showDialogueLine(){
@@ -787,6 +913,9 @@ function showDialogueLine(){
  dialogueNameEl.textContent=l.speaker;
  dialogueNameEl.className=l.speaker==="OCULO"?"oculo":"";
  dialogueTextEl.textContent=l.text;
+ // la telecamera si gira verso chi sta parlando, cosi' si capisce subito
+ // chi e' — prima restava fissa sul giocatore per tutta la scena.
+ dialogueFocus=DIALOGUE_FOCUS_POS[l.speaker]||null;
 }
 function advanceDialogue(){
  if(!dialogueActive)return;
@@ -795,6 +924,8 @@ function advanceDialogue(){
  if(dialogueIndex>=dialogueQueue.length){
   dialogueActive=false;
   dialogueBoxEl.classList.remove("show");
+  document.body.classList.remove("dialogue-active");
+  dialogueFocus=null;
   const cb=dialogueOnEnd; dialogueOnEnd=null;
   if(cb)cb();
  }else{
@@ -828,6 +959,86 @@ function startIntro(){
    setTimeout(()=>{ enterArena(); },700);
   },2300);
  });
+}
+
+// ------------------------------------------------------------
+// Archivio: la rivelazione (le vecchie squadre, il registro, gli elmi) e
+// la rottura della quarta parete — Oculo smette di parlare a "unita' Zero"
+// e comincia a rivolgersi a chi sta giocando davvero. Finisce con la
+// scelta a tre vie gia' prevista in pre-produzione.
+// ------------------------------------------------------------
+const archiveLines=[
+ {speaker:"REGISTRO",text:"SQUADRA_07 — STATO: TERMINATA."},
+ {speaker:"REGISTRO",text:"SQUADRA_08 — STATO: TERMINATA."},
+ {speaker:"REGISTRO",text:"SQUADRA_09 — STATO: TERMINATA."},
+ {speaker:"OCULO",text:"Non dovevi vederlo. Ma hai vinto, e chi vince guadagna il diritto di guardare."},
+ {speaker:"OCULO",text:"L'armatura che hai combattuto non e' nata dal nulla. Era fatta di loro — di chi e' venuto prima di te."},
+ {speaker:"OCULO",text:"E tu, che stai leggendo questo — non tu, unita' Zero. Tu, dall'altra parte dello schermo."},
+ {speaker:"OCULO",text:"Registriamo ogni sessione. Ogni scelta. So che stai scegliendo per lui in questo momento, come hai scelto per altri prima."},
+ {speaker:"OCULO",text:"Allora scegli tu. Cosa ne facciamo di questo ciclo?"},
+];
+function startArchiveSequence(){
+ enterArchivio();
+ setTimeout(()=>{ playDialogue(archiveLines,showChoiceScreen); },600);
+}
+const choiceScreenEl=document.getElementById("choiceScreen");
+const choiceRowEl=document.getElementById("choiceRow");
+const endingScreenEl=document.getElementById("endingScreen");
+const cliffFlashEl=document.getElementById("cliffFlash");
+const ENDINGS={
+ good:{cls:"good",title:"CICLO INTERROTTO",
+  text:"Distruggi il sistema di trasformazione dall'interno. Meridiana e TIC ti aiutano a coprirti. Oculo non dice altro. Il ciclo, per ora, si ferma."},
+ normal:{cls:"normal",title:"CICLO DI SOSTITUZIONE: PRONTO",
+  text:"Completi la missione come richiesto. La Torre torna in silenzio. Da qualche parte, un nuovo fascicolo si apre gia'."},
+ evil:{cls:"evil",title:"IL POSTO SI LIBERA",
+  text:"Prendi il posto di Oculo. Il sistema ha bisogno di qualcuno che guardi. Alla porta della Torre, qualcuno di nuovo sta per entrare."},
+};
+function showChoiceScreen(){
+ choiceRowEl.innerHTML="";
+ const opts=[
+  {kind:"good",lbl:"RIFIUTA",txt:"Sabota il sistema di trasformazione. Interrompi il ciclo, qualunque cosa costi."},
+  {kind:"normal",lbl:"COMPLETA",txt:"Porta a termine la missione come da protocollo. E' quello per cui sei stato scelto."},
+  {kind:"evil",lbl:"PRENDI IL SUO POSTO",txt:"Diventa parte del sistema. Qualcuno deve pur guardare chi verra' dopo."},
+ ];
+ for(const o of opts){
+  const b=document.createElement("button");
+  b.className="choiceBtn";
+  b.innerHTML=`<span class="lbl">${o.lbl}</span>${o.txt}`;
+  b.addEventListener("click",()=>triggerEnding(o.kind));
+  choiceRowEl.appendChild(b);
+ }
+ choiceScreenEl.classList.add("show");
+}
+function triggerEnding(kind){
+ choiceScreenEl.classList.remove("show");
+ // salva la sessione LIMEN condivisa con IT SHIFT (stessa chiave), cosi' i
+ // marcatori LMN_02 restano per quando l'antologia li rilegge.
+ try{
+  const raw=localStorage.getItem("LIMEN_SESSION_01");
+  const session=raw?JSON.parse(raw):{};
+  session.LMN_02={ending:kind,ts:Date.now()};
+  localStorage.setItem("LIMEN_SESSION_01",JSON.stringify(session));
+ }catch(e){}
+ const e=ENDINGS[kind];
+ endingScreenEl.className=e.cls;
+ endingScreenEl.querySelector("h1").textContent=e.title;
+ endingScreenEl.querySelector("p").textContent=e.text;
+ endingScreenEl.classList.add("show");
+ sfx.win();
+ // cliffhanger: un lampo breve con un accenno (colore/forma) di qualcos'altro
+ // — non spiegato, non commentato — poi buio VERO, non si torna al gioco.
+ setTimeout(()=>{
+  cliffFlashEl.style.transition="opacity .04s linear";
+  cliffFlashEl.style.opacity=1;
+  setTimeout(()=>{
+   cliffFlashEl.style.transition="opacity 1.4s ease";
+   cliffFlashEl.style.opacity=0;
+   // solo il testo sfuma nel buio, lo sfondo nero resta per sempre: la
+   // sessione e' davvero finita, non deve rivelare la scena dietro.
+   const h1=endingScreenEl.querySelector("h1"), p=endingScreenEl.querySelector("p"), code=endingScreenEl.querySelector(".code");
+   [h1,p,code].forEach(el=>{ el.style.transition="opacity 1.6s ease"; el.style.opacity=0; });
+  },90);
+ },4200);
 }
 
 function beginGame(){
@@ -1020,7 +1231,7 @@ let last=performance.now();
 function frame(now){
  const dt=Math.min(.05,(now-last)/1000);last=now;
  updateTransformation(dt);
- const inputLocked=!!transformState||!gameStarted||dialogueActive||gameOverActive||zone==="colosso";
+ const inputLocked=!!transformState||!gameStarted||dialogueActive||gameOverActive||zone==="colosso"||(colosso&&colosso.phase==="converge")||choiceScreenEl.classList.contains("show")||endingScreenEl.classList.contains("show");
  if(gameStarted)energyFillEl.style.width=(74+Math.sin(now/900)*4)+"%";
 
  // rotazione del personaggio (A/D) — indipendente dal movimento, niente
@@ -1097,7 +1308,7 @@ function frame(now){
  player.specialT=Math.max(0,player.specialT-dt);
  for(let i=specialBursts.length-1;i>=0;i--){specialBursts[i].t+=dt;if(specialBursts[i].t>.5)specialBursts.splice(i,1);}
  if(zone==="arena"&&gameStarted&&!transformState)updateEnemies(dt);
- if(zone==="colosso")updateColosso(dt);
+ if(colosso)updateColosso(dt);
 
  player.walkPhase+=dt*(moving?8.5:0);
  const pal=player.transformed?PAL_ZERO:PAL_CIVILE;
@@ -1127,12 +1338,22 @@ function frame(now){
  eyeX=Math.max(zb.camXmin,Math.min(zb.camXmax,eyeX));
  eyeZ=Math.max(zb.camZmin,Math.min(zb.camZmax,eyeZ));
  eye=[eyeX,camState.height,eyeZ];
- target=[player.x,1.1+zoomIn*.35,player.z];
+ if(dialogueActive&&dialogueFocus){
+  // durante i dialoghi la telecamera gira a guardare chi sta parlando
+  // invece di restare fissa sul giocatore — prima si capiva solo dal nome
+  // scritto nel balloon, ora si vede anche chi si muove.
+  target=[dialogueFocus.x,dialogueFocus.y,dialogueFocus.z];
+ }else{
+  target=[player.x,1.1+zoomIn*.35,player.z];
+ }
  }
  const view=mat4.lookAt(eye,target,[0,1,0]);
  const proj=mat4.perspective(60*Math.PI/180, c.width/c.height, .1, 100);
  const vp=mat4.multiply(proj,view);
 
+ if(zone==="arena"||zone==="colosso")gl.clearColor(.08,.10,.20,1);
+ else if(zone==="archivio")gl.clearColor(.02,.02,.03,1);
+ else gl.clearColor(.035,.04,.055,1);
  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
 
  if(zone==="torre"){
@@ -1155,14 +1376,35 @@ function frame(now){
   const eyeModel=mul(mat4.translate(0,EYE_Y,EYE_Z+.01),mat4.scale(3.5*pulse,2.15*pulse,1));
   drawTexturedQuad(oculoTex,eyeModel,vp,flicker);
 
-  // squadra: 4 Ranger fermi, con casco, colori da bibbia personaggi
-  for(const m of teamMembers)drawBuffer(m.buf, mul(mat4.translate(m.x,0,m.z),mat4.rotY(m.yaw)), vp);
+  // squadra: 4 Ranger con casco, colori da bibbia personaggi. Non piu'
+  // completamente immobili: un leggero dondolio/spostamento del peso per
+  // dare un minimo di vita, e chi sta parlando in quel momento si illumina
+  // un po' di piu' cosi' si riconosce anche senza leggere il nome.
+  for(let mi=0;mi<teamMembers.length;mi++){
+   const m=teamMembers[mi];
+   const idlePhase=now/900+mi*1.7;
+   const isSpeaking=dialogueActive&&dialogueQueue[dialogueIndex]&&
+    ((mi===0&&dialogueQueue[dialogueIndex].speaker==="ARCO")||(mi===1&&dialogueQueue[dialogueIndex].speaker==="MERIDIANA"));
+   const mesh=buildCharacterBuffers(m.pal||[PAL_ARCO,PAL_MERIDIANA,PAL_RANGER3,PAL_RANGER4][mi],idlePhase,.16,true,"ranger",0);
+   const mb=makeBuffer(mesh);
+   const bump=isSpeaking?1.06:1;
+   drawBuffer(mb, mul(mat4.translate(m.x,0,m.z),mat4.rotY(m.yaw+Math.sin(idlePhase*.4)*.05),mat4.scale(bump,bump,bump)), vp);
+   gl.deleteBuffer(mb.posB);gl.deleteBuffer(mb.nrmB);gl.deleteBuffer(mb.colB);
+  }
 
-  // TIC: fluttua con un piccolo su-e-giu' e rotazione lenta
-  const ticY=ticHome.y+Math.sin(now/500)*.10;
-  const ticModel=mul(mat4.translate(ticHome.x,ticY,ticHome.z),mat4.rotY(now/900));
+  // TIC: pattuglia tra i pannelli laterali facendo finta di controllarli,
+  // invece di restare fermo a fluttuare sempre nello stesso punto.
+  const patrolT=(now/1000)%(TIC_PATROL.length*2.4);
+  const seg=Math.floor(patrolT/2.4), segT=Math.min(1,(patrolT%2.4)/1.6);
+  const pA=TIC_PATROL[seg], pB=TIC_PATROL[(seg+1)%TIC_PATROL.length];
+  const easeT=segT<1?(1-Math.cos(segT*Math.PI))/2:1;
+  const ticX=pA.x+(pB.x-pA.x)*easeT, ticZ=pA.z+(pB.z-pA.z)*easeT;
+  const ticY=2.1+Math.sin(now/500)*.10;
+  const ticFaceYaw=Math.atan2(pB.x-pA.x,pB.z-pA.z);
+  const ticModel=mul(mat4.translate(ticX,ticY,ticZ),mat4.rotY(ticFaceYaw));
   drawBuffer(ticBuf,ticModel,vp);
  }else if(zone==="arena"){
+  drawBuffer(arenaSkyBuf,mat4.identity(),vp);
   drawBuffer(arenaFloorBuf,mat4.identity(),vp);
   drawBuffer(arenaSeaBuf,mat4.identity(),vp);
   drawBuffer(arenaPropBuf,mat4.identity(),vp);
@@ -1179,7 +1421,17 @@ function frame(now){
    drawBuffer(enBuf,enModel,vp,en.alpha);
    gl.deleteBuffer(enBuf.posB);gl.deleteBuffer(enBuf.nrmB);gl.deleteBuffer(enBuf.colB);
   }
+  if(colossoTeamPos){
+   for(const tp of colossoTeamPos){
+    const tMesh=buildCharacterBuffers(tp.pal,now/300,1,true,"ranger",0);
+    const tBuf=makeBuffer(tMesh);
+    const tYaw=Math.atan2(player.x-tp.x,player.z-tp.z);
+    drawBuffer(tBuf, mul(mat4.translate(tp.x,0,tp.z),mat4.rotY(tYaw)), vp);
+    gl.deleteBuffer(tBuf.posB);gl.deleteBuffer(tBuf.nrmB);gl.deleteBuffer(tBuf.colB);
+   }
+  }
  }else if(zone==="colosso"&&colosso){
+  drawBuffer(arenaSkyBuf,mat4.identity(),vp);
   drawBuffer(arenaFloorBuf,mat4.identity(),vp);
   drawBuffer(arenaSeaBuf,mat4.identity(),vp);
   // Il Raccoglitore gigante, sempre rivolto verso la telecamera (verso il
@@ -1205,6 +1457,11 @@ function frame(now){
     }
    }
   }
+ }else if(zone==="archivio"){
+  drawBuffer(archivioFloorBuf,mat4.identity(),vp);
+  drawBuffer(archivioWallBuf,mat4.identity(),vp);
+  drawBuffer(archivioHelmetBuf,mat4.identity(),vp);
+  drawBuffer(archivioTerminalBuf,mat4.identity(),vp);
  }
 
  if(zone!=="colosso"){
@@ -1242,7 +1499,7 @@ requestAnimationFrame(frame);
 
 // esposto per test/debug
 window.__rz={player,camState,startTransformation,enterArena,enterTorre,advanceDialogue,triggerGameOver,
- startColossoSequence,colossoPunch,colossoSpecial,
+ startColossoSequence,colossoPunch,colossoSpecial,startArchiveSequence,showChoiceScreen,triggerEnding,
  get enemies(){return enemies},get zone(){return zone},get dialogueActive(){return dialogueActive},
  get dialogueIndex(){return dialogueIndex},get gameOverActive(){return gameOverActive},get colosso(){return colosso}};
 })();

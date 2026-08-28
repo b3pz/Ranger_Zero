@@ -120,16 +120,49 @@ Questa versione (v12) aggiunge, rispetto a quanto descritto sopra:
 - Il balloon dei dialoghi ora ha un trattamento PSX via CSS (angoli a mirino + bevel),
   niente immagine esterna: vedi `#dialogueBox` in index.html.
 
-## Cosa manca ancora (in ordine di priorità, secondo l'utente)
-1. Un vero sistema di interazione (per leggere il pannello IT SHIFT nella Torre, per ora è
-   solo un prop visivo senza testo).
-2. Più contenuto narrativo dopo il Colosso (l'utente ha chiesto di "chiudere la storia in
-   2-3 passaggi" — verifica se è stato scritto un piano nella chat, altrimenti chiedilo).
-3. Transizione vera tra Torre e Arena (oggi è un teletrasporto istantaneo via tasto M o
-   automatico a fine intro) — stesso discorso per l'ingresso al Colosso.
-4. Musica/ambiente di sottofondo (per ora solo SFX puntuali).
-5. Un vero modello/animazione del Colosso, se in futuro si vuole uscire dalla sola vista in
-   prima persona (es. per una scena non giocabile che lo mostri dall'esterno).
+## Aggiornamento v13 — Archivio, finali, cliffhanger, e leggibilita' del prologo
+- **Archivio costruito**: terza stanza della Torre (`ARCHIVIO_CX=40`, lontana dalle altre
+  zone), si sblocca dopo la vittoria sul Colosso (`archivioUnlocked=true`,
+  `startArchiveSequence()`). Elmi danneggiati appesi alla parete est (colori spenti,
+  richiamano le vecchie squadre), un terminale con `SQUADRA_07/08/09 — STATO: TERMINATA`.
+  **Nota per chi riprende**: la stanza inizialmente non aveva il muro est e si vedeva
+  attraverso fino a geometria di altre zone lontane — controllato e corretto, ma se si
+  aggiungono altre stanze verificare sempre che abbiano tutti e 4 i muri.
+- **Rottura della quarta parete**: dopo il registro, Oculo smette di rivolgersi a "unita'
+  Zero" e parla direttamente a chi gioca (`archiveLines` in game.js).
+- **Scelta finale a tre vie** (`showChoiceScreen()`): RIFIUTA / COMPLETA / PRENDI IL SUO
+  POSTO, che portano a `triggerEnding('good'|'normal'|'evil')`. Ogni finale scrive su
+  `localStorage["LIMEN_SESSION_01"]` (stessa chiave condivisa con IT SHIFT) un campo
+  `LMN_02:{ending,ts}`.
+- **Cliffhanger**: lampo bianco breve dopo qualche secondo sul finale, poi il testo sfuma
+  nel nero **permanente** (bug corretto: la prima versione faceva sfumare anche lo sfondo,
+  rivelando di nuovo il gioco dietro — ora solo il testo sparisce, lo sfondo nero resta).
+- **Prologo piu' leggibile**: nascosto il tag di debug (`#tag`) e i controlli (`#hint`)
+  durante i dialoghi, che prima si sovrapponevano al balloon. Il giocatore ora nasce
+  rivolto verso la squadra/Oculo invece che di spalle. La telecamera gira verso chi sta
+  parlando durante i dialoghi (`dialogueFocus`, mappa `DIALOGUE_FOCUS_POS`).
+- **Vita nella Torre**: TIC pattuglia tra i pannelli (`TIC_PATROL`, waypoints con
+  interpolazione), i 4 Ranger hanno un leggero dondolio idle invece di restare immobili, e
+  chi sta parlando in quel momento si illumina leggermente.
+- **Cielo per l'arena**: prima c'era il vuoto nero sopra la spiaggia, ora pareti a bande
+  colorate sull'orizzonte (`arenaSkyBuf`) + `clearColor` coordinato per zona.
+- **Teletrasporto vero**: lampo ciano + suono (`teleportFlash()`) sia per Torre→Arena che
+  per il ritorno, invece di un salto secco senza feedback.
+- **Transizione del Colosso rifatta**: ora c'e' una fase "converge" (1.5s) PRIMA della
+  cutscene di crescita — i 4 compagni volano verso il giocatore e convergono, poi lampo,
+  poi passa a `zone="colosso"` e la crescita del Raccoglitore parte. Prima era solo testo.
+  **Importante per chi riprende**: questo ha allungato la sequenza totale (converge 1.5s +
+  cutscene 2.8s = 4.3s prima che `colosso.phase` diventi `"fight"`) — se si scrivono altri
+  test o si aggiungono altre fasi, tenerne conto nei tempi di attesa.
+
+## Cosa manca ancora
+1. Musica/ambiente di sottofondo (solo SFX puntuali per ora).
+2. Un vero sistema di interazione generico (il pannello IT SHIFT nella Sala di Comando è
+   ancora solo un prop visivo, il resto ora usa sequenze scriptate invece).
+3. Bilanciamento vero del combattimento (numeri di danno/HP scelti a naso, mai testati per
+   difficolta' reale).
+4. I tre finali sono scritti ma minimali (poche righe di testo) — se si vuole approfondirli
+   narrativamente, farlo mantenendo la struttura a tre vie gia' in pre-produzione.
 
 ## Metodo di lavoro da rispettare
 - **Testa sempre prima di consegnare.** In questa cartella non c'è modo di "vedere" il
