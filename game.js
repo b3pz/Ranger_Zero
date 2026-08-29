@@ -920,39 +920,82 @@ function updateEmergeCutscene(dt){
 // ruggine di Zero, per far capire senza dirlo che sono i resti delle
 // vecchie squadre) e un terminale con il registro delle squadre precedenti.
 // ============================================================
-const ARCHIVIO_CX=40, ARCHIVIO_CZ=0, ARCHIVIO_W=9, ARCHIVIO_D=12;
+// L'Archivio ora ha due parti in un unico corridoio lungo (niente cambio
+// di zona/telecamera, piu' semplice e meno confuso da seguire): la parte
+// vicina all'ingresso col terminale e gli elmi, e IN FONDO — piu' buia,
+// col pavimento diverso apposta per far percepire il cambiamento — la
+// sala delle capsule. I vecchi Ranger non sono morti: sono ancora li',
+// tenuti in stasi, e la Torre continua a prelevare energia da loro. E'
+// per questo che serve sempre un nuovo "unita' Zero": il ciclo non libera
+// mai chi c'e' gia' dentro, ne aggiunge solo altri.
+const ARCHIVIO_CX=40, ARCHIVIO_CZ=0, ARCHIVIO_W=9, ARCHIVIO_D=24;
+const CAPSULE_ZONE_Z=ARCHIVIO_CZ-ARCHIVIO_D/2+6; // da qui in poi (verso nord) e' la sala delle capsule
 const archivioFloorBuf=makeBuffer(bakeParts([
- {mesh:boxMesh([.07,.07,.08]),mtx:mul(mat4.translate(ARCHIVIO_CX,-.1,ARCHIVIO_CZ),mat4.scale(ARCHIVIO_W,.2,ARCHIVIO_D))},
+ {mesh:boxMesh([.07,.07,.08]),mtx:mul(mat4.translate(ARCHIVIO_CX,-.1,ARCHIVIO_CZ+4),mat4.scale(ARCHIVIO_W,.2,ARCHIVIO_D-8))},
+ // pavimento della sala capsule: piu' freddo/malato, per segnare il cambio senza bisogno di una porta
+ {mesh:boxMesh([.05,.09,.09]),mtx:mul(mat4.translate(ARCHIVIO_CX,-.1,CAPSULE_ZONE_Z-2),mat4.scale(ARCHIVIO_W,.2,8))},
 ]));
 const archivioWallCol=[.08,.08,.10];
+const capsuleWallCol=[.05,.06,.08];
 const archivioWallParts=[
- {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX,2.2,ARCHIVIO_CZ-ARCHIVIO_D/2),mat4.scale(ARCHIVIO_W,4.4,.3))},
- {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX,2.2,ARCHIVIO_CZ+ARCHIVIO_D/2),mat4.scale(ARCHIVIO_W,4.4,.3))},
- {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2,2.2,ARCHIVIO_CZ),mat4.scale(.3,4.4,ARCHIVIO_D))},
- {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX+ARCHIVIO_W/2,2.2,ARCHIVIO_CZ),mat4.scale(.3,4.4,ARCHIVIO_D))},
- {mesh:boxMesh([.05,.05,.06]),mtx:mul(mat4.translate(ARCHIVIO_CX,4.5,ARCHIVIO_CZ),mat4.scale(ARCHIVIO_W,.3,ARCHIVIO_D))},
+ {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX,2.2,ARCHIVIO_CZ+ARCHIVIO_D/2),mat4.scale(ARCHIVIO_W,4.4,.3))}, // fondo ingresso
+ {mesh:boxMesh(capsuleWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX,2.6,ARCHIVIO_CZ-ARCHIVIO_D/2),mat4.scale(ARCHIVIO_W,5.2,.3))}, // fondo sala capsule
+ {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2,2.2,ARCHIVIO_CZ+5),mat4.scale(.3,4.4,ARCHIVIO_D-10))},
+ {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX+ARCHIVIO_W/2,2.2,ARCHIVIO_CZ+5),mat4.scale(.3,4.4,ARCHIVIO_D-10))},
+ {mesh:boxMesh(capsuleWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2,2.6,CAPSULE_ZONE_Z-2),mat4.scale(.3,5.2,8))},
+ {mesh:boxMesh(capsuleWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX+ARCHIVIO_W/2,2.6,CAPSULE_ZONE_Z-2),mat4.scale(.3,5.2,8))},
+ {mesh:boxMesh([.05,.05,.06]),mtx:mul(mat4.translate(ARCHIVIO_CX,4.5,ARCHIVIO_CZ+4),mat4.scale(ARCHIVIO_W,.3,ARCHIVIO_D-8))},
+ {mesh:boxMesh([.03,.04,.05]),mtx:mul(mat4.translate(ARCHIVIO_CX,5.3,CAPSULE_ZONE_Z-2),mat4.scale(ARCHIVIO_W,.3,8))},
 ];
-// elmi danneggiati appesi lungo la parete est — colori delle vecchie
-// squadre, volutamente spenti/sporchi invece che brillanti come quelli
-// della squadra attuale.
+// elmi danneggiati appesi lungo la parete est, nella parte vicina
+// all'ingresso — restano come prima, decorazione/indizio, non piu'
+// un'interazione a se stante (semplificato: contava solo confondere).
 const oldHelmetPalettes=[
  [.42,.10,.08],[.30,.40,.44],[.20,.12,.24],[.10,.24,.16],[.35,.18,.10],[.28,.28,.30],
 ];
 const archivioHelmetParts=[];
 for(let i=0;i<oldHelmetPalettes.length;i++){
- const hz=ARCHIVIO_CZ-ARCHIVIO_D/2+1.4+i*1.7;
+ const hz=ARCHIVIO_CZ+ARCHIVIO_D/2-2.2-i*1.5;
  const hx=ARCHIVIO_CX+ARCHIVIO_W/2-.6;
- archivioHelmetParts.push({mesh:boxMesh([.10,.10,.11]),mtx:mul(mat4.translate(hx,2.9,hz),mat4.scale(.04,.5,.04))}); // gancio
+ archivioHelmetParts.push({mesh:boxMesh([.10,.10,.11]),mtx:mul(mat4.translate(hx,2.9,hz),mat4.scale(.04,.5,.04))});
  archivioHelmetParts.push({mesh:boxMesh(oldHelmetPalettes[i]),mtx:mul(mat4.translate(hx,2.35,hz),mat4.rotZ((i%2?1:-1)*.12),mat4.scale(.30,.32,.32))});
 }
 const archivioHelmetBuf=makeBuffer(bakeParts(archivioHelmetParts));
-// terminale col registro delle squadre — il testo vero e' nel dialogo, qui
-// solo l'oggetto fisico (schermo acceso, colore malato).
 const archivioTerminalBuf=makeBuffer(bakeParts([
- {mesh:boxMesh([.14,.15,.17]),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2+.9,.5,ARCHIVIO_CZ),mat4.scale(.7,1.0,.6))},
- {mesh:boxMesh([.35,.55,.25]),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2+.9,1.15,ARCHIVIO_CZ),mat4.rotX(-.3),mat4.scale(.55,.42,.04))},
+ {mesh:boxMesh([.14,.15,.17]),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2+.9,.5,ARCHIVIO_CZ+ARCHIVIO_D/2-2.5),mat4.scale(.7,1.0,.6))},
+ {mesh:boxMesh([.35,.55,.25]),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2+.9,1.15,ARCHIVIO_CZ+ARCHIVIO_D/2-2.5),mat4.rotX(-.3),mat4.scale(.55,.42,.04))},
 ]));
 const archivioWallBuf=makeBuffer(bakeParts(archivioWallParts));
+
+// ------------------------------------------------------------
+// Sala delle capsule: 4 vecchi Ranger, ancora vivi, tenuti in stasi —
+// ognuno col rig e la palette gia' pronti (basta riusare quelli della
+// squadra + due varianti in piu' per dare l'idea di piu' cicli passati),
+// dentro una capsula (cornice + pannello "vetro" colorato), con un fascio
+// verticale che sale verso il soffitto a suggerire il prelievo di energia.
+// ------------------------------------------------------------
+const PAL_OLDRANGER_A=makePalette([.34,.16,.14],[.42,.36,.20]);
+const PAL_OLDRANGER_B=makePalette([.14,.28,.34],[.44,.44,.46]);
+const capsuleRangerPals=[PAL_OLDRANGER_A,PAL_ARCO,PAL_OLDRANGER_B,PAL_MERIDIANA];
+const CAPSULE_POS=[
+ {x:ARCHIVIO_CX-2.6,z:CAPSULE_ZONE_Z-4.5},
+ {x:ARCHIVIO_CX-0.9,z:CAPSULE_ZONE_Z-5.2},
+ {x:ARCHIVIO_CX+0.9,z:CAPSULE_ZONE_Z-5.2},
+ {x:ARCHIVIO_CX+2.6,z:CAPSULE_ZONE_Z-4.5},
+];
+const capsuleFrameParts=[];
+for(const p of CAPSULE_POS){
+ capsuleFrameParts.push({mesh:boxMesh([.12,.13,.15]),mtx:mul(mat4.translate(p.x,1.15,p.z),mat4.scale(1.0,2.3,.12))}); // schiena capsula
+ capsuleFrameParts.push({mesh:boxMesh([.10,.11,.13]),mtx:mul(mat4.translate(p.x,.05,p.z+.35),mat4.scale(1.05,.10,.85))}); // base
+}
+const capsuleFrameBuf=makeBuffer(bakeParts(capsuleFrameParts));
+// il "vetro" colorato e il fascio di luce si disegnano ogni frame (per il
+// leggero pulsare, come per Oculo/LIMEN) invece di essere statici.
+const capsuleGlassMesh=boxMesh([.30,.75,.85]);
+const capsuleGlassBuf=makeBuffer(capsuleGlassMesh);
+const capsuleBeamMesh=boxMesh([.55,.90,.98]);
+const capsuleBeamBuf=makeBuffer(capsuleBeamMesh);
+
 let archivioUnlocked=false;
 function enterArchivio(){
  zone="archivio";
@@ -960,7 +1003,8 @@ function enterArchivio(){
  teleportFlash();
  playAmbient("archivio");
 }
-DIALOGUE_FOCUS_POS.REGISTRO={x:ARCHIVIO_CX-ARCHIVIO_W/2+.9,y:1.3,z:ARCHIVIO_CZ};
+DIALOGUE_FOCUS_POS.REGISTRO={x:ARCHIVIO_CX-ARCHIVIO_W/2+.9,y:1.3,z:ARCHIVIO_CZ+ARCHIVIO_D/2-2.5};
+DIALOGUE_FOCUS_POS.CAPSULE={x:ARCHIVIO_CX,y:1.3,z:CAPSULE_ZONE_Z-5};
 
 // ============================================================
 // stato di gioco
@@ -1116,49 +1160,55 @@ function startIntro(){
 
 // ------------------------------------------------------------
 // Archivio: ora giocabile, non solo narrativo — il giocatore cammina
-// liberamente e scopre il registro e gli elmi avvicinandosi e premendo
-// SPAZIO, invece di subire tutto in automatico. Solo dopo aver scoperto
-// entrambi, Oculo rompe la quarta parete e offre la scelta finale.
+// liberamente e scopre il registro e la sala delle capsule avvicinandosi e
+// premendo SPAZIO, invece di subire tutto in automatico. Solo dopo aver
+// scoperto entrambi, Oculo rompe la quarta parete e offre la scelta finale.
+// La rivelazione vera: i vecchi Ranger non sono morti. Sono ancora li',
+// tenuti in stasi, e la Torre continua a prelevare energia da loro — per
+// questo serve sempre un'unita' nuova: il ciclo non libera mai chi c'e'
+// gia' dentro, ne aggiunge solo altri.
 // ------------------------------------------------------------
 const terminalLines=[
- {speaker:"REGISTRO",text:"SQUADRA_07 — STATO: TERMINATA."},
- {speaker:"REGISTRO",text:"SQUADRA_08 — STATO: TERMINATA."},
- {speaker:"REGISTRO",text:"SQUADRA_09 — STATO: TERMINATA."},
+ {speaker:"REGISTRO",text:"SQUADRA_07 — STATO: STASI ATTIVA. ENERGIA IN PRELIEVO: 61%."},
+ {speaker:"REGISTRO",text:"SQUADRA_08 — STATO: STASI ATTIVA. ENERGIA IN PRELIEVO: 44%."},
+ {speaker:"REGISTRO",text:"SQUADRA_09 — STATO: STASI ATTIVA. ENERGIA IN PRELIEVO: 78%."},
+ {speaker:"REGISTRO",text:"Nessuna voce risulta "+String.fromCharCode(34)+"terminata."+String.fromCharCode(34)},
 ];
-const helmetLines=[
- {speaker:"MERIDIANA",text:"Quello... conosco quel colore. Era di uno di prima. Non me l'hanno mai detto cosa gli e' successo davvero."},
- {speaker:"MERIDIANA",text:"Andiamo via da qui, Zero."},
+const capsuleLines=[
+ {speaker:"MERIDIANA",text:"Zero... non sono morti."},
+ {speaker:"MERIDIANA",text:"Sono ancora li' dentro. Li tengono cosi', e continuano a prendere quello che gli resta."},
+ {speaker:"MERIDIANA",text:"Nessuno viene mai liberato. Si aggiunge solo un altro nome in fondo alla lista."},
 ];
 const oculoRevealLines=[
  {speaker:"OCULO",text:"Non dovevi vederlo. Ma hai vinto, e chi vince guadagna il diritto di guardare."},
- {speaker:"OCULO",text:"L'armatura che hai combattuto non e' nata dal nulla. Era fatta di loro — di chi e' venuto prima di te."},
+ {speaker:"OCULO",text:"Non li abbiamo mai persi. Restano utili anche fermi — l'energia non ha bisogno che siano in piedi, solo che ci siano."},
  {speaker:"OCULO",text:"E tu, che stai leggendo questo — non tu, unita' Zero. Tu, dall'altra parte dello schermo."},
  {speaker:"OCULO",text:"Registriamo ogni sessione. Ogni scelta. So che stai scegliendo per lui in questo momento, come hai scelto per altri prima."},
- {speaker:"OCULO",text:"Allora scegli tu. Cosa ne facciamo di questo ciclo?"},
+ {speaker:"OCULO",text:"Allora scegli tu. Cosa ne facciamo di questo ciclo — e di loro?"},
 ];
-const TERMINAL_POS={x:ARCHIVIO_CX-ARCHIVIO_W/2+.9,z:ARCHIVIO_CZ};
-const HELMET_POS={x:ARCHIVIO_CX+ARCHIVIO_W/2-.6,z:ARCHIVIO_CZ};
-let archiveState={terminalRead:false,helmetsRead:false,revealing:false};
+const TERMINAL_POS={x:ARCHIVIO_CX-ARCHIVIO_W/2+.9,z:ARCHIVIO_CZ+ARCHIVIO_D/2-2.5};
+const CAPSULE_INTERACT_POS={x:ARCHIVIO_CX,z:CAPSULE_ZONE_Z-5};
+let archiveState={terminalRead:false,capsuleRead:false,revealing:false};
 let nearInteractable=null;
 function doArchiveInteract(){
  if(nearInteractable==="terminal"&&!archiveState.terminalRead){
   archiveState.terminalRead=true;
   playDialogue(terminalLines,maybeStartOculoReveal);
- }else if(nearInteractable==="helmets"&&!archiveState.helmetsRead){
-  archiveState.helmetsRead=true;
-  playDialogue(helmetLines,maybeStartOculoReveal);
+ }else if(nearInteractable==="capsule"&&!archiveState.capsuleRead){
+  archiveState.capsuleRead=true;
+  playDialogue(capsuleLines,maybeStartOculoReveal);
  }
 }
 function startArchiveSequence(){
- archiveState={terminalRead:false,helmetsRead:false,revealing:false};
+ archiveState={terminalRead:false,capsuleRead:false,revealing:false};
  enterArchivio();
  setTimeout(()=>{
-  missionHintEl.textContent="ESPLORA L'ARCHIVIO — CERCA IL TERMINALE E GLI ELMI";
+  missionHintEl.textContent="ESPLORA L'ARCHIVIO — CERCA IL TERMINALE, POI VAI IN FONDO";
   missionHintEl.classList.add("show");
  },600);
 }
 function maybeStartOculoReveal(){
- if(archiveState.terminalRead&&archiveState.helmetsRead&&!archiveState.revealing){
+ if(archiveState.terminalRead&&archiveState.capsuleRead&&!archiveState.revealing){
   archiveState.revealing=true;
   missionHintEl.classList.remove("show");
   setTimeout(()=>{ playDialogue(oculoRevealLines,showChoiceScreen); },900);
@@ -1171,18 +1221,18 @@ const cliffFlashEl=document.getElementById("cliffFlash");
 const cliffEyeEl=document.getElementById("cliffEye");
 const ENDINGS={
  good:{cls:"good",title:"CICLO INTERROTTO",
-  text:"Distruggi il sistema di trasformazione dall'interno. Meridiana e TIC ti aiutano a coprirti. Oculo non dice altro. Il ciclo, per ora, si ferma."},
+  text:"Apri le capsule. Meridiana e TIC ti coprono mentre i vecchi Ranger tornano a respirare da soli. Oculo non dice altro. Il ciclo, per ora, si ferma."},
  normal:{cls:"normal",title:"CICLO DI SOSTITUZIONE: PRONTO",
-  text:"Completi la missione come richiesto. La Torre torna in silenzio. Da qualche parte, un nuovo fascicolo si apre gia'."},
+  text:"Completi la missione. Le capsule restano chiuse, la Torre torna in silenzio. Da qualche parte, un nuovo fascicolo si apre gia'."},
  evil:{cls:"evil",title:"IL POSTO SI LIBERA",
-  text:"Prendi il posto di Oculo. Il sistema ha bisogno di qualcuno che guardi. Alla porta della Torre, qualcuno di nuovo sta per entrare."},
+  text:"Prendi il posto di Oculo. Le capsule restano sue da custodire, ora. Alla porta della Torre, qualcuno di nuovo sta per entrare."},
 };
 function showChoiceScreen(){
  choiceRowEl.innerHTML="";
  const opts=[
-  {kind:"good",lbl:"RIFIUTA",txt:"Sabota il sistema di trasformazione. Interrompi il ciclo, qualunque cosa costi."},
-  {kind:"normal",lbl:"COMPLETA",txt:"Porta a termine la missione come da protocollo. E' quello per cui sei stato scelto."},
-  {kind:"evil",lbl:"PRENDI IL SUO POSTO",txt:"Diventa parte del sistema. Qualcuno deve pur guardare chi verra' dopo."},
+  {kind:"good",lbl:"LIBERALI",txt:"Apri le capsule, qualunque cosa costi."},
+  {kind:"normal",lbl:"COMPLETA",txt:"Porta a termine la missione come da protocollo."},
+  {kind:"evil",lbl:"PRENDI IL SUO POSTO",txt:"Diventa parte del sistema che li tiene li'."},
  ];
  for(const o of opts){
   const b=document.createElement("button");
@@ -1443,6 +1493,25 @@ function drawShadow(x,z,radius,vp,alpha){
  drawBuffer(shadowBuf, mul(mat4.translate(x,.012,z),mat4.scale(radius,.02,radius*.85)), vp, alpha===undefined?.35:alpha);
 }
 
+// Barra vita dei nemici in spiaggia: prima non si vedeva quanta vita
+// avesse nessuno (scagnozzi o Raccoglitore) fuori dal Colosso, che ha gia'
+// la sua barra dedicata. Una barra piccola fluttuante sopra la testa,
+// sempre rivolta verso la telecamera (billboard vero, calcolato dallo yaw
+// della camera ogni frame), che appare solo se il nemico ha gia' subito
+// danno — cosi' non affolla la scena finche' non serve davvero.
+const hpBarBgMesh=boxMesh([.08,.06,.07]);
+const hpBarBgBuf=makeBuffer(hpBarBgMesh);
+const hpBarFillMesh=boxMesh([.75,.18,.14]);
+const hpBarFillBuf=makeBuffer(hpBarFillMesh);
+function drawEnemyHpBar(x,y,z,frac,camYaw,vp){
+ if(frac>=1)return; // ancora a vita piena: non serve mostrarla
+ const rot=mat4.rotY(camYaw);
+ const base=mul(mat4.translate(x,y,z),rot);
+ drawBuffer(hpBarBgBuf, mul(base,mat4.scale(.62,.09,.02)), vp, .8);
+ const w=Math.max(0,frac)*.58;
+ drawBuffer(hpBarFillBuf, mul(base,mat4.translate(-.29+w/2,0,.002),mat4.scale(w,.06,.02)), vp, .95);
+}
+
 // Rallentatore/hit-stop: un fattore di scala globale sul tempo di gioco,
 // usato sia per i micro-freeze quando un colpo va a segno (hit-stop, molto
 // breve e deciso) sia per il rallentatore vero e proprio sul colpo di
@@ -1550,13 +1619,13 @@ function frame(now){
  if(zone==="arena")updateEmergeCutscene(dt);
 
  // Archivio: mostra il prompt "SPAZIO — LEGGI" quando ci si avvicina al
- // terminale o alla parete degli elmi, cosi' l'esplorazione e' guidata ma
- // resta libera (il giocatore decide quando e se avvicinarsi).
+ // terminale o alla sala delle capsule in fondo, cosi' l'esplorazione e'
+ // guidata ma resta libera (il giocatore decide quando e se avvicinarsi).
  if(zone==="archivio"&&!dialogueActive){
   const dT=Math.hypot(player.x-TERMINAL_POS.x,player.z-TERMINAL_POS.z);
-  const dH=Math.hypot(player.x-HELMET_POS.x,player.z-HELMET_POS.z);
+  const dC=Math.hypot(player.x-CAPSULE_INTERACT_POS.x,player.z-CAPSULE_INTERACT_POS.z);
   if(dT<1.6&&!archiveState.terminalRead){ nearInteractable="terminal"; interactPromptEl.textContent="SPAZIO — LEGGI IL REGISTRO"; interactPromptEl.classList.add("show"); }
-  else if(dH<1.8&&!archiveState.helmetsRead){ nearInteractable="helmets"; interactPromptEl.textContent="SPAZIO — GUARDA GLI ELMI"; interactPromptEl.classList.add("show"); }
+  else if(dC<2.4&&!archiveState.capsuleRead){ nearInteractable="capsule"; interactPromptEl.textContent="SPAZIO — GUARDA LE CAPSULE"; interactPromptEl.classList.add("show"); }
   else{ nearInteractable=null; interactPromptEl.classList.remove("show"); }
  }else if(nearInteractable){
   nearInteractable=null; interactPromptEl.classList.remove("show");
@@ -1684,6 +1753,11 @@ function frame(now){
    const enModel=mul(mat4.translate(en.x,en.y||0,en.z),mat4.rotY(en.yaw),mat4.scale(s,s,s));
    drawBuffer(enBuf,enModel,vp,en.alpha);
    gl.deleteBuffer(enBuf.posB);gl.deleteBuffer(enBuf.nrmB);gl.deleteBuffer(enBuf.colB);
+   if(en.state!=="retreat"){
+    const barYaw=Math.atan2(eye[0]-en.x,eye[2]-en.z);
+    const barY=(en.y||0)+(en.type==="raccoglitore"?2.55*en.scale:1.95*s);
+    drawEnemyHpBar(en.x,barY,en.z,en.hp/en.hpMax,barYaw,vp);
+   }
   }
   if(colossoTeamPos){
    for(const tp of colossoTeamPos){
@@ -1728,6 +1802,17 @@ function frame(now){
   drawBuffer(archivioWallBuf,mat4.identity(),vp);
   drawBuffer(archivioHelmetBuf,mat4.identity(),vp);
   drawBuffer(archivioTerminalBuf,mat4.identity(),vp);
+  drawBuffer(capsuleFrameBuf,mat4.identity(),vp);
+  for(let ci=0;ci<CAPSULE_POS.length;ci++){
+   const cp=CAPSULE_POS[ci];
+   const pulse=.75+Math.sin(now/620+ci*1.3)*.25;
+   drawBuffer(capsuleGlassBuf, mul(mat4.translate(cp.x,1.15,cp.z+.30),mat4.scale(1,1,1)), vp, .38);
+   drawBuffer(capsuleBeamBuf, mul(mat4.translate(cp.x,3.6,cp.z),mat4.scale(.5*pulse,3.0,.5*pulse)), vp, .16*pulse);
+   const rMesh=buildCharacterBuffers(capsuleRangerPals[ci],0,0,true,"ranger",0);
+   const rBuf=makeBuffer(rMesh);
+   drawBuffer(rBuf, mul(mat4.translate(cp.x,0,cp.z+.05),mat4.rotY(Math.PI)), vp, .8);
+   gl.deleteBuffer(rBuf.posB);gl.deleteBuffer(rBuf.nrmB);gl.deleteBuffer(rBuf.colB);
+  }
  }
 
  if(zone!=="colosso"){

@@ -309,6 +309,37 @@ pre-produzione originale) e concentrare gli sforzi altrove.
   Colosso, replicare lo stesso pattern (`loadTexture` + `drawTexturedQuad` posizionato su
   una parete) invece di inventare un sistema nuovo.
 
+## Aggiornamento v22 — Archivio corretto (i vecchi Ranger sono vivi, non morti), barre vita nemici
+- **Riscritto l'Archivio secondo il piano originale**, che la versione precedente non
+  rispettava: non è più "vecchie squadre morte", ma un unico corridoio lungo
+  (`ARCHIVIO_D` raddoppiata a 24) che porta dall'ingresso (terminale + elmi, decorazione)
+  fino a una **sala delle capsule** in fondo, più buia (`capsuleWallCol`, pavimento
+  diverso), con 4 vecchi Ranger ancora vivi (`CAPSULE_POS`, rig riusato con palette
+  diverse) tenuti in stasi mentre la Torre continua a prelevare energia da loro — è per
+  questo che serve sempre una nuova unità: il ciclo non libera mai chi c'è già dentro.
+  Registro (`terminalLines`) e rivelazione di Meridiana alle capsule (`capsuleLines`)
+  riscritti di conseguenza, così come le battute di Oculo e i tre finali (ora "LIBERALI"
+  invece di "RIFIUTA", con testo aggiornato).
+- **Barre vita sopra i nemici in spiaggia** (`drawEnemyHpBar`, billboard vero calcolato
+  dalla posizione della telecamera reale ogni frame, non da uno yaw fisso) — compaiono solo
+  quando il nemico ha già subito danno, per non affollare la scena. Prima non c'era alcun
+  indicatore fuori dal Colosso.
+- **Nota per chi riprende — testato ma non in un'unica sessione pulita**: ho verificato
+  separatamente (1) la sala delle capsule e il suo dialogo, (2) il terminale con le nuove
+  righe, (3) le barre vita — tutti e tre confermati funzionanti, zero errori console in
+  ogni test. Non sono riuscito a incatenare tutto in un'unica run pulita dall'inizio alla
+  fine per mancanza di tempo/tentativi (i miei script di test avevano posizioni/timing
+  imprecisi, non il gioco). Se si trova qualcosa che non torna nel flusso completo
+  terminale+capsule→rivelazione→scelta, ripartire da qui.
+
+## Non ancora affrontato in questa sessione (richiesto dall'utente)
+- **Compagni che combattono altri scagnozzi sullo sfondo** in spiaggia (solo cosmetico,
+  quello che conta per la missione resta solo cio' che uccide il giocatore) — non
+  implementato, richiede spawnare la squadra nell'arena con un'IA leggera propria.
+- **Immagini per ogni scelta finale** — non implementato. La schermata scelta ora ha gia'
+  l'occhio come sfondo comune (fatto in una sessione precedente); se si vogliono 3 immagini
+  diverse una per opzione serve deciderne il contenuto e generarle.
+
 ## Cosa manca ancora
 1. Musica/ambiente di sottofondo (solo SFX puntuali per ora).
 2. Bilanciamento vero del combattimento (numeri di danno/HP scelti a naso).
