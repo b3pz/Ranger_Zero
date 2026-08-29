@@ -250,6 +250,23 @@ Questa versione (v12) aggiunge, rispetto a quanto descritto sopra:
   dovrebbe, il problema è probabile sia nei valori dei preset (`AMBIENT_PRESETS`), non nella
   meccanica del sistema (quella è stata testata a fondo).
 
+## Aggiornamento v19 — bug vero corretto: input "mangiato" durante i colpi ripetuti
+- **Trovato testando sul serio** (non a memoria): colpendo ripetutamente Il Raccoglitore o
+  il Colosso, molti input venivano ignorati — su 20 pugni ne registravano solo 5-8. Causa:
+  l'hit-stop (rallentatore breve ad ogni colpo) scala `dt` globalmente, e i timer di
+  recupero attacco (`player.attackT`, `colosso.punchT`/`beamT`, `en.cd` dei nemici)
+  venivano decrementati con quello stesso `dt` scalato — quindi durante l'hit-stop il
+  recupero rallentava insieme a tutto il resto, "mangiando" i tasti premuti nel frattempo.
+- **Corretto**: aggiunto `rawDtGlobal` (tempo reale non scalato dell'ultimo frame,
+  aggiornato in cima a `frame()`). Tutti i timer di recupero attacco ora decrementano con
+  `rawDtGlobal` invece di `dt` — restano legati al tempo reale, non a quello rallentato.
+  Le animazioni e gli effetti visivi restano su `dt` scalato (quello e' l'effetto voluto
+  dell'hit-stop). **Nota per chi riprende**: se si aggiungono nuovi timer di
+  recupero/cooldown per azioni del giocatore o dei nemici, usare sempre `rawDtGlobal`, mai
+  `dt` — altrimenti si ricade nello stesso problema.
+- Verificato col test che aveva scoperto il bug: prima 20 pugni sul Colosso registravano
+  90 danni su 360 possibili, ora 342 su 360.
+
 ## Cosa manca ancora
 1. Musica/ambiente di sottofondo (solo SFX puntuali per ora).
 2. Bilanciamento vero del combattimento (numeri di danno/HP scelti a naso).

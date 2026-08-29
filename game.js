@@ -831,10 +831,10 @@ function updateColosso(dt){
  }
  if(colosso.phase==="finishing"){ updateColossoFinish(dt); return; }
  if(colosso.phase!=="fight")return;
- colosso.punchT=Math.max(0,colosso.punchT-dt);
- colosso.beamT=Math.max(0,colosso.beamT-dt);
+ colosso.punchT=Math.max(0,colosso.punchT-rawDtGlobal);
+ colosso.beamT=Math.max(0,colosso.beamT-rawDtGlobal);
  colosso.shakeT=Math.max(0,colosso.shakeT-dt);
- colosso.attackCd-=dt;
+ colosso.attackCd-=rawDtGlobal;
  for(let i=colosso.beamBursts.length-1;i>=0;i--){colosso.beamBursts[i].t+=dt;if(colosso.beamBursts[i].t>.4)colosso.beamBursts.splice(i,1);}
  if(colosso.attackCd<=0){
   colosso.attackCd=2.6;
@@ -1366,7 +1366,7 @@ function updateEnemies(dt){
   const wantRange=en.type==="raccoglitore"?1.9:1.5;
   // orienta il nemico verso il giocatore
   en.yaw=Math.atan2(player.x-en.x,player.z-en.z);
-  if(en.cd>0)en.cd-=dt;
+  if(en.cd>0)en.cd-=rawDtGlobal;
   if(distToPlayer>wantRange+.15){
    const spd=(en.type==="raccoglitore"?1.5:1.9)*dt;
    en.x+=Math.sin(en.yaw)*spd; en.z+=Math.cos(en.yaw)*spd;
@@ -1434,11 +1434,20 @@ function drawShadow(x,z,radius,vp,alpha){
 // va in tempo REALE (rawDt), non in quello scalato, altrimenti non
 // finirebbe mai.
 let slowMoT=0, slowMoFactor=1;
+// tempo reale non scalato dell'ultimo frame: i timer di recupero degli
+// attacchi lo usano invece di dt, altrimenti l'hit-stop (che rallenta dt)
+// finiva per rallentare ANCHE il recupero tra un colpo e l'altro, "mangiando"
+// input durante il combattimento serrato — bug vero, trovato testando
+// colpendo ripetutamente Il Raccoglitore e il Colosso (su 20 pugni ne
+// registravano solo 5-8). Le animazioni/effetti restano su dt scalato
+// (quello resta l'effetto voluto), solo i cooldown usano rawDtGlobal.
+let rawDtGlobal=0;
 function triggerSlowMo(duration,factor){ slowMoT=duration; slowMoFactor=factor; }
 
 let last=performance.now();
 function frame(now){
  const rawDt=Math.min(.05,(now-last)/1000);last=now;
+ rawDtGlobal=rawDt;
  let dt=rawDt;
  if(slowMoT>0){ dt=rawDt*slowMoFactor; slowMoT-=rawDt; }
  updateTransformation(dt);
@@ -1511,12 +1520,12 @@ function frame(now){
  }
 
  // timer di combattimento
- player.attackT=Math.max(0,player.attackT-dt);
- player.dodgeT=Math.max(0,player.dodgeT-dt);
- player.dodgeCd=Math.max(0,player.dodgeCd-dt);
+ player.attackT=Math.max(0,player.attackT-rawDtGlobal);
+ player.dodgeT=Math.max(0,player.dodgeT-rawDtGlobal);
+ player.dodgeCd=Math.max(0,player.dodgeCd-rawDtGlobal);
  player.invuln=Math.max(0,player.invuln-dt);
  player.hitFlashT=Math.max(0,player.hitFlashT-dt);
- player.specialT=Math.max(0,player.specialT-dt);
+ player.specialT=Math.max(0,player.specialT-rawDtGlobal);
  for(let i=specialBursts.length-1;i>=0;i--){specialBursts[i].t+=dt;if(specialBursts[i].t>.5)specialBursts.splice(i,1);}
  for(let i=splashBursts.length-1;i>=0;i--){splashBursts[i].t+=dt;if(splashBursts[i].t>.7)splashBursts.splice(i,1);}
  if(zone==="arena"&&gameStarted&&!transformState)updateEnemies(dt);
