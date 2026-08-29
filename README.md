@@ -1,97 +1,107 @@
-# RANGER ZERO v24 — GIANT FIGHT REWORK
+# RANGER ZERO v24.1 — TEAM & GIANT BATTLE 360
 
-Build cumulativa basata su **v23.0.1 INTRO / TRANSFORM HOTFIX** e quindi sulla **v22** come base di contenuto.
+Build cumulativa basata su **v24 GIANT FIGHT REWORK**, mantenendo anche il fix v23.0.1 di intro/allarme/trasformazione e tutto il safety pass derivato dalla v22.
 
-## Obiettivo di questa build
+## Focus della v24.1
 
-Il pass grosso corregge i problemi emersi nel playtest della v23 senza rimuovere le parti gia' riuscite: intro/dialoghi/allarme/trasformazione, Torre, Archivio/capsule, safety pass, checkpoint, Oculo, tre finali e LIMEN restano presenti.
+Questa versione corregge il playtest della v24 senza rifare la sequenza di combinazione, che resta uno dei momenti principali del gioco.
 
-## Novita' principali
-
-### Spiaggia: due ondate vere
-- **Wave 1:** 3 scagnozzi.
-- pausa radio breve.
-- **Wave 2:** 4 scagnozzi che arrivano da posizioni differenti e piu' vicine alla battigia.
-- dopo la seconda wave arriva il silenzio prima del reveal del boss.
-
-### La squadra combatte con Zero
-Arco, Meridiana e gli altri due Ranger sono presenti fisicamente sulla spiaggia e si muovono verso gli scagnozzi. Attaccano in modo leggero/scriptato: aiutano visivamente e tolgono pochissima vita, ma non possono completare la wave al posto del giocatore.
-
-### Raccoglitore: vera emersione dal mare
-Il Raccoglitore parte sott'acqua nella zona profonda, non sulla sabbia. Dopo la seconda wave:
-1. la telecamera guarda dalla spiaggia verso il mare;
-2. il mostro sale dall'acqua con lo splash;
-3. avanza fino al bagnasciuga;
-4. soltanto allora entra nel combattimento normale.
-
-### Fondale `arena_sky.png`
-Il fondale costiero viene renderizzato come quad a doppia faccia per evitare il problema di culling che nella v23 poteva farlo sparire. Il pannello e' stato anche leggermente avanzato davanti alla parete procedurale per evitare sovrapposizioni.
+### Squadra sulla spiaggia
+- Wave 1: 3 scagnozzi.
+- Wave 2: 4 scagnozzi.
+- Arco, Meridiana e gli altri due Ranger combattono in entrambe le wave.
+- Dopo la Wave 2 non restano piu' congelati: si dispongono verso il mare durante il reveal.
+- Quando Il Raccoglitore raggiunge la riva, i quattro Ranger continuano a combattere con Zero.
+- Gli alleati fanno danno reale ma minimo e non possono infliggere il colpo finale al boss.
+- Fra seconda wave e Raccoglitore TIC fornisce una carica d'emergenza fino a **+25 HP**, senza riportare automaticamente Zero al 100%.
 
 ### Raccoglitore
-Il volto introdotto nella v23 resta: occhi, maschera, bocca/griglia, denti e corna. Sono invece state rimosse le placche rosse/blu/viola/verdi dal suo corpo: quei colori ora appartengono chiaramente al **Colosso Ranger**.
+- Continua a emergere realmente dal mare.
+- Mantiene il volto/maschera della v24.
+- La squadra lo attacca sui fianchi invece di fermarsi dopo le wave.
 
-## Combinazione Colosso rifatta
-La combinazione usa una regia chiusa e prevedibile, non piu' una camera che orbita liberamente:
-1. shot basso sulle gambe;
-2. shot medio su nucleo/torso;
-3. shot alto su testa/elmo;
-4. hero shot completo con robot + avversario.
+## Combinazione Colosso
+La sequenza della v24 e' mantenuta:
+1. gambe;
+2. nucleo/torso;
+3. braccia;
+4. testa;
+5. hero shot.
 
-I moduli colorati della squadra diventano placche visibili sul robot combinato.
+Correzione importante: la combinazione usa **gli stessi quattro Ranger presenti sulla spiaggia**. Durante la convergenza i modelli normali vengono nascosti, quindi non compaiono piu' Ranger duplicati/clonati.
 
-## Nuovo combattimento gigante in 3/4
-La prima persona e' stata sostituita dal combattimento **in terza persona / camera 3/4 cinematografica**.
+## Giant Battle 3/4 — fix camera
+La camera del combattimento non eredita piu' un angolo fisso dalla cinematic.
 
-Entrambi i giganti restano visibili:
-- Colosso Ranger a sinistra;
-- Raccoglitore gigante a destra;
-- mini-citta' low-poly ai loro piedi;
-- mare e tramonto sullo sfondo.
+Durante `GIANT BATTLE` viene ricalcolata ogni frame sul punto medio fra:
+- Colosso Ranger;
+- Raccoglitore gigante.
 
-La mini-citta' non e' un livello aggiuntivo: sono piccoli edifici, strade e antenne scenografiche per far percepire immediatamente la scala dei personaggi.
+In questo modo il gameplay non puo' continuare dietro una visuale rimasta bloccata sulla cutscene.
 
-### Combat gigante
-- **F:** attacco. Il Colosso fa un affondo visivo verso il nemico.
-- **SHIFT:** guardia / guardia perfetta sul telegraph.
-- **C:** speciale e colpo finale.
-- Il Raccoglitore si muove fisicamente in avanti quando attacca.
-- Camera shake e impatti restano presenti.
-- Fase 2 **SOVRACCARICO** resta attiva a meta' vita.
-- Finisher finale resta obbligatorio con `C`.
+## Giant Battle — bilanciamento
+Lo scontro non deve piu' essere vincibile semplicemente spammando F/C/SHIFT senza leggere il boss.
 
-## Intro e trasformazione
-Resta il fix della v23.0.1:
+- Boss: **520 HP**.
+- `F`: 10 danni con cooldown piu' netto.
+- `C`: speciale solo a energia piena, 55 danni.
+- `SHIFT`: guardia con cooldown; la finestra perfetta richiede timing.
+- Guardia perfetta ricarica anche energia.
+- Tre telegraph del boss:
+  - PUGNO GIGANTE;
+  - COLPO DALL'ALTO;
+  - RAGGIO IN CARICA.
+- La fase `SOVRACCARICO` aumenta la pressione.
+- I due giganti fanno piccoli spostamenti laterali automatici e affondi durante i colpi, invece di restare statue ferme.
+- Il finisher con `C` resta obbligatorio alla fine.
 
-**NUOVA PARTITA → dialoghi Torre → allarme → trasformazione visibile → trasferimento → spiaggia**
+## Panorama 360
+`arena_sky.png` e' ora il panorama equirettangolare **2:1** fornito per questa build (1774x887).
 
-`SPAZIO` dal titolo non carica automaticamente un vecchio checkpoint. `CONTINUA` e' una scelta separata.
+Non viene piu' usato come singolo pannello frontale.
+
+Il renderer lo avvolge su un **cilindro a 32 segmenti** intorno all'arena:
+- il mare/tramonto centrale della texture guarda verso il punto di emersione del Raccoglitore;
+- la cucitura viene messa dietro il punto di ingresso;
+- la camera puo' guardare lateralmente senza mostrare il bordo del vecchio fondale;
+- le bande procedurali restano sotto come fallback mentre la texture si carica.
+
+La mini-citta' 3D della v24 resta all'interno del panorama per dare scala ai due giganti.
+
+## Intro preservata
+Una nuova partita mantiene obbligatoriamente:
+
+**Torre → dialoghi → allarme → trasformazione visibile → trasferimento → spiaggia**
+
+`SPAZIO` dal titolo avvia una nuova partita. `CONTINUA` resta una scelta separata.
 
 ## Safety mantenuta
-- checkpoint Torre / Spiaggia / Colosso / Archivio;
+- checkpoint automatici;
 - CONTINUA;
-- pausa `P` / `ESC`;
+- pausa P / ESC;
 - auto-pausa su perdita focus;
-- Game Over con ripristino checkpoint pulito;
+- Game Over da checkpoint pulito;
 - key repeat filtrato;
-- debug soltanto con `?dev=1`;
+- debug solo con `?dev=1`;
 - texture NPOT sicure;
 - render scale limitato;
 - WebGL context-loss handler;
-- clamp e protezione coordinate non finite;
+- coordinate non finite protette;
+- clamp nemici;
 - buffer dinamici riutilizzati;
-- `LIMEN_META_V1` + compatibilita' vecchio sistema.
+- LIMEN_META_V1 + compatibilita' precedente.
 
-## Flusso da testare
-1. Nuova partita.
-2. Controllare che avvengano dialoghi, allarme e trasformazione.
-3. Spiaggia: verificare **due wave distinte** e squadra alleata in combattimento.
-4. Verificare che `arena_sky.png` sia visibile.
-5. Verificare che il Raccoglitore emerga chiaramente dal **mare**.
-6. Sconfiggere il Raccoglitore normale.
-7. Verificare i quattro shot della combinazione.
-8. Verificare il nuovo fight gigante 3/4 con mini-citta'.
-9. Provare F / SHIFT / C e fase SOVRACCARICO.
-10. Terminare il boss e controllare ritorno Torre → pannello anomalo → Archivio.
+## Flusso prioritario di playtest
+1. Nuova partita: verificare briefing, allarme e trasformazione.
+2. Wave 1 e Wave 2 con i quattro Ranger attivi.
+3. Controllare la cura TIC dopo la seconda wave.
+4. Controllare il panorama 360 guardando anche lateralmente.
+5. Verificare emersione del Raccoglitore dal mare.
+6. Verificare che gli NPC continuino ad aiutarvi contro Il Raccoglitore.
+7. Sconfiggere il midboss e verificare che non compaiano Ranger duplicati durante la combinazione.
+8. Dopo l'hero shot, verificare che la camera passi davvero al fight 3/4 e resti centrata sui due giganti.
+9. Provare a spammare F/C/SHIFT: il boss deve richiedere comunque lettura dei telegraph e timing della guardia.
+10. Completare il finisher e verificare Torre → pannello anomalo → Archivio.
 
-## Nota test texture
-Per i test reali usare GitHub Pages o un server HTTP. Alcuni browser possono bloccare le texture WebGL (`oculo_eye.png` / `arena_sky.png`) se `index.html` viene aperto direttamente con `file://`.
+## Nota texture
+Per testare le texture WebGL usare GitHub Pages o un server HTTP. Alcuni browser bloccano `oculo_eye.png` e `arena_sky.png` se `index.html` viene aperto direttamente tramite `file://`.

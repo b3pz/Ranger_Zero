@@ -318,6 +318,27 @@ function drawTexturedQuad(tex,model,vp,alpha){
  gl.useProgram(prog);
 }
 
+// Mesh texturizzata con UV arbitrari: serve per il panorama 360. A differenza
+// del vecchio quad frontale, qui una sola texture 2:1 viene avvolta davvero
+// intorno all'arena, quindi la camera puo' girare senza mostrare lati vuoti.
+function makeTexMesh(pos,uv){
+ const posB=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,posB);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(pos),gl.STATIC_DRAW);
+ const uvB=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,uvB);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(uv),gl.STATIC_DRAW);
+ return {posB,uvB,count:pos.length/3};
+}
+function drawTexturedMesh(tex,mesh,model,vp,alpha){
+ if(!tex||tex.failed||!mesh)return;
+ gl.useProgram(texProg);
+ const cullWas=gl.isEnabled(gl.CULL_FACE);if(cullWas)gl.disable(gl.CULL_FACE);
+ gl.bindBuffer(gl.ARRAY_BUFFER,mesh.posB);gl.enableVertexAttribArray(texAPos);gl.vertexAttribPointer(texAPos,3,gl.FLOAT,false,0,0);
+ gl.bindBuffer(gl.ARRAY_BUFFER,mesh.uvB);gl.enableVertexAttribArray(texAUV);gl.vertexAttribPointer(texAUV,2,gl.FLOAT,false,0,0);
+ gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex);gl.uniform1i(texUTex,0);
+ gl.uniform1f(texUAlpha,alpha===undefined?1:alpha);gl.uniformMatrix4fv(texUMVP,false,mat4.multiply(vp,model));
+ gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
+ gl.drawArrays(gl.TRIANGLES,0,mesh.count);
+ gl.depthMask(true);gl.disable(gl.BLEND);if(cullWas)gl.enable(gl.CULL_FACE);gl.useProgram(prog);
+}
+
 // ============================================================
 // box builder: unit box centered at origin, size 1x1x1, tinted per face
 // ============================================================
@@ -745,9 +766,22 @@ const arenaSkyBuf=makeBuffer(bakeParts([
 // Se il file non c'e', drawTexturedQuad non disegna nulla — restano solo
 // le bande procedurali, nessun errore, nessun buco visivo.
 const arenaSkyTex=loadTexture("arena_sky.png");
-// Il fondale fornito e' circa 3:1: manteniamo quasi lo stesso aspect ratio
-// per non schiacciare il tramonto verticalmente.
-const ARENA_SKY_PANEL={x:ARENA_CX,y:8.0,z:ARENA_CZ-ARENA_D/2-1.25,w:60,h:20};
+// Panorama equirettangolare 2:1 avvolto a 360 gradi. La cucitura U=0/1
+// viene posizionata dietro il punto di ingresso (+Z); il centro dell'immagine
+// (U=.5, mare/tramonto) guarda verso -Z, cioe' la direzione del Raccoglitore.
+function buildArenaPanorama(segments=32,radius=52,bottom=-5,top=30){
+ const pos=[],uv=[];
+ for(let i=0;i<segments;i++){
+  const u0=i/segments,u1=(i+1)/segments;
+  const a0=u0*Math.PI*2,a1=u1*Math.PI*2;
+  const x0=ARENA_CX+Math.sin(a0)*radius,z0=ARENA_CZ+Math.cos(a0)*radius;
+  const x1=ARENA_CX+Math.sin(a1)*radius,z1=ARENA_CZ+Math.cos(a1)*radius;
+  pos.push(x0,bottom,z0, x1,bottom,z1, x1,top,z1, x0,bottom,z0, x1,top,z1, x0,top,z0);
+  uv.push(u0,1, u1,1, u1,0, u0,1, u1,0, u0,0);
+ }
+ return makeTexMesh(pos,uv);
+}
+const arenaPanoramaMesh=buildArenaPanorama();
 
 // Mini-citta' scenografica per lo scontro gigante: non e' una nuova mappa,
 // sono solo volumi PS1 molto piccoli ai piedi dei due giganti. Serve a dare
@@ -862,9 +896,9 @@ function drawColossoRobot(vp,p,now,opts){
  }
 }
 function newColossoState(phase){
- return {phase:phase||"fight",t:0,giantHp:400,giantHpMax:400,playerHp:100,playerHpMax:100,
-  giantScale:7.15,attackCd:2.8,punchT:0,beamT:0,shakeT:0,beamBursts:[],guardT:0,
-  perfectGuard:false,attackTelegraph:false,phase2:false,finisherReady:false,messageT:0,
+ return {phase:phase||"fight",t:0,giantHp:520,giantHpMax:520,playerHp:100,playerHpMax:100,
+  giantScale:7.15,attackCd:2.9,punchT:0,punchCd:0,beamT:0,shakeT:0,beamBursts:[],guardT:0,guardCd:0,
+  perfectGuard:false,attackTelegraph:false,attackKind:"punch",phase2:false,finisherReady:false,messageT:0,
   robotX:-5.0,robotZ:ARENA_CZ+2.0,giantX:5.0,giantZ:ARENA_CZ-5.0,giantAttackT:0};
 }
 function startColossoSequence(){
@@ -875,10 +909,9 @@ function startColossoSequence(){
  missionHintEl.classList.add("show");
  colossoHpWrapEl.classList.add("show");
  sfx.teleport();
- colossoTeamPos=teamMembers.map((m,i)=>({
-  startX:player.x+Math.cos(i*1.6)*7,startZ:player.z+Math.sin(i*1.6)*7,x:0,z:0,
-  pal:[PAL_ARCO,PAL_MERIDIANA,PAL_RANGER3,PAL_RANGER4][i]
- }));
+ // Usa ESATTAMENTE i quattro Ranger che stavano combattendo sulla spiaggia:
+ // niente cloni aggiuntivi durante la combinazione.
+ colossoTeamPos=arenaAllies.map(a=>({startX:a.x,startZ:a.z,x:a.x,z:a.z,pal:a.pal,name:a.name}));
 }
 function startColossoFightDirect(){
  clearTransientState();
@@ -914,11 +947,11 @@ function updateColossoThresholds(){
  }
 }
 function colossoPunch(){
- if(!colosso||colosso.phase!=="fight"||colosso.punchT>0||colosso.beamT>0)return;
+ if(!colosso||colosso.phase!=="fight"||colosso.punchT>0||colosso.punchCd>0||colosso.beamT>0)return;
  if(colosso.finisherReady){missionHintEl.textContent="C — COLPO FINALE";missionHintEl.classList.add("show");return;}
- colosso.punchT=.48;
- colosso.giantHp=Math.max(0,colosso.giantHp-18);
- player.energy=Math.min(player.energyMax,player.energy+9);
+ colosso.punchT=.48;colosso.punchCd=.86;
+ colosso.giantHp=Math.max(0,colosso.giantHp-10);
+ player.energy=Math.min(player.energyMax,player.energy+5);
  colosso.beamBursts.push({t:0,kind:"punch",ox:(Math.random()-.5)*2.2,oy:Math.random()*1.6-.2});
  sfx.giantHit(); triggerSlowMo(.09,.08); updateColossoThresholds();
 }
@@ -932,16 +965,17 @@ function colossoSpecial(){
  }
  if(player.energy<player.energyMax)return;
  colosso.beamT=.5;player.energy=0;
- colosso.giantHp=Math.max(0,colosso.giantHp-70);
+ colosso.giantHp=Math.max(0,colosso.giantHp-55);
  specialFlashEl.style.opacity=.95;setTimeout(()=>{specialFlashEl.style.opacity=0;},140);
  colosso.beamBursts.push({t:0,kind:"beam"});sfx.special();triggerSlowMo(.16,.1);updateColossoThresholds();
 }
 function colossoGuard(){
- if(!colosso||colosso.phase!=="fight"||colosso.finisherReady)return;
- colosso.guardT=.58;
+ if(!colosso||colosso.phase!=="fight"||colosso.finisherReady||colosso.guardCd>0)return;
+ colosso.guardT=.54;colosso.guardCd=.78;
  colosso.perfectGuard=!!colosso.attackTelegraph;
  if(colosso.perfectGuard){
-  missionHintEl.textContent="GUARDIA PERFETTA";missionHintEl.classList.add("show");colosso.messageT=.65;sfx.dodge();
+  player.energy=Math.min(player.energyMax,player.energy+14);
+  missionHintEl.textContent="GUARDIA PERFETTA // ENERGIA +";missionHintEl.classList.add("show");colosso.messageT=.65;sfx.dodge();
  }else{sfx.dodge();}
 }
 function startColossoFinish(){
@@ -990,25 +1024,33 @@ function updateColosso(dt){
  }
  if(colosso.phase==="finishing"){updateColossoFinish(dt);return;}
  if(colosso.phase!=="fight")return;
- colosso.punchT=Math.max(0,colosso.punchT-rawDtGlobal);colosso.beamT=Math.max(0,colosso.beamT-rawDtGlobal);
+ colosso.punchT=Math.max(0,colosso.punchT-rawDtGlobal);colosso.punchCd=Math.max(0,(colosso.punchCd||0)-rawDtGlobal);colosso.beamT=Math.max(0,colosso.beamT-rawDtGlobal);
  colosso.giantAttackT=Math.max(0,(colosso.giantAttackT||0)-rawDtGlobal);
- colosso.shakeT=Math.max(0,colosso.shakeT-dt);colosso.guardT=Math.max(0,colosso.guardT-rawDtGlobal);
+ colosso.shakeT=Math.max(0,colosso.shakeT-dt);colosso.guardT=Math.max(0,colosso.guardT-rawDtGlobal);colosso.guardCd=Math.max(0,(colosso.guardCd||0)-rawDtGlobal);
+ // Piccolo footwork automatico: non sono piu' due statue.
+ colosso.robotX=-5.0+Math.sin(colosso.t*.55)*.65;
+ colosso.giantX=5.0+Math.sin(colosso.t*.43+1.6)*.72;
  if(colosso.messageT>0){colosso.messageT-=rawDtGlobal;if(colosso.messageT<=0&&!colosso.finisherReady&&!colosso.attackTelegraph)missionHintEl.classList.remove("show");}
  for(let i=colosso.beamBursts.length-1;i>=0;i--){colosso.beamBursts[i].t+=dt;if(colosso.beamBursts[i].t>.55)colosso.beamBursts.splice(i,1);}
  if(colosso.finisherReady)return;
  colosso.attackCd-=rawDtGlobal;
  if(colosso.attackCd<=.72&&!colosso.attackTelegraph){
-  colosso.attackTelegraph=true;missionHintEl.textContent="ATTACCO IN ARRIVO — SHIFT = GUARDIA";missionHintEl.classList.add("show");sfx.alarm();
+  colosso.attackTelegraph=true;
+  const labels={punch:"PUGNO GIGANTE",slam:"COLPO DALL'ALTO",beam:"RAGGIO IN CARICA"};
+  missionHintEl.textContent=(labels[colosso.attackKind]||"ATTACCO IN ARRIVO")+" — SHIFT = GUARDIA";missionHintEl.classList.add("show");sfx.alarm();
  }
  if(colosso.attackCd<=0){
-  const baseDmg=colosso.phase2?20:16;
+  const base={punch:18,slam:22,beam:20}[colosso.attackKind]||18;
+  const baseDmg=base+(colosso.phase2?4:0);
   const guarded=colosso.guardT>0;
-  const dmg=guarded?(colosso.perfectGuard?0:Math.ceil(baseDmg*.25)):baseDmg;
-  colosso.giantAttackT=.58;
-  colosso.shakeT=guarded?.18:.40;colosso.playerHp=Math.max(0,colosso.playerHp-dmg);
+  const dmg=guarded?(colosso.perfectGuard?0:Math.ceil(baseDmg*.30)):baseDmg;
+  colosso.giantAttackT=colosso.attackKind==="slam"?.72:.58;
+  if(colosso.attackKind==="beam")colosso.beamBursts.push({t:0,kind:"enemyBeam"});
+  colosso.shakeT=guarded?.18:.44;colosso.playerHp=Math.max(0,colosso.playerHp-dmg);
   if(guarded){missionHintEl.textContent=colosso.perfectGuard?"GUARDIA PERFETTA":"GUARDIA";missionHintEl.classList.add("show");colosso.messageT=.55;sfx.dodge();}
   else sfx.hitPlayer();
-  colosso.attackCd=colosso.phase2?1.85:2.65;colosso.attackTelegraph=false;colosso.perfectGuard=false;
+  const kinds=["punch","slam","beam"];colosso.attackKind=kinds[Math.floor(Math.random()*kinds.length)];
+  colosso.attackCd=colosso.phase2?2.05:2.75;colosso.attackTelegraph=false;colosso.perfectGuard=false;
   if(colosso.playerHp<=0)colossoLose();
  }
 }
@@ -1059,23 +1101,36 @@ function maybeAdvanceArenaWave(){
   missionHintEl.textContent="ARCO // NON E' FINITA. SECONDA ONDATA!";missionHintEl.classList.add("show");
   afterGame(1050,()=>{addWave(2);arenaWaveTransition=false;missionHintEl.textContent="SECONDA ONDATA // TENETE LA LINEA";});
  }else if(arenaWave===2&&aliveMooks().length===0){
-  arenaWave=3;missionHintEl.textContent="...SILENZIO";missionHintEl.classList.add("show");
-  afterGame(650,maybeEmergeRaccoglitore);
+  arenaWave=3;
+  const heal=Math.min(25,player.hpMax-player.hp);player.hp+=heal;
+  missionHintEl.textContent=heal>0?"TIC // CARICA D'EMERGENZA +"+heal+" HP":"...SILENZIO";missionHintEl.classList.add("show");
+  if(heal>0){specialFlashEl.style.opacity=.35;afterGame(220,()=>specialFlashEl.style.opacity=0);sfx.dodge();}
+  afterGame(850,()=>{missionHintEl.textContent="...SILENZIO";maybeEmergeRaccoglitore();});
  }
 }
 function updateArenaAllies(dt){
- if(zone!=="arena")return;
+ if(zone!=="arena"||colossoTeamPos)return;
+ const racc=enemies.find(e=>e.type==="raccoglitore"&&!e.dead&&!e.hidden&&e.emerged&&e.state!=="retreat"&&e.state!=="submerged"&&e.state!=="emerging");
  for(let i=0;i<arenaAllies.length;i++){
   const a=arenaAllies[i];a.cd-=rawDtGlobal;a.attackT=Math.max(0,a.attackT-rawDtGlobal);
-  const targets=aliveMooks();
-  if(!targets.length){a.yaw=Math.atan2(ARENA_CX-a.x,RACC_SHORE_Z-a.z);continue;}
-  const t=targets[(i+arenaWave)%targets.length];
-  const dx=t.x-a.x,dz=t.z-a.z,dist=Math.hypot(dx,dz)||.001;a.yaw=Math.atan2(dx,dz);
-  if(dist>1.65){const sp=.95*dt;a.x+=dx/dist*sp;a.z+=dz/dist*sp;a.walk+=dt*6;}
-  else if(a.cd<=0){a.cd=1.0+i*.12;a.attackT=.38;
-   // aiuto leggero ma non autonomo: la squadra combatte DAVVERO, senza
-   // poter cancellare la wave da sola mentre il giocatore guarda.
-   t.hp=Math.max(1,t.hp-2);t.hitFlash=.08;
+  const mooks=aliveMooks();
+  const t=mooks.length?mooks[(i+arenaWave)%mooks.length]:racc;
+  if(!t){
+   // Durante il reveal non restano congelati: si dispongono ai lati e guardano il mare.
+   const tx=ARENA_CX+(i-1.5)*2.2,tz=ARENA_CZ-1.0;const dx=tx-a.x,dz=tz-a.z,dist=Math.hypot(dx,dz)||.001;
+   a.yaw=Math.atan2(ARENA_CX-a.x,RACC_SHORE_Z-a.z);
+   if(dist>.35){a.x+=dx/dist*.8*dt;a.z+=dz/dist*.8*dt;a.walk+=dt*5;}
+   continue;
+  }
+  // Contro Il Raccoglitore si aprono sui fianchi: battaglia di squadra vera.
+  const flank=t.type==="raccoglitore"?(i-1.5)*.85:0;
+  const tx=t.x+flank,tz=t.z+(t.type==="raccoglitore"?1.25:0);
+  const dx=tx-a.x,dz=tz-a.z,dist=Math.hypot(dx,dz)||.001;a.yaw=Math.atan2(t.x-a.x,t.z-a.z);
+  const want=t.type==="raccoglitore"?2.05:1.65;
+  if(dist>want){const sp=(t.type==="raccoglitore"?1.05:.95)*dt;a.x+=dx/dist*sp;a.z+=dz/dist*sp;a.walk+=dt*6;}
+  else if(a.cd<=0){a.cd=(t.type==="raccoglitore"?1.15:1.0)+i*.10;a.attackT=.38;
+   // Aiutano davvero ma NON possono dare il colpo finale.
+   const allyDmg=t.type==="raccoglitore"?1:2;t.hp=Math.max(1,t.hp-allyDmg);t.hitFlash=.08;
   }
  }
 }
@@ -1908,12 +1963,13 @@ function frame(now){
    else if(t<6.4){eye=[8,10.5,ARENA_CZ+8];target=[-5,7.5,ARENA_CZ+2];}
    else{eye=[18,10.5,ARENA_CZ+8];target=[0,4.8,ARENA_CZ-2];}
   }else if(colosso&&colosso.phase==="reveal"){
-   eye=[18,10.5,ARENA_CZ+8];target=[0,4.8,ARENA_CZ-2];
+   // Hero shot gia' raccordato con la camera del combattimento.
+   eye=[13.5,11.8,ARENA_CZ+16];target=[0,4.8,ARENA_CZ-2];
   }else{
-   // Boss fight 3/4: entrambi i giganti rimangono sempre leggibili con la
-   // mini-citta' ai piedi. Piccolo shake solamente sugli impatti.
-   eye=[18+Math.sin(now/90)*sh*.35,10.5+Math.sin(now/75)*sh*.2,ARENA_CZ+8];
-   target=[0,4.4,ARENA_CZ-2];
+   // Camera 3/4 ricalcolata ogni frame sul midpoint dei due giganti.
+   const mx=(colosso.robotX+colosso.giantX)*.5,mz=(colosso.robotZ+colosso.giantZ)*.5;
+   eye=[mx+13.5+Math.sin(now/90)*sh*.30,11.8+Math.sin(now/75)*sh*.18,mz+18.0];
+   target=[mx,4.6,mz-.8];
   }
  }else{
  // camera terza persona dietro il personaggio, con collisione contro i
@@ -1992,19 +2048,21 @@ function frame(now){
   const ticModel=mul(mat4.translate(ticX,ticY,ticZ),mat4.rotY(ticFaceYaw));
   drawBuffer(ticBuf,ticModel,vp);
  }else if(zone==="arena"){
-  drawBuffer(arenaSkyBuf,mat4.identity(),vp);
-  drawTexturedQuad(arenaSkyTex, mul(mat4.translate(ARENA_SKY_PANEL.x,ARENA_SKY_PANEL.y,ARENA_SKY_PANEL.z),mat4.scale(ARENA_SKY_PANEL.w,ARENA_SKY_PANEL.h,1)), vp, 1);
+  drawBuffer(arenaSkyBuf,mat4.identity(),vp); // fallback
+  drawTexturedMesh(arenaSkyTex,arenaPanoramaMesh,mat4.identity(),vp,1);
   drawBuffer(arenaFloorBuf,mat4.identity(),vp);
   drawBuffer(arenaSeaBuf,mat4.identity(),vp);
   drawBuffer(arenaPropBuf,mat4.identity(),vp);
   drawBuffer(arenaEdgeBuf,mat4.identity(),vp);
   // La squadra combatte con Zero: AI volutamente leggera, ma visivamente
   // presente per tutta la missione invece di sparire dopo il briefing.
-  for(let ai=0;ai<arenaAllies.length;ai++){
-   const a=arenaAllies[ai];drawShadow(a.x,a.z,.38,vp,.28);
-   const ap=a.attackT>0?1-a.attackT/.38:0;
-   const am=buildCharacterBuffers(a.pal,a.walk,1,true,"ranger",ap);
-   drawDynamicMesh(am,mul(mat4.translate(a.x,0,a.z),mat4.rotY(a.yaw),mat4.scale(.96,.96,.96)),vp,.95);
+  if(!colossoTeamPos){
+   for(let ai=0;ai<arenaAllies.length;ai++){
+    const a=arenaAllies[ai];drawShadow(a.x,a.z,.38,vp,.28);
+    const ap=a.attackT>0?1-a.attackT/.38:0;
+    const am=buildCharacterBuffers(a.pal,a.walk,1,true,"ranger",ap);
+    drawDynamicMesh(am,mul(mat4.translate(a.x,0,a.z),mat4.rotY(a.yaw),mat4.scale(.96,.96,.96)),vp,.95);
+   }
   }
   for(const en of enemies){
    if(en.dead||en.hidden)continue;
@@ -2030,8 +2088,8 @@ function frame(now){
    }
   }
  }else if(zone==="colosso"&&colosso){
-  drawBuffer(arenaSkyBuf,mat4.identity(),vp);
-  drawTexturedQuad(arenaSkyTex,mul(mat4.translate(ARENA_SKY_PANEL.x,ARENA_SKY_PANEL.y,ARENA_SKY_PANEL.z),mat4.scale(ARENA_SKY_PANEL.w,ARENA_SKY_PANEL.h,1)),vp,1);
+  drawBuffer(arenaSkyBuf,mat4.identity(),vp); // fallback
+  drawTexturedMesh(arenaSkyTex,arenaPanoramaMesh,mat4.identity(),vp,1);
   drawBuffer(arenaFloorBuf,mat4.identity(),vp);drawBuffer(arenaSeaBuf,mat4.identity(),vp);
   drawBuffer(giantCityBuf,mat4.identity(),vp,.98);
 
@@ -2063,6 +2121,10 @@ function frame(now){
      const p=b.t/.4,sc=.4+p*2.2,a=Math.max(0,1-p);
      const ix=(colosso.robotX+gx)/2+(b.ox||0)*.3, iz=(colosso.robotZ+gz)/2;
      drawBuffer(burstBuf,mul(mat4.translate(ix,5.1+(b.oy||0)*.25,iz),mat4.scale(sc,sc,sc)),vp,a*.9);
+    }else if(b.kind==="enemyBeam"){
+     const p=b.t/.4,a=Math.max(0,1-p),dx=colosso.robotX-gx,dz=colosso.robotZ-gz,len=Math.hypot(dx,dz)||1;
+     const mx=(gx+colosso.robotX)/2,mz=(gz+colosso.robotZ)/2,yaw=Math.atan2(dx,dz);
+     drawBuffer(burstBuf,mul(mat4.translate(mx,5.8,mz),mat4.rotY(yaw),mat4.scale(.48,.48,len)),vp,a*.72);
     }else{
      const p=b.t/.4,a=Math.max(0,1-p),dx=gx-colosso.robotX,dz=gz-colosso.robotZ,len=Math.hypot(dx,dz)||1;
      const mx=(gx+colosso.robotX)/2,mz=(gz+colosso.robotZ)/2,yaw=Math.atan2(dx,dz);
@@ -2131,6 +2193,6 @@ requestAnimationFrame(frame);
 // Helper solo in modalita' sviluppo: aggiungere ?dev=1 all'URL.
 if(DEV_MODE)window.__rz={player,camState,startTransformation,enterArena,enterTorre,advanceDialogue,triggerGameOver,
  startColossoSequence,startColossoFightDirect,colossoPunch,colossoSpecial,colossoGuard,startArchiveSequence,showChoiceScreen,triggerEnding,restoreCheckpoint,
- get enemies(){return enemies},get zone(){return zone},get dialogueActive(){return dialogueActive},
+ get enemies(){return enemies},get arenaAllies(){return arenaAllies},get arenaWave(){return arenaWave},get colossoTeamPos(){return colossoTeamPos},get zone(){return zone},get dialogueActive(){return dialogueActive},
  get dialogueIndex(){return dialogueIndex},get gameOverActive(){return gameOverActive},get colosso(){return colosso}};
 })();
