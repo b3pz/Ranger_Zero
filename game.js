@@ -261,7 +261,17 @@ function loadTexture(url){
   try{
    gl.bindTexture(gl.TEXTURE_2D,tex);
    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);
-   gl.generateMipmap(gl.TEXTURE_2D);
+   const isPOT=n=>(n&(n-1))===0;
+   if(isPOT(img.width)&&isPOT(img.height)){
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);
+   }else{
+    // WebGL1: le texture NPOT non possono usare mipmap/repeat. Oculo e
+    // arena_sky sono volutamente NPOT, quindi restano LINEAR + CLAMP.
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+   }
    tex.ready=true;
   }catch(err){
    // I browser bloccano il caricamento delle texture WebGL quando la
@@ -368,6 +378,18 @@ function drawBuffer(buf,model,vp,alpha){
  if(a<1){gl.depthMask(true);gl.disable(gl.BLEND);}
 }
 
+// Buffer dinamico condiviso per tutti i personaggi animati. La v22 creava e
+// distruggeva tre WebGLBuffer per ogni personaggio a ogni frame; qui gli
+// oggetti GPU vengono creati una volta sola e si aggiornano solo i dati.
+const dynamicMeshBuf={posB:gl.createBuffer(),nrmB:gl.createBuffer(),colB:gl.createBuffer(),count:0};
+function drawDynamicMesh(mesh,model,vp,alpha){
+ gl.bindBuffer(gl.ARRAY_BUFFER,dynamicMeshBuf.posB);gl.bufferData(gl.ARRAY_BUFFER,mesh.pos,gl.DYNAMIC_DRAW);
+ gl.bindBuffer(gl.ARRAY_BUFFER,dynamicMeshBuf.nrmB);gl.bufferData(gl.ARRAY_BUFFER,mesh.nrm,gl.DYNAMIC_DRAW);
+ gl.bindBuffer(gl.ARRAY_BUFFER,dynamicMeshBuf.colB);gl.bufferData(gl.ARRAY_BUFFER,mesh.col,gl.DYNAMIC_DRAW);
+ dynamicMeshBuf.count=mesh.count;
+ drawBuffer(dynamicMeshBuf,model,vp,alpha);
+}
+
 // ============================================================
 // STANZA: La Torre — Sala di Comando, ispirata ai riferimenti (parete di
 // fondo sfumata, fascio di luce centrale, colonne con anelli, consolle
@@ -432,7 +454,9 @@ function buildWallPanel(x,z,rotY,lit){
 }
 const sidePanelParts=[];
 for(const z of [-5.2,-2.2,1.0,4.2]){
- sidePanelParts.push(...buildWallPanel(-ROOM_W/2+.16, z, 0, true));
+ // il pannello ovest a z=-2.2 e' quello anomalo: NON costruire anche
+ // quello acceso sotto, altrimenti due superfici coincidono (z-fighting).
+ if(z!==-2.2)sidePanelParts.push(...buildWallPanel(-ROOM_W/2+.16, z, 0, true));
  sidePanelParts.push(...buildWallPanel( ROOM_W/2-.16, z, Math.PI, true));
 }
 // Eco di IT SHIFT: un pannello spento/incrinato tra gli altri, diverso da
@@ -509,7 +533,7 @@ function partMeshFor(pal){
   upperArm:boxMesh(pal.suit), lowerArm:boxMesh(pal.skin), glove:boxMesh(pal.accent),
   upperLeg:boxMesh(pal.suit), lowerLeg:boxMesh(pal.boot),
   bladeCore:boxMesh([.85,.92,.98]), bladeEdge:boxMesh(pal.accent), bladeHilt:boxMesh([.15,.14,.16]),
-  menaceEye:boxMesh([.95,.15,.08]),
+  menaceEye:boxMesh([1.0,.10,.04]),
  };
  meshCache[key]=m;
  return m;
@@ -553,10 +577,21 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
   // e basta — gli dà un volto minaccioso vero senza dover ridisegnare tutto.
   parts.push({mesh:pm.helmetShell, mtx:mul(mat4.translate(0,1.60+bob,0),mat4.scale(.36,.35,.35))});
   parts.push({mesh:pm.helmetVisor, mtx:mul(mat4.translate(0,1.58+bob,.165),mat4.scale(.27,.13,.05))});
-  parts.push({mesh:pm.menaceEye, mtx:mul(mat4.translate(-.10,1.585+bob,.175),mat4.scale(.045,.04,.02))});
-  parts.push({mesh:pm.menaceEye, mtx:mul(mat4.translate(.10,1.585+bob,.175),mat4.scale(.045,.04,.02))});
-  parts.push({mesh:pm.horn, mtx:mul(mat4.translate(-.16,1.86+bob,0),mat4.rotZ(.35),mat4.scale(.06,.20,.06))});
-  parts.push({mesh:pm.horn, mtx:mul(mat4.translate(.16,1.86+bob,0),mat4.rotZ(-.35),mat4.scale(.06,.20,.06))});
+  // volto leggibile anche in scala gigante: occhi separati, maschera
+  // centrale e bocca/griglia. Prima da lontano restava una massa senza volto.
+  parts.push({mesh:RACC_SCRAP.face, mtx:mul(mat4.translate(0,1.55+bob,.188),mat4.scale(.22,.18,.035))});
+  parts.push({mesh:pm.menaceEye, mtx:mul(mat4.translate(-.105,1.615+bob,.214),mat4.rotZ(-.12),mat4.scale(.070,.045,.022))});
+  parts.push({mesh:pm.menaceEye, mtx:mul(mat4.translate(.105,1.615+bob,.214),mat4.rotZ(.12),mat4.scale(.070,.045,.022))});
+  parts.push({mesh:RACC_SCRAP.mouth, mtx:mul(mat4.translate(0,1.505+bob,.216),mat4.scale(.19,.055,.022))});
+  parts.push({mesh:RACC_SCRAP.tooth, mtx:mul(mat4.translate(-.06,1.505+bob,.228),mat4.rotZ(.18),mat4.scale(.025,.045,.012))});
+  parts.push({mesh:RACC_SCRAP.tooth, mtx:mul(mat4.translate(.06,1.505+bob,.228),mat4.rotZ(-.18),mat4.scale(.025,.045,.012))});
+  parts.push({mesh:pm.horn, mtx:mul(mat4.translate(-.18,1.88+bob,0),mat4.rotZ(.40),mat4.scale(.07,.24,.07))});
+  parts.push({mesh:pm.horn, mtx:mul(mat4.translate(.18,1.88+bob,0),mat4.rotZ(-.40),mat4.scale(.07,.24,.07))});
+  // frammenti di armature di vecchi Ranger: pochi, leggibili e asimmetrici.
+  parts.push({mesh:RACC_SCRAP.violet,mtx:mul(mat4.translate(.29,1.16+bob,.285),mat4.rotZ(-.12),mat4.scale(.18,.26,.035))});
+  parts.push({mesh:RACC_SCRAP.green,mtx:mul(mat4.translate(-.34,1.37+bob,.16),mat4.scale(.17,.12,.12))});
+  parts.push({mesh:RACC_SCRAP.red,mtx:mul(mat4.translate(-.18,.82+bob,.305),mat4.rotZ(.18),mat4.scale(.14,.12,.035))});
+  parts.push({mesh:RACC_SCRAP.blue,mtx:mul(mat4.translate(.35,.57+bob,.10),mat4.scale(.10,.18,.10))});
  }else{
   parts.push({mesh:pm.head,  mtx:mul(mat4.translate(0,1.55+bob,0),mat4.scale(.30,.30,.30))});
   parts.push({mesh:pm.hair,  mtx:mul(mat4.translate(0,1.665+bob,-.01),mat4.scale(.305,.14,.30))});
@@ -708,7 +743,9 @@ const arenaSkyBuf=makeBuffer(bakeParts([
 // Se il file non c'e', drawTexturedQuad non disegna nulla — restano solo
 // le bande procedurali, nessun errore, nessun buco visivo.
 const arenaSkyTex=loadTexture("arena_sky.png");
-const ARENA_SKY_PANEL={x:ARENA_CX,y:SKY_Y0+SKY_H*.42,z:ARENA_CZ-ARENA_D/2-1.9,w:ARENA_W+28,h:SKY_H*.95};
+// Il fondale fornito e' circa 3:1: manteniamo quasi lo stesso aspect ratio
+// per non schiacciare il tramonto verticalmente.
+const ARENA_SKY_PANEL={x:ARENA_CX,y:8.0,z:ARENA_CZ-ARENA_D/2-1.9,w:60,h:20};
 
 // ============================================================
 // NEMICI — scagnozzi (deboli, in gruppo) e Il Raccoglitore (piu' forte,
@@ -720,153 +757,223 @@ const PAL_SCAGNOZZO=makePalette([.22,.20,.18],[.42,.38,.30],[.55,.42,.30]);
 // irregolari/asimmetriche — armature di vecchi Ranger fuse insieme,
 // non un'armatura di serie come quella della squadra.
 const PAL_RACCOGLITORE=makePalette([.48,.36,.10],[.62,.48,.14],[.35,.28,.22]);
+const PAL_RACCOGLITORE_OVERLOAD=makePalette([.50,.18,.08],[.92,.32,.08],[.30,.20,.18]);
+const RACC_SCRAP={
+ red:boxMesh([.68,.08,.07]), blue:boxMesh([.20,.48,.62]),
+ violet:boxMesh([.38,.18,.48]), green:boxMesh([.12,.42,.26]),
+ mouth:boxMesh([.08,.035,.025]), tooth:boxMesh([.78,.70,.48]), face:boxMesh([.16,.12,.08])
+};
 
 const scagnozzoBuf=makeBuffer(buildCharacterBuffers(PAL_SCAGNOZZO,0,0,true,"scagnozzo"));
 const raccoglitoreBuf=makeBuffer(buildCharacterBuffers(PAL_RACCOGLITORE,0,0,true,"raccoglitore"));
 
 // ============================================================
-// FASE 2 — IL COLOSSO: i 5 Ranger si combinano (implicito, non
-// animato/modellato — vedi nota sotto), Il Raccoglitore diventa gigante,
-// scontro finale in prima persona fissa (niente camminata: solo mira e
-// attacco, per tenerlo semplice come richiesto). Il "video" della
-// combinazione e' una breve sequenza scriptata con testo + il nemico che
-// cresce, non un vero filmato — costruire un modello animato dei 5 Ranger
-// che si fondono sarebbe un progetto a se'; la telecamera in prima persona
-// aggira elegantemente il problema (non serve renderizzare il Colosso
-// stesso, solo il suo punto di vista).
+// FASE 2 — IL COLOSSO: payoff tokusatsu vero ma economico. I compagni
+// convergono, una breve cutscene mostra i moduli che formano un robot
+// low-poly completo, poi si entra nella prima persona del cockpit.
 // ============================================================
 let colosso=null;
 const COLOSSO_EYE_Y=6.5;
 const COLOSSO_CAM_Z=ARENA_CZ+11;
 const COLOSSO_GIANT_Z=SEA_EDGE_Z-9;
+const COLOSSO_ROBOT_Z=COLOSSO_CAM_Z+1.5;
 let colossoTeamPos=null;
+
+// Box colorati riutilizzati dalla cutscene di combinazione.
+const COLOSSO_BOX={
+ zero:makeBuffer(boxMesh(PAL_ZERO.suit)), bronze:makeBuffer(boxMesh(PAL_ZERO.accent)),
+ red:makeBuffer(boxMesh(PAL_ARCO.suit)), blue:makeBuffer(boxMesh(PAL_MERIDIANA.suit)),
+ violet:makeBuffer(boxMesh(PAL_RANGER3.suit)), green:makeBuffer(boxMesh(PAL_RANGER4.suit)),
+ dark:makeBuffer(boxMesh([.08,.09,.12])), cyan:makeBuffer(boxMesh([.22,.92,1.0])),
+ gold:makeBuffer(boxMesh([.86,.65,.18]))
+};
+function partProgress(p,a,b){return Math.max(0,Math.min(1,(p-a)/(b-a)));}
+function easeOut3(t){return 1-Math.pow(1-t,3);}
+function drawColossoRobot(vp,p,now){
+ const base=mul(mat4.translate(0,0,COLOSSO_ROBOT_Z),mat4.rotY(Math.PI));
+ const drawPart=(buf,fx,fy,fz,sx,sy,sz,stage,fromX,fromY,fromZ,rz=0)=>{
+  const q=easeOut3(partProgress(p,stage,Math.min(1,stage+.24)));
+  if(q<=0)return;
+  const x=fromX+(fx-fromX)*q, y=fromY+(fy-fromY)*q, z=fromZ+(fz-fromZ)*q;
+  drawBuffer(buf,mul(base,mat4.translate(x,y,z),mat4.rotZ(rz*(1-q)),mat4.scale(sx,sy,sz)),vp);
+ };
+ // gambe, torso, braccia, testa: arrivano da direzioni diverse come moduli.
+ drawPart(COLOSSO_BOX.violet,-.92,2.0,0,1.25,3.6,1.35,.00,-8,-1,3,.5);
+ drawPart(COLOSSO_BOX.green,.92,2.0,0,1.25,3.6,1.35,.05,8,-1,3,-.5);
+ drawPart(COLOSSO_BOX.dark,-.92,.35,.28,1.45,.65,1.9,.04,-8,-2,5,.3);
+ drawPart(COLOSSO_BOX.dark,.92,.35,.28,1.45,.65,1.9,.09,8,-2,5,-.3);
+ drawPart(COLOSSO_BOX.zero,0,5.0,0,3.25,3.0,1.75,.20,0,-5,8,0);
+ drawPart(COLOSSO_BOX.red,-2.25,5.0,0,1.25,3.1,1.25,.37,-10,7,2,.7);
+ drawPart(COLOSSO_BOX.blue,2.25,5.0,0,1.25,3.1,1.25,.43,10,7,2,-.7);
+ drawPart(COLOSSO_BOX.dark,-2.25,3.15,.15,1.05,1.15,1.15,.41,-11,5,4,.4);
+ drawPart(COLOSSO_BOX.dark,2.25,3.15,.15,1.05,1.15,1.15,.47,11,5,4,-.4);
+ drawPart(COLOSSO_BOX.bronze,0,7.35,0,1.65,1.45,1.55,.60,0,14,2,0);
+ drawPart(COLOSSO_BOX.cyan,0,7.45,.79,1.20,.43,.08,.68,0,14,2,0);
+ drawPart(COLOSSO_BOX.gold,0,8.35,-.05,.24,.65,1.35,.74,0,15,0,0);
+ // piastra centrale e simbolo si accendono per ultimi.
+ const q=partProgress(p,.78,1);
+ if(q>0){
+  const pulse=.88+Math.sin(now/110)*.12;
+  drawBuffer(COLOSSO_BOX.gold,mul(base,mat4.translate(0,5.35,.93),mat4.scale(1.0,.48,.09)),vp,q);
+  drawBuffer(COLOSSO_BOX.cyan,mul(base,mat4.translate(0,5.35,1.04),mat4.scale(.25*pulse,.25*pulse,.05)),vp,q);
+ }
+}
+function newColossoState(phase){
+ return {phase:phase||"fight",t:0,giantHp:400,giantHpMax:400,playerHp:100,playerHpMax:100,
+  giantScale:7.15,attackCd:2.8,punchT:0,beamT:0,shakeT:0,beamBursts:[],guardT:0,
+  perfectGuard:false,attackTelegraph:false,phase2:false,finisherReady:false,messageT:0};
+}
 function startColossoSequence(){
  if(colosso)return;
- colosso={phase:"converge",t:0,giantHp:400,giantHpMax:400,playerHp:100,playerHpMax:100,
-  giantScale:1.55,attackCd:2.6,punchT:0,beamT:0,shakeT:0,beamBursts:[]};
- missionHintEl.textContent="I RANGER SI COMBINANO...";
+ colosso=newColossoState("converge");
+ colosso.giantScale=1.55;
+ missionHintEl.textContent="OCULO // PROTOCOLLO COLOSSO!";
  missionHintEl.classList.add("show");
  colossoHpWrapEl.classList.add("show");
  sfx.teleport();
- // i 4 compagni "volano" verso il giocatore da punti sparsi della
- // spiaggia — prima la combinazione era solo un testo, ora si vede
- // davvero la squadra convergere prima del lampo.
  colossoTeamPos=teamMembers.map((m,i)=>({
-  startX:player.x+Math.cos(i*1.6)*7, startZ:player.z+Math.sin(i*1.6)*7,
-  x:0,z:0,pal:[PAL_ARCO,PAL_MERIDIANA,PAL_RANGER3,PAL_RANGER4][i],
+  startX:player.x+Math.cos(i*1.6)*7,startZ:player.z+Math.sin(i*1.6)*7,x:0,z:0,
+  pal:[PAL_ARCO,PAL_MERIDIANA,PAL_RANGER3,PAL_RANGER4][i]
  }));
+}
+function startColossoFightDirect(){
+ clearTransientState();
+ zone="colosso";
+ player.transformed=true;player.helmet=true;player.hp=player.hpMax;player.energy=0;
+ colosso=newColossoState("fight");
+ colossoTeamPos=null;
+ colossoHpWrapEl.classList.add("show");
+ missionHintEl.classList.remove("show");
+ playAmbient("colosso");
+ saveCheckpoint("colosso");
+}
+function updateColossoThresholds(){
+ if(!colosso)return;
+ if(!colosso.phase2&&colosso.giantHp<=colosso.giantHpMax*.5){
+  colosso.phase2=true;
+  colosso.attackCd=Math.min(colosso.attackCd,1.25);
+  colosso.shakeT=.5;
+  missionHintEl.textContent="RACCOGLITORE // SOVRACCARICO";
+  missionHintEl.classList.add("show");
+  colosso.messageT=1.6;
+  sfx.alarm(); specialFlashEl.style.opacity=.65;setTimeout(()=>specialFlashEl.style.opacity=0,160);
+ }
+ if(!colosso.finisherReady&&colosso.giantHp<=55){
+  colosso.giantHp=55;
+  colosso.finisherReady=true;
+  colosso.attackCd=999;
+  colosso.attackTelegraph=false;
+  player.energy=player.energyMax;
+  missionHintEl.textContent="ZERO! ADESSO!  C — COLPO FINALE";
+  missionHintEl.classList.add("show");
+  sfx.alarm();
+ }
 }
 function colossoPunch(){
  if(!colosso||colosso.phase!=="fight"||colosso.punchT>0||colosso.beamT>0)return;
+ if(colosso.finisherReady){missionHintEl.textContent="C — COLPO FINALE";missionHintEl.classList.add("show");return;}
  colosso.punchT=.32;
  colosso.giantHp=Math.max(0,colosso.giantHp-18);
  player.energy=Math.min(player.energyMax,player.energy+9);
  colosso.beamBursts.push({t:0,kind:"punch",ox:(Math.random()-.5)*2.2,oy:Math.random()*1.6-.2});
- sfx.giantHit();
- triggerSlowMo(.09,.08);
- if(colosso.giantHp<=0)startColossoFinish();
+ sfx.giantHit(); triggerSlowMo(.09,.08); updateColossoThresholds();
 }
 function colossoSpecial(){
- if(!colosso||colosso.phase!=="fight"||player.energy<player.energyMax||colosso.beamT>0||colosso.punchT>0)return;
- colosso.beamT=.5;
- player.energy=0;
+ if(!colosso||colosso.phase!=="fight"||colosso.beamT>0||colosso.punchT>0)return;
+ if(colosso.finisherReady){
+  colosso.beamT=.8;player.energy=0;colosso.giantHp=0;
+  colosso.beamBursts.push({t:0,kind:"beam"});
+  specialFlashEl.style.opacity=1;setTimeout(()=>specialFlashEl.style.opacity=0,190);
+  sfx.special();startColossoFinish();return;
+ }
+ if(player.energy<player.energyMax)return;
+ colosso.beamT=.5;player.energy=0;
  colosso.giantHp=Math.max(0,colosso.giantHp-70);
- specialFlashEl.style.opacity=.95;
- setTimeout(()=>{specialFlashEl.style.opacity=0;},140);
- colosso.beamBursts.push({t:0,kind:"beam"});
- sfx.special();
- triggerSlowMo(.16,.1);
- if(colosso.giantHp<=0)startColossoFinish();
+ specialFlashEl.style.opacity=.95;setTimeout(()=>{specialFlashEl.style.opacity=0;},140);
+ colosso.beamBursts.push({t:0,kind:"beam"});sfx.special();triggerSlowMo(.16,.1);updateColossoThresholds();
 }
-// Colpo di grazia in rallentatore: la telecamera si stringe sul gigante
-// mentre crolla, invece di saltare dritti alla schermata di vittoria —
-// il momento che dovrebbe sentirsi piu' epico di tutti.
+function colossoGuard(){
+ if(!colosso||colosso.phase!=="fight"||colosso.finisherReady)return;
+ colosso.guardT=.42;
+ colosso.perfectGuard=!!colosso.attackTelegraph;
+ if(colosso.perfectGuard){
+  missionHintEl.textContent="GUARDIA PERFETTA";missionHintEl.classList.add("show");colosso.messageT=.65;sfx.dodge();
+ }else{sfx.dodge();}
+}
 function startColossoFinish(){
- if(colosso.phase==="finishing"||colosso.phase==="won")return;
- colosso.phase="finishing";
- colosso.finishT=0;
- triggerSlowMo(2.2,.22);
- sfx.alarm();
+ if(!colosso||colosso.phase==="finishing"||colosso.phase==="won")return;
+ colosso.phase="finishing";colosso.finishT=0;colosso.finishZoom=0;colosso.finishTilt=0;
+ missionHintEl.textContent="COLPO FINALE // IMPATTO";missionHintEl.classList.add("show");
+ triggerSlowMo(2.2,.22);sfx.alarm();
 }
 function updateColossoFinish(dt){
- colosso.finishT+=dt;
- const p=Math.min(1,colosso.finishT/2.0);
- colosso.finishZoom=p;
- colosso.finishTilt=p*p*1.1; // il gigante si piega in avanti crollando
+ colosso.finishT+=dt;const p=Math.min(1,colosso.finishT/2.0);colosso.finishZoom=p;colosso.finishTilt=p*p*1.1;
  if(colosso.finishT>2.0)colossoWin();
 }
 function colossoWin(){
- colosso.phase="won";
- missionHintEl.textContent="IL RACCOGLITORE E' STATO RESPINTO";
- sfx.win();
- setTimeout(()=>{ colossoOutcomeEl.querySelector("h1").textContent="VITTORIA";
+ colosso.phase="won";missionHintEl.textContent="IL RACCOGLITORE E' STATO RESPINTO";sfx.win();
+ afterGame(900,()=>{colossoOutcomeEl.querySelector("h1").textContent="VITTORIA";
   colossoOutcomeEl.querySelector("p").textContent="Il Colosso ha respinto Il Raccoglitore nel mare.";
-  colossoOutcomeEl.classList.add("show","win"); },900);
+  colossoOutcomeEl.classList.add("show","win");});
 }
 function colossoLose(){
- colosso.phase="lost";
- colossoOutcomeEl.querySelector("h1").textContent="IL COLOSSO CROLLA";
- colossoOutcomeEl.querySelector("p").textContent="Riprova — Il Raccoglitore non aspetta.";
- colossoOutcomeEl.classList.remove("win");
- colossoOutcomeEl.classList.add("show");
- sfx.lose();
+ colosso.phase="lost";colossoOutcomeEl.querySelector("h1").textContent="IL COLOSSO CROLLA";
+ colossoOutcomeEl.querySelector("p").textContent="Riprova dal checkpoint del Colosso.";
+ colossoOutcomeEl.classList.remove("win");colossoOutcomeEl.classList.add("show");sfx.lose();
 }
 function updateColosso(dt){
- if(!colosso)return;
- colosso.t+=dt;
+ if(!colosso)return;colosso.t+=dt;
  if(colosso.phase==="converge"){
-  const p=Math.min(1,colosso.t/1.5);
-  const ease=1-Math.pow(1-p,3);
-  for(const tp of colossoTeamPos){
-   tp.x=tp.startX+(player.x-tp.startX)*ease;
-   tp.z=tp.startZ+(player.z-tp.startZ)*ease;
-  }
+  const p=Math.min(1,colosso.t/1.5),ease=1-Math.pow(1-p,3);
+  for(const tp of colossoTeamPos){tp.x=tp.startX+(player.x-tp.startX)*ease;tp.z=tp.startZ+(player.z-tp.startZ)*ease;}
   if(colosso.t>1.5){
-   colosso.phase="cutscene";
-   colosso.t=0;
-   colossoTeamPos=null;
-   zone="colosso";
-   flashEl.style.opacity=1;
-   setTimeout(()=>{flashEl.style.opacity=0;},220);
-   sfx.transform();
-   playAmbient("colosso");
-  }
+   colosso.phase="combine";colosso.t=0;colossoTeamPos=null;zone="colosso";colosso.giantScale=2.2;
+   flashEl.style.opacity=1;setTimeout(()=>flashEl.style.opacity=0,220);sfx.transform();playAmbient("colosso");
+   missionHintEl.textContent="COMBINAZIONE COLOSSO // MODULI IN AGGANCIO";
+  }return;
+ }
+ if(colosso.phase==="combine"){
+  const p=Math.min(1,colosso.t/8.0);colosso.giantScale=2.2+p*4.95;
+  if(colosso.t>2.0&&colosso.t<4.2)missionHintEl.textContent="GAMBE // NUCLEO // BRACCIA";
+  else if(colosso.t>=4.2&&colosso.t<6.5)missionHintEl.textContent="TESTA // SISTEMI ONLINE";
+  else if(colosso.t>=6.5)missionHintEl.textContent="COLOSSO RANGER // COMBINAZIONE COMPLETA";
+  if(colosso.t>8.0){colosso.phase="reveal";colosso.t=0;sfx.win();}
   return;
  }
- if(colosso.phase==="cutscene"){
-  colosso.giantScale=1.55+Math.min(1,colosso.t/2.6)*5.8;
-  if(colosso.t>1.4)missionHintEl.textContent="IL COLOSSO E' PRONTO";
-  if(colosso.t>2.8){
-   colosso.phase="fight";
-   missionHintEl.classList.remove("show");
-  }
+ if(colosso.phase==="reveal"){
+  if(colosso.t>2.7){colosso.phase="fight";colosso.t=0;missionHintEl.classList.remove("show");saveCheckpoint("colosso");}
   return;
  }
- if(colosso.phase==="finishing"){ updateColossoFinish(dt); return; }
+ if(colosso.phase==="finishing"){updateColossoFinish(dt);return;}
  if(colosso.phase!=="fight")return;
- colosso.punchT=Math.max(0,colosso.punchT-rawDtGlobal);
- colosso.beamT=Math.max(0,colosso.beamT-rawDtGlobal);
- colosso.shakeT=Math.max(0,colosso.shakeT-dt);
+ colosso.punchT=Math.max(0,colosso.punchT-rawDtGlobal);colosso.beamT=Math.max(0,colosso.beamT-rawDtGlobal);
+ colosso.shakeT=Math.max(0,colosso.shakeT-dt);colosso.guardT=Math.max(0,colosso.guardT-rawDtGlobal);
+ if(colosso.messageT>0){colosso.messageT-=rawDtGlobal;if(colosso.messageT<=0&&!colosso.finisherReady&&!colosso.attackTelegraph)missionHintEl.classList.remove("show");}
+ for(let i=colosso.beamBursts.length-1;i>=0;i--){colosso.beamBursts[i].t+=dt;if(colosso.beamBursts[i].t>.55)colosso.beamBursts.splice(i,1);}
+ if(colosso.finisherReady)return;
  colosso.attackCd-=rawDtGlobal;
- for(let i=colosso.beamBursts.length-1;i>=0;i--){colosso.beamBursts[i].t+=dt;if(colosso.beamBursts[i].t>.4)colosso.beamBursts.splice(i,1);}
+ if(colosso.attackCd<=.72&&!colosso.attackTelegraph){
+  colosso.attackTelegraph=true;missionHintEl.textContent="ATTACCO IN ARRIVO — SHIFT = GUARDIA";missionHintEl.classList.add("show");sfx.alarm();
+ }
  if(colosso.attackCd<=0){
-  colosso.attackCd=2.6;
-  colosso.shakeT=.35;
-  colosso.playerHp=Math.max(0,colosso.playerHp-16);
-  sfx.hitPlayer();
+  const baseDmg=colosso.phase2?20:16;
+  const guarded=colosso.guardT>0;
+  const dmg=guarded?(colosso.perfectGuard?0:Math.ceil(baseDmg*.25)):baseDmg;
+  colosso.shakeT=guarded?.18:.40;colosso.playerHp=Math.max(0,colosso.playerHp-dmg);
+  if(guarded){missionHintEl.textContent=colosso.perfectGuard?"GUARDIA PERFETTA":"GUARDIA";missionHintEl.classList.add("show");colosso.messageT=.55;sfx.dodge();}
+  else sfx.hitPlayer();
+  colosso.attackCd=colosso.phase2?1.85:2.65;colosso.attackTelegraph=false;colosso.perfectGuard=false;
   if(colosso.playerHp<=0)colossoLose();
  }
 }
 document.getElementById("colossoOutcomeBtn").addEventListener("click",()=>{
  colossoOutcomeEl.classList.remove("show");
- if(colosso&&colosso.phase==="lost"){
-  colosso.phase="fight";colosso.giantHp=colosso.giantHpMax;colosso.playerHp=colosso.playerHpMax;colosso.attackCd=2.6;
- }else{
-  colosso=null;missionHintEl.classList.remove("show");colossoHpWrapEl.classList.remove("show");
-  archivioUnlocked=true;
-  enterTorre();
-  setTimeout(startArchiveSequence,500);
- }
+ if(colosso&&colosso.phase==="lost"){restoreCheckpoint("colosso");return;}
+ colosso=null;missionHintEl.classList.remove("show");colossoHpWrapEl.classList.remove("show");
+ archivioUnlocked=true;postBossState=true;enterTorre();saveCheckpoint("postboss");
+ afterGame(450,()=>playDialogue(postBossLines,()=>{
+  missionHintEl.textContent="CONTROLLA IL PANNELLO ANOMALO";missionHintEl.classList.add("show");
+ }));
 });
 
 let enemies=[];
@@ -965,6 +1072,10 @@ const archivioTerminalBuf=makeBuffer(bakeParts([
  {mesh:boxMesh([.14,.15,.17]),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2+.9,.5,ARCHIVIO_CZ+ARCHIVIO_D/2-2.5),mat4.scale(.7,1.0,.6))},
  {mesh:boxMesh([.35,.55,.25]),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2+.9,1.15,ARCHIVIO_CZ+ARCHIVIO_D/2-2.5),mat4.rotX(-.3),mat4.scale(.55,.42,.04))},
 ]));
+const ARCH_OCULO_POS={x:ARCHIVIO_CX,y:2.55,z:ARCHIVIO_CZ-ARCHIVIO_D/2+.18};
+const archivioOculoFrameBuf=makeBuffer(bakeParts([
+ {mesh:boxMesh([.10,.11,.14]),mtx:mul(mat4.translate(ARCH_OCULO_POS.x,ARCH_OCULO_POS.y,ARCH_OCULO_POS.z-.04),mat4.scale(2.7,1.65,.12))},
+]));
 const archivioWallBuf=makeBuffer(bakeParts(archivioWallParts));
 
 // ------------------------------------------------------------
@@ -1005,6 +1116,7 @@ function enterArchivio(){
 }
 DIALOGUE_FOCUS_POS.REGISTRO={x:ARCHIVIO_CX-ARCHIVIO_W/2+.9,y:1.3,z:ARCHIVIO_CZ+ARCHIVIO_D/2-2.5};
 DIALOGUE_FOCUS_POS.CAPSULE={x:ARCHIVIO_CX,y:1.3,z:CAPSULE_ZONE_Z-5};
+DIALOGUE_FOCUS_POS.ARCH_OCULO=ARCH_OCULO_POS;
 
 // ============================================================
 // stato di gioco
@@ -1032,18 +1144,42 @@ const colossoHpFillEl=document.getElementById("colossoHpFill");
 const colossoOutcomeEl=document.getElementById("colossoOutcome");
 let gameStarted=false;
 let gameOverActive=false;
-function triggerGameOver(){
- if(gameOverActive)return;
- gameOverActive=true;
- gameOverEl.classList.add("show");
- sfx.lose();
+let paused=false,postBossState=false,currentCheckpoint=null;
+const DEV_MODE=new URLSearchParams(location.search).get("dev")==="1";
+const CHECKPOINT_KEY="RANGER_ZERO_CHECKPOINT_V23";
+const pauseScreenEl=document.getElementById("pauseScreen");
+const runtimeOverlayEl=document.getElementById("runtimeOverlay");
+const continueBtnEl=document.getElementById("continueBtn");
+const gameTimers=[];
+function afterGame(ms,fn){gameTimers.push({t:ms/1000,fn});}
+function updateGameTimers(dt){
+ for(let i=gameTimers.length-1;i>=0;i--){const x=gameTimers[i];x.t-=dt;if(x.t<=0){gameTimers.splice(i,1);try{x.fn();}catch(err){showRuntimeError("ERRORE DI SESSIONE",err&&err.message||String(err));}}}
 }
-document.getElementById("gameOverBtn").addEventListener("click",()=>{
- gameOverActive=false;
- gameOverEl.classList.remove("show");
- player.hp=player.hpMax;
- enterArena(); // ricomincia direttamente la missione, senza dover rifare l'intro
-});
+function clearKeys(){for(const k of Object.keys(keys))keys[k]=false;}
+function clearTransientState(){
+ clearKeys();gameTimers.length=0;gameOverActive=false;gameOverEl.classList.remove("show");colossoOutcomeEl.classList.remove("show","win");
+ choiceScreenEl?.classList.remove("show");interactPromptEl.classList.remove("show");nearInteractable=null;
+ transformState=null;emergeCutscene=null;specialBursts.length=0;splashBursts.length=0;dialogueActive=false;dialogueBoxEl?.classList.remove("show");document.body.classList.remove("dialogue-active");
+}
+function readCheckpoint(){try{return JSON.parse(localStorage.getItem(CHECKPOINT_KEY)||"null");}catch(e){return null;}}
+function refreshContinueButton(){if(!continueBtnEl)return;const cp=readCheckpoint();continueBtnEl.disabled=!cp;continueBtnEl.style.opacity=cp?1:.38;}
+function saveCheckpoint(id){
+ currentCheckpoint=id;try{localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({id,ts:Date.now(),version:23}));}catch(e){}refreshContinueButton();
+}
+function clearCheckpoint(){try{localStorage.removeItem(CHECKPOINT_KEY);}catch(e){}currentCheckpoint=null;refreshContinueButton();}
+function showRuntimeError(title,msg){
+ if(!runtimeOverlayEl)return;runtimeOverlayEl.querySelector("h2").textContent=title;runtimeOverlayEl.querySelector("p").textContent=msg;runtimeOverlayEl.classList.add("show");
+ clearKeys();paused=true;try{if(actx&&actx.state==="running")actx.suspend();}catch(e){}
+}
+function setPaused(v){
+ if(!gameStarted||endingScreenEl?.classList.contains("show"))return;paused=!!v;clearKeys();
+ if(pauseScreenEl)pauseScreenEl.classList.toggle("show",paused);
+ if(actx){try{paused?actx.suspend():actx.resume();}catch(e){}}
+}
+function triggerGameOver(){
+ if(gameOverActive)return;gameOverActive=true;clearKeys();gameOverEl.classList.add("show");sfx.lose();
+}
+document.getElementById("gameOverBtn").addEventListener("click",()=>restoreCheckpoint(currentCheckpoint||"arena"));
 
 // Zone: "torre" (sala di comando) oppure "arena" (missione di combattimento).
 // Ognuna ha i propri confini per il movimento/telecamera, cosi' non serve
@@ -1066,25 +1202,29 @@ function zoneBounds(){
  }
  return b;
 }
-function enterArena(){
- if(zone==="arena")return;
- zone="arena";
- player.x=ZONES.arena.cx; player.z=ZONES.arena.cz+9; player.yaw=Math.PI;
- spawnWave();
- missionHintEl.textContent="MISSIONE: sconfiggi gli scagnozzi e Il Raccoglitore";
- missionHintEl.classList.add("show");
- teleportFlash();
- playAmbient("arena");
+function enterArena(force){
+ if(zone==="arena"&&!force)return;zone="arena";
+ player.x=ZONES.arena.cx;player.z=ZONES.arena.cz+9;player.yaw=Math.PI;player.hp=player.hpMax;player.energy=0;
+ spawnWave();missionHintEl.textContent="MISSIONE: sconfiggi gli scagnozzi e Il Raccoglitore";missionHintEl.classList.add("show");
+ teleportFlash();playAmbient("arena");saveCheckpoint("arena");
 }
 function enterTorre(){
- zone="torre";
- player.x=0; player.z=4.0; player.yaw=Math.PI;
- missionHintEl.classList.remove("show");
- teleportFlash();
- playAmbient("torre");
+ zone="torre";player.x=0;player.z=4.0;player.yaw=Math.PI;missionHintEl.classList.remove("show");teleportFlash();playAmbient("torre");
+}
+const ANOMALO_POS={x:-ROOM_W/2+.78,z:-2.2};
+function restoreCheckpoint(id){
+ clearTransientState();paused=false;if(pauseScreenEl)pauseScreenEl.classList.remove("show");if(actx)try{actx.resume();}catch(e){}
+ gameStarted=true;titleEl.style.display="none";hudEl.style.display="block";document.body.classList.add("started");
+ player.hp=player.hpMax;player.energy=0;player.attackT=player.dodgeT=player.dodgeCd=player.invuln=player.hitFlashT=player.specialT=0;
+ colosso=null;colossoTeamPos=null;colossoHpWrapEl.classList.remove("show");postBossState=false;archiveState={terminalRead:false,capsuleRead:false,revealing:false};
+ if(id==="arena"){player.transformed=true;player.helmet=true;enterArena(true);}
+ else if(id==="colosso"){player.transformed=true;player.helmet=true;startColossoFightDirect();}
+ else if(id==="postboss"){player.transformed=true;player.helmet=true;postBossState=true;enterTorre();saveCheckpoint("postboss");afterGame(250,()=>playDialogue(postBossLines,()=>{missionHintEl.textContent="CONTROLLA IL PANNELLO ANOMALO";missionHintEl.classList.add("show");}));}
+ else if(id==="archivio"){player.transformed=true;player.helmet=true;startArchiveSequence();}
+ else{player.transformed=false;player.helmet=false;enterTorre();saveCheckpoint("torre");startIntro();}
 }
 function teleportFlash(){
- sfx.teleport();
+ clearKeys();sfx.teleport();
  teleportFlashEl.style.opacity=1;
  setTimeout(()=>{teleportFlashEl.style.opacity=0;},260);
 }
@@ -1100,7 +1240,7 @@ const dialogueNameEl=document.getElementById("dialogueName");
 const dialogueTextEl=document.getElementById("dialogueText");
 let dialogueQueue=[], dialogueIndex=0, dialogueActive=false, dialogueOnEnd=null, dialogueFocus=null;
 function playDialogue(lines,onEnd){
- dialogueQueue=lines; dialogueIndex=0; dialogueActive=true; dialogueOnEnd=onEnd||null;
+ clearKeys();dialogueQueue=lines; dialogueIndex=0; dialogueActive=true; dialogueOnEnd=onEnd||null;
  dialogueBoxEl.classList.add("show");
  document.body.classList.add("dialogue-active");
  showDialogueLine();
@@ -1112,7 +1252,10 @@ function showDialogueLine(){
  dialogueTextEl.textContent=l.text;
  // la telecamera si gira verso chi sta parlando, cosi' si capisce subito
  // chi e' — prima restava fissa sul giocatore per tutta la scena.
- dialogueFocus=DIALOGUE_FOCUS_POS[l.speaker]||null;
+ if(zone==="archivio"&&l.speaker==="MERIDIANA")dialogueFocus=DIALOGUE_FOCUS_POS.CAPSULE;
+ else if(zone==="archivio"&&l.speaker==="OCULO")dialogueFocus=DIALOGUE_FOCUS_POS.ARCH_OCULO;
+ else if(l.speaker==="ZERO")dialogueFocus={x:player.x,y:1.45,z:player.z};
+ else dialogueFocus=DIALOGUE_FOCUS_POS[l.speaker]||null;
 }
 function advanceDialogue(){
  if(!dialogueActive)return;
@@ -1136,27 +1279,26 @@ dialogueBoxEl.addEventListener("click",advanceDialogue);
 // "badge", "sessione", roba amministrativa che non dovrebbe esistere qui),
 // poi l'allarme che porta dritti al combattimento in spiaggia.
 const introLines=[
- {speaker:"OCULO",text:"...e con questo, il quadro e' completo. La Torre veglia da molto prima di te. Quando un posto si libera, ne troviamo un altro pronto a occuparlo."},
+ {speaker:"OCULO",text:"La Torre protegge questo mondo da generazioni. Da oggi farai parte di qualcosa piu' grande di te."},
  {speaker:"OCULO",text:"Benvenuto, unita' Zero."},
- {speaker:"ARCO",text:"Non fare quella faccia. Ci siamo passati tutti. Io sono Arco, comando la squadra sul campo — resta vicino e vai bene."},
- {speaker:"MERIDIANA",text:"Meridiana. Non serve che tu ci creda subito. Vedrai con che squadra hai a che fare quando contera' davvero."},
- {speaker:"MERIDIANA",text:"Ogni tanto Oculo tira fuori vecchi registri da prima di noi. Sessioni, badge, roba amministrativa. Non ci penso troppo."},
+ {speaker:"ARCO",text:"Non fare quella faccia. Ci siamo passati tutti. Io sono Arco, comando la squadra sul campo — resta vicino e andra' bene."},
+ {speaker:"MERIDIANA",text:"Meridiana. Io tengo d'occhio quello che gli altri preferiscono non guardare."},
  {speaker:"TIC",text:"IO SONO TIC! Supporto tattico, morale, e tecnicamente l'unico qui che si ricorda gli anniversari."},
  {speaker:"OCULO",text:"Allarme. Presenza ostile sulla costa sud — scagnozzi, e qualcosa di piu' grande dietro di loro."},
  {speaker:"OCULO",text:"Squadra, in posizione. Zero — trasformati, e vai."},
 ];
 function startIntro(){
  playDialogue(introLines,()=>{
-  missionHintEl.textContent="ALLARME — TRASFORMAZIONE IN CORSO";
-  missionHintEl.classList.add("show");
-  sfx.alarm();
-  startTransformation();
-  setTimeout(()=>{
-   missionHintEl.textContent="TRASFERIMENTO IN CORSO";
-   setTimeout(()=>{ enterArena(); },700);
-  },2300);
+  missionHintEl.textContent="ALLARME — TRASFORMAZIONE IN CORSO";missionHintEl.classList.add("show");sfx.alarm();startTransformation();
+  afterGame(2300,()=>{missionHintEl.textContent="TRASFERIMENTO IN CORSO";afterGame(700,()=>enterArena());});
  });
 }
+const postBossLines=[
+ {speaker:"OCULO",text:"Missione completata. Prestazione conforme ai parametri."},
+ {speaker:"TIC",text:"Ehm... Oculo? Ho un sottosistema che continua a rispondere. Settore non indicizzato."},
+ {speaker:"MERIDIANA",text:"Da quando abbiamo settori non indicizzati?"},
+ {speaker:"OCULO",text:"Errore diagnostico. Ignoratelo."},
+];
 
 // ------------------------------------------------------------
 // Archivio: ora giocabile, non solo narrativo — il giocatore cammina
@@ -1169,21 +1311,25 @@ function startIntro(){
 // gia' dentro, ne aggiunge solo altri.
 // ------------------------------------------------------------
 const terminalLines=[
- {speaker:"REGISTRO",text:"SQUADRA_07 — STATO: STASI ATTIVA. ENERGIA IN PRELIEVO: 61%."},
- {speaker:"REGISTRO",text:"SQUADRA_08 — STATO: STASI ATTIVA. ENERGIA IN PRELIEVO: 44%."},
- {speaker:"REGISTRO",text:"SQUADRA_09 — STATO: STASI ATTIVA. ENERGIA IN PRELIEVO: 78%."},
- {speaker:"REGISTRO",text:"Nessuna voce risulta "+String.fromCharCode(34)+"terminata."+String.fromCharCode(34)},
+ {speaker:"REGISTRO",text:"UNITA' ATTIVE IN STASI: 04. OUTPUT ENERGETICO MEDIO: 17%."},
+ {speaker:"REGISTRO",text:"DECADIMENTO ENERGETICO: IRREVERSIBILE. SOSTITUZIONE: NECESSARIA."},
+ {speaker:"REGISTRO",text:"SQUADRA_07 — STASI ATTIVA. SQUADRA_08 — STASI ATTIVA. SQUADRA_09 — STASI ATTIVA."},
+ {speaker:"REGISTRO",text:"SESSION_01 // TYPE: STUDIO // STATUS: CLOSED"},
+ {speaker:"REGISTRO",text:"ERRORE — DATA TYPE MISMATCH. ACCESSO AL BLOCCO LMN_01 NEGATO."},
 ];
 const capsuleLines=[
  {speaker:"MERIDIANA",text:"Zero... non sono morti."},
  {speaker:"MERIDIANA",text:"Sono ancora li' dentro. Li tengono cosi', e continuano a prendere quello che gli resta."},
- {speaker:"MERIDIANA",text:"Nessuno viene mai liberato. Si aggiunge solo un altro nome in fondo alla lista."},
+ {speaker:"MERIDIANA",text:"Quando l'output scende troppo, non li liberano. Reclutano un'altra unita'."},
 ];
 const oculoRevealLines=[
- {speaker:"OCULO",text:"Non dovevi vederlo. Ma hai vinto, e chi vince guadagna il diritto di guardare."},
- {speaker:"OCULO",text:"Non li abbiamo mai persi. Restano utili anche fermi — l'energia non ha bisogno che siano in piedi, solo che ci siano."},
- {speaker:"OCULO",text:"E tu, che stai leggendo questo — non tu, unita' Zero. Tu, dall'altra parte dello schermo."},
- {speaker:"OCULO",text:"Registriamo ogni sessione. Ogni scelta. So che stai scegliendo per lui in questo momento, come hai scelto per altri prima."},
+ {speaker:"OCULO",text:"Zero. Hai seguito il protocollo."},
+ {speaker:"OCULO",text:"Anche quando lui esitava."},
+ {speaker:"ZERO",text:"Lui chi?"},
+ {speaker:"OCULO",text:"Non parlavo con te."},
+ {speaker:"OCULO",text:"Tu, dall'altra parte dello schermo: registriamo ogni sessione. Ogni scelta. Ogni modo in cui fai avanzare un'unita'."},
+ {speaker:"OCULO",text:"OCULO non e' soltanto un nome. E' il nodo di supervisione. Qualcuno deve osservare, selezionare, sostituire."},
+ {speaker:"REGISTRO",text:"SUPERVISOR NODE: OCULO // SUCCESSOR SLOT: AVAILABLE"},
  {speaker:"OCULO",text:"Allora scegli tu. Cosa ne facciamo di questo ciclo — e di loro?"},
 ];
 const TERMINAL_POS={x:ARCHIVIO_CX-ARCHIVIO_W/2+.9,z:ARCHIVIO_CZ+ARCHIVIO_D/2-2.5};
@@ -1191,28 +1337,16 @@ const CAPSULE_INTERACT_POS={x:ARCHIVIO_CX,z:CAPSULE_ZONE_Z-5};
 let archiveState={terminalRead:false,capsuleRead:false,revealing:false};
 let nearInteractable=null;
 function doArchiveInteract(){
- if(nearInteractable==="terminal"&&!archiveState.terminalRead){
-  archiveState.terminalRead=true;
-  playDialogue(terminalLines,maybeStartOculoReveal);
- }else if(nearInteractable==="capsule"&&!archiveState.capsuleRead){
-  archiveState.capsuleRead=true;
-  playDialogue(capsuleLines,maybeStartOculoReveal);
- }
+ if(nearInteractable==="terminal"&&!archiveState.terminalRead){archiveState.terminalRead=true;playDialogue(terminalLines,maybeStartOculoReveal);}
+ else if(nearInteractable==="capsule"&&!archiveState.capsuleRead){archiveState.capsuleRead=true;playDialogue(capsuleLines,maybeStartOculoReveal);}
 }
+function doAnomalyInteract(){if(!postBossState)return;postBossState=false;missionHintEl.classList.remove("show");startArchiveSequence();}
 function startArchiveSequence(){
- archiveState={terminalRead:false,capsuleRead:false,revealing:false};
- enterArchivio();
- setTimeout(()=>{
-  missionHintEl.textContent="ESPLORA L'ARCHIVIO — CERCA IL TERMINALE, POI VAI IN FONDO";
-  missionHintEl.classList.add("show");
- },600);
+ archiveState={terminalRead:false,capsuleRead:false,revealing:false};enterArchivio();saveCheckpoint("archivio");
+ afterGame(600,()=>{missionHintEl.textContent="ESPLORA L'ARCHIVIO — CERCA IL TERMINALE, POI VAI IN FONDO";missionHintEl.classList.add("show");});
 }
 function maybeStartOculoReveal(){
- if(archiveState.terminalRead&&archiveState.capsuleRead&&!archiveState.revealing){
-  archiveState.revealing=true;
-  missionHintEl.classList.remove("show");
-  setTimeout(()=>{ playDialogue(oculoRevealLines,showChoiceScreen); },900);
- }
+ if(archiveState.terminalRead&&archiveState.capsuleRead&&!archiveState.revealing){archiveState.revealing=true;missionHintEl.classList.remove("show");afterGame(900,()=>playDialogue(oculoRevealLines,showChoiceScreen));}
 }
 const choiceScreenEl=document.getElementById("choiceScreen");
 const choiceRowEl=document.getElementById("choiceRow");
@@ -1220,92 +1354,81 @@ const endingScreenEl=document.getElementById("endingScreen");
 const cliffFlashEl=document.getElementById("cliffFlash");
 const cliffEyeEl=document.getElementById("cliffEye");
 const ENDINGS={
- good:{cls:"good",title:"CICLO INTERROTTO",
-  text:"Apri le capsule. Meridiana e TIC ti coprono mentre i vecchi Ranger tornano a respirare da soli. Oculo non dice altro. Il ciclo, per ora, si ferma."},
- normal:{cls:"normal",title:"CICLO DI SOSTITUZIONE: PRONTO",
-  text:"Completi la missione. Le capsule restano chiuse, la Torre torna in silenzio. Da qualche parte, un nuovo fascicolo si apre gia'."},
- evil:{cls:"evil",title:"IL POSTO SI LIBERA",
-  text:"Prendi il posto di Oculo. Le capsule restano sue da custodire, ora. Alla porta della Torre, qualcuno di nuovo sta per entrare."},
+ good:{cls:"good",title:"CICLO INTERROTTO",text:"Apri le capsule. Meridiana e TIC ti coprono mentre i vecchi Ranger tornano a respirare da soli. Rinunci al protocollo e al potere che lo alimenta. Il ciclo, per ora, si ferma."},
+ normal:{cls:"normal",title:"ARCHIVIO RICHIUSO",text:"Richiudi l'Archivio. Accetti che le perdite siano parte del protocollo. Le unita' restano in stasi e la Torre torna in silenzio. La missione continua."},
+ evil:{cls:"evil",title:"SUPERVISORE AUTORIZZATO",text:"Assumi il nodo di supervisione. Oculo non viene distrutto: viene sostituito. Le capsule restano da amministrare, e alla porta della Torre qualcuno di nuovo sta per entrare."},
 };
 function showChoiceScreen(){
  choiceRowEl.innerHTML="";
  const opts=[
   {kind:"good",lbl:"LIBERALI",txt:"Apri le capsule, qualunque cosa costi."},
-  {kind:"normal",lbl:"COMPLETA",txt:"Porta a termine la missione come da protocollo."},
-  {kind:"evil",lbl:"PRENDI IL SUO POSTO",txt:"Diventa parte del sistema che li tiene li'."},
+  {kind:"normal",lbl:"ARCHIVIA",txt:"Richiudi tutto. Accetta il protocollo e continua."},
+  {kind:"evil",lbl:"ASSUMI IL CONTROLLO",txt:"Occupa il nodo di supervisione e gestisci tu il ciclo."},
  ];
- for(const o of opts){
-  const b=document.createElement("button");
-  b.className="choiceBtn";
-  b.innerHTML=`<span class="lbl">${o.lbl}</span>${o.txt}`;
-  b.addEventListener("click",()=>triggerEnding(o.kind));
-  choiceRowEl.appendChild(b);
- }
- choiceScreenEl.classList.add("show");
+ for(const o of opts){const b=document.createElement("button");b.className="choiceBtn";b.innerHTML=`<span class="lbl">${o.lbl}</span>${o.txt}`;b.addEventListener("click",()=>triggerEnding(o.kind));choiceRowEl.appendChild(b);}
+ choiceScreenEl.classList.add("show");clearKeys();
+}
+function recordLimenEnding(kind){
+ const axis={good:"rebellion",normal:"compliance",evil:"control"}[kind];
+ try{
+  const raw=localStorage.getItem("LIMEN_META_V1"),meta=raw?JSON.parse(raw):{};
+  meta.version=1;meta.sessions=meta.sessions||{};meta.profile=meta.profile||{rebellion:0,compliance:0,control:0};meta.history=Array.isArray(meta.history)?meta.history:[];
+  const prev=meta.sessions.LMN_02||{unlockedEndings:[]};
+  if(!prev.firstEnding){prev.firstEnding=kind;meta.profile[axis]=(meta.profile[axis]||0)+1;}
+  prev.lastEnding=kind;prev.axis=axis;prev.updatedAt=Date.now();prev.unlockedEndings=Array.from(new Set([...(prev.unlockedEndings||[]),kind]));
+  meta.sessions.LMN_02=prev;meta.history.push({session:"LMN_02",ending:kind,axis,ts:Date.now()});if(meta.history.length>30)meta.history=meta.history.slice(-30);
+  localStorage.setItem("LIMEN_META_V1",JSON.stringify(meta));
+  // compatibilita' con IT SHIFT / vecchie build.
+  const legacyRaw=localStorage.getItem("LIMEN_SESSION_01"),legacy=legacyRaw?JSON.parse(legacyRaw):{};legacy.LMN_02={ending:kind,ts:Date.now()};localStorage.setItem("LIMEN_SESSION_01",JSON.stringify(legacy));
+ }catch(e){}
 }
 function triggerEnding(kind){
- choiceScreenEl.classList.remove("show");
- // salva la sessione LIMEN condivisa con IT SHIFT (stessa chiave), cosi' i
- // marcatori LMN_02 restano per quando l'antologia li rilegge.
- try{
-  const raw=localStorage.getItem("LIMEN_SESSION_01");
-  const session=raw?JSON.parse(raw):{};
-  session.LMN_02={ending:kind,ts:Date.now()};
-  localStorage.setItem("LIMEN_SESSION_01",JSON.stringify(session));
- }catch(e){}
- const e=ENDINGS[kind];
- endingScreenEl.className=e.cls;
- endingScreenEl.querySelector("h1").textContent=e.title;
- endingScreenEl.querySelector("p").textContent=e.text;
- endingScreenEl.classList.add("show");
- stopAmbient(3.5);
- sfx.win();
- // cliffhanger: un lampo breve, poi l'occhio di Oculo compare enorme al
- // centro e resta li' a fissare — non "la scena", ma chi sta guardando lo
- // schermo — prima di sparire nel buio vero (non si torna al gioco).
+ choiceScreenEl.classList.remove("show");recordLimenEnding(kind);clearCheckpoint();
+ const e=ENDINGS[kind];endingScreenEl.className=e.cls;endingScreenEl.querySelector("h1").textContent=e.title;endingScreenEl.querySelector("p").textContent=e.text;endingScreenEl.classList.add("show");
+ stopAmbient(3.5);sfx.win();
  setTimeout(()=>{
-  const h1=endingScreenEl.querySelector("h1"), p=endingScreenEl.querySelector("p"), code=endingScreenEl.querySelector(".code");
-  [h1,p,code].forEach(el=>{ el.style.transition="opacity .8s ease"; el.style.opacity=0; });
-  cliffFlashEl.style.transition="opacity .04s linear";
-  cliffFlashEl.style.opacity=1;
-  sfx.alarm();
-  setTimeout(()=>{
-   cliffFlashEl.style.transition="opacity 1.1s ease";
-   cliffFlashEl.style.opacity=0;
-   cliffEyeEl.classList.add("show");
-   setTimeout(()=>{
-    cliffEyeEl.style.transition="opacity 1.8s ease";
-    cliffEyeEl.classList.remove("show");
-    cliffEyeEl.style.opacity=0;
-   },3400);
-  },90);
+  const h1=endingScreenEl.querySelector("h1"),p=endingScreenEl.querySelector("p"),code=endingScreenEl.querySelector(".code");[h1,p,code].forEach(el=>{el.style.transition="opacity .8s ease";el.style.opacity=0;});
+  cliffFlashEl.style.transition="opacity .04s linear";cliffFlashEl.style.opacity=1;sfx.alarm();
+  setTimeout(()=>{cliffFlashEl.style.transition="opacity 1.1s ease";cliffFlashEl.style.opacity=0;cliffEyeEl.classList.add("show");setTimeout(()=>{cliffEyeEl.style.transition="opacity 1.8s ease";cliffEyeEl.classList.remove("show");cliffEyeEl.style.opacity=0;},3400);},90);
  },4200);
 }
 
-function beginGame(){
- if(gameStarted)return;
- unlockAudio();
- gameStarted=true;
- titleEl.style.display="none";
- hudEl.style.display="block";
- document.body.classList.add("started");
- playAmbient("torre");
- startIntro();
+function prepareStartedGame(){
+ unlockAudio();gameStarted=true;paused=false;titleEl.style.display="none";hudEl.style.display="block";document.body.classList.add("started");clearKeys();
 }
-titleEl.addEventListener("click",beginGame);
+function beginNewGame(){
+ if(gameStarted)return;clearCheckpoint();prepareStartedGame();player.transformed=false;player.helmet=false;player.hp=player.hpMax;player.energy=0;enterTorre();saveCheckpoint("torre");startIntro();
+}
+function continueGame(){
+ if(gameStarted)return;const cp=readCheckpoint();if(!cp){beginNewGame();return;}prepareStartedGame();restoreCheckpoint(cp.id||"torre");
+}
+refreshContinueButton();
+document.getElementById("newGameBtn").addEventListener("click",e=>{e.stopPropagation();beginNewGame();});
+continueBtnEl.addEventListener("click",e=>{e.stopPropagation();if(!continueBtnEl.disabled)continueGame();});
+const edgeKeys=new Set(["Space","KeyF","KeyC","ShiftLeft","ShiftRight","KeyP","Escape","KeyT","KeyM"]);
 window.addEventListener("keydown",e=>{
+ if(e.repeat&&edgeKeys.has(e.code))return;
  keys[e.code]=true;
- if(e.code==="Space"&&!gameStarted){beginGame();return;}
+ if(e.code==="Space"&&!gameStarted){readCheckpoint()?continueGame():beginNewGame();return;}
+ if((e.code==="KeyP"||e.code==="Escape")&&gameStarted&&!endingScreenEl.classList.contains("show")){setPaused(!paused);return;}
+ if(paused)return;
  if(e.code==="Space"&&dialogueActive){advanceDialogue();return;}
  if(e.code==="Space"&&zone==="archivio"&&nearInteractable){doArchiveInteract();return;}
+ if(e.code==="Space"&&zone==="torre"&&nearInteractable==="anomaly"){doAnomalyInteract();return;}
  if(gameOverActive)return;
- if(e.code==="KeyT")startTransformation();
- if(e.code==="KeyM"&&gameStarted&&!transformState&&!dialogueActive){ if(zone==="torre")enterArena(); else enterTorre(); }
- if(e.code==="KeyF"){ if(zone==="colosso")colossoPunch(); else tryAttack(); }
- if(e.code==="KeyC"){ if(zone==="colosso")colossoSpecial(); else trySpecial(); }
- if(e.code==="ShiftLeft"||e.code==="ShiftRight")tryDodge();
+ if(DEV_MODE&&e.code==="KeyT")startTransformation();
+ if(DEV_MODE&&e.code==="KeyM"&&gameStarted&&!transformState&&!dialogueActive){if(zone==="torre")enterArena();else enterTorre();}
+ if(e.code==="KeyF"){if(zone==="colosso")colossoPunch();else tryAttack();}
+ if(e.code==="KeyC"){if(zone==="colosso")colossoSpecial();else trySpecial();}
+ if(e.code==="ShiftLeft"||e.code==="ShiftRight"){if(zone==="colosso")colossoGuard();else tryDodge();}
 });
 window.addEventListener("keyup",e=>{keys[e.code]=false;});
+window.addEventListener("blur",()=>{clearKeys();if(gameStarted&&!paused&&!endingScreenEl.classList.contains("show"))setPaused(true);});
+document.addEventListener("visibilitychange",()=>{if(document.hidden){clearKeys();if(gameStarted&&!paused&&!endingScreenEl.classList.contains("show"))setPaused(true);}});
+document.getElementById("resumeBtn").addEventListener("click",()=>setPaused(false));
+document.getElementById("restartCheckpointBtn").addEventListener("click",()=>{setPaused(false);restoreCheckpoint(currentCheckpoint||(readCheckpoint()?.id)||"torre");});
+document.getElementById("returnMenuBtn").addEventListener("click",()=>location.reload());
+document.getElementById("runtimeReloadBtn").addEventListener("click",()=>location.reload());
 
 // ------------------------------------------------------------
 // Sequenza di trasformazione: pochi secondi, il giocatore perde il
@@ -1398,7 +1521,7 @@ function damageEnemy(en,amt){
    // Colosso, scontro finale in prima persona.
    en.retreated=true;en.state="retreat";
    triggerSlowMo(.35,.18); // colpo finale sui mob normali, un pelo piu' lungo
-   setTimeout(startColossoSequence,900);
+   afterGame(900,startColossoSequence);
   }else{
    en.dead=true;
   }
@@ -1469,15 +1592,28 @@ function updateEnemies(dt){
    }
   }
  }
+ // sicurezza finale: separazione e AI non possono spingere un nemico fuori
+ // dai limiti validi dell'arena o propagare coordinate non finite.
+ const b=ZONES.arena;const xmin=b.cx-b.w/2+.7,xmax=b.cx+b.w/2-.7,zmin=SEA_EDGE_Z+.55,zmax=b.cz+b.d/2-.7;
+ for(const en of enemies){if(!Number.isFinite(en.x)||!Number.isFinite(en.z)){en.x=ARENA_CX;en.z=ARENA_CZ;}en.x=Math.max(xmin,Math.min(xmax,en.x));en.z=Math.max(zmin,Math.min(zmax,en.z));}
 }
 
 function resize(){
- c.width=innerWidth*devicePixelRatio;c.height=innerHeight*devicePixelRatio;
- c.style.width=innerWidth+"px";c.style.height=innerHeight+"px";
- gl.viewport(0,0,c.width,c.height);
+ const maxRB=gl.getParameter(gl.MAX_RENDERBUFFER_SIZE)||8192;
+ const baseDpr=Math.min(window.devicePixelRatio||1,2);
+ const safeScale=Math.max(.5,Math.min(baseDpr,maxRB/Math.max(1,innerWidth),maxRB/Math.max(1,innerHeight)));
+ c.width=Math.max(1,Math.floor(innerWidth*safeScale));c.height=Math.max(1,Math.floor(innerHeight*safeScale));
+ c.style.width=innerWidth+"px";c.style.height=innerHeight+"px";gl.viewport(0,0,c.width,c.height);
 }
 window.addEventListener("resize",resize);
 resize();
+
+// WebGL/context safety: se la GPU/browser perde il contesto, conserviamo il
+// checkpoint e chiediamo un reload pulito invece di lasciare la scena rotta.
+c.addEventListener("webglcontextlost",e=>{e.preventDefault();if(currentCheckpoint)saveCheckpoint(currentCheckpoint);showRuntimeError("RENDERER INTERROTTO","Il contesto WebGL e' stato perso. Il checkpoint e' salvo: ricarica per continuare.");},{passive:false});
+c.addEventListener("webglcontextrestored",()=>location.reload());
+window.addEventListener("error",e=>{if(gameStarted&&!runtimeOverlayEl.classList.contains("show"))showRuntimeError("ERRORE DI SESSIONE",e.message||"Errore runtime imprevisto.");});
+window.addEventListener("unhandledrejection",e=>{if(gameStarted&&!runtimeOverlayEl.classList.contains("show"))showRuntimeError("ERRORE DI SESSIONE",String(e.reason&&e.reason.message||e.reason||"Promise rifiutata"));});
 
 // impatto dell'attacco speciale: una piccola forma chiara che si espande e
 // sparisce, riusata per ogni scoppio invece di ricostruire geometria nuova.
@@ -1532,12 +1668,13 @@ function triggerSlowMo(duration,factor){ slowMoT=duration; slowMoFactor=factor; 
 let last=performance.now();
 function frame(now){
  const rawDt=Math.min(.05,(now-last)/1000);last=now;
- rawDtGlobal=rawDt;
+ if(paused){rawDtGlobal=0;requestAnimationFrame(frame);return;}
+ rawDtGlobal=rawDt;updateGameTimers(rawDt);
  let dt=rawDt;
  if(slowMoT>0){ dt=rawDt*slowMoFactor; slowMoT-=rawDt; }
  updateTransformation(dt);
- const inputLocked=!!transformState||!gameStarted||dialogueActive||gameOverActive||zone==="colosso"||(colosso&&colosso.phase==="converge")||choiceScreenEl.classList.contains("show")||endingScreenEl.classList.contains("show")||!!emergeCutscene;
- if(gameStarted)energyFillEl.style.width=(74+Math.sin(now/900)*4)+"%";
+ const inputLocked=paused||!!transformState||!gameStarted||dialogueActive||gameOverActive||zone==="colosso"||(colosso&&colosso.phase==="converge")||choiceScreenEl.classList.contains("show")||endingScreenEl.classList.contains("show")||!!emergeCutscene;
+ if(gameStarted)energyFillEl.style.width=(player.energy/player.energyMax*100)+"%";
  if(zone!==lastZoneLabel){ lastZoneLabel=zone; hudLocationEl.textContent=ZONE_LABELS[zone]||""; }
 
  // rotazione del personaggio (A/D) — indipendente dal movimento, niente
@@ -1583,8 +1720,8 @@ function frame(now){
   moving=true;
  }
  const zb=zoneBounds();
- player.x=Math.max(zb.xmin,Math.min(zb.xmax,player.x));
- player.z=Math.max(zb.zmin,Math.min(zb.zmax,player.z));
+ if(!Number.isFinite(player.x)||!Number.isFinite(player.z)){player.x=ZONES[zone].cx;player.z=ZONES[zone].cz;}
+ player.x=Math.max(zb.xmin,Math.min(zb.xmax,player.x));player.z=Math.max(zb.zmin,Math.min(zb.zmax,player.z));
 
  // collisione giocatore-nemico: prima si camminava dritti attraverso gli
  // scagnozzi come se non ci fossero. Ora il giocatore viene spinto fuori
@@ -1622,14 +1759,15 @@ function frame(now){
  // terminale o alla sala delle capsule in fondo, cosi' l'esplorazione e'
  // guidata ma resta libera (il giocatore decide quando e se avvicinarsi).
  if(zone==="archivio"&&!dialogueActive){
-  const dT=Math.hypot(player.x-TERMINAL_POS.x,player.z-TERMINAL_POS.z);
-  const dC=Math.hypot(player.x-CAPSULE_INTERACT_POS.x,player.z-CAPSULE_INTERACT_POS.z);
-  if(dT<1.6&&!archiveState.terminalRead){ nearInteractable="terminal"; interactPromptEl.textContent="SPAZIO — LEGGI IL REGISTRO"; interactPromptEl.classList.add("show"); }
-  else if(dC<2.4&&!archiveState.capsuleRead){ nearInteractable="capsule"; interactPromptEl.textContent="SPAZIO — GUARDA LE CAPSULE"; interactPromptEl.classList.add("show"); }
-  else{ nearInteractable=null; interactPromptEl.classList.remove("show"); }
- }else if(nearInteractable){
-  nearInteractable=null; interactPromptEl.classList.remove("show");
- }
+  const dT=Math.hypot(player.x-TERMINAL_POS.x,player.z-TERMINAL_POS.z),dC=Math.hypot(player.x-CAPSULE_INTERACT_POS.x,player.z-CAPSULE_INTERACT_POS.z);
+  if(dT<1.6&&!archiveState.terminalRead){nearInteractable="terminal";interactPromptEl.textContent="SPAZIO — LEGGI IL REGISTRO";interactPromptEl.classList.add("show");}
+  else if(dC<2.4&&!archiveState.capsuleRead){nearInteractable="capsule";interactPromptEl.textContent="SPAZIO — GUARDA LE CAPSULE";interactPromptEl.classList.add("show");}
+  else{nearInteractable=null;interactPromptEl.classList.remove("show");}
+ }else if(zone==="torre"&&postBossState&&!dialogueActive){
+  const dA=Math.hypot(player.x-ANOMALO_POS.x,player.z-ANOMALO_POS.z);
+  if(dA<1.65){nearInteractable="anomaly";interactPromptEl.textContent="SPAZIO — ISPEZIONA IL PANNELLO ANOMALO";interactPromptEl.classList.add("show");}
+  else{nearInteractable=null;interactPromptEl.classList.remove("show");}
+ }else if(nearInteractable){nearInteractable=null;interactPromptEl.classList.remove("show");}
 
  player.walkPhase+=dt*(moving?8.5:0);
  const pal=player.transformed?PAL_ZERO:PAL_CIVILE;
@@ -1637,7 +1775,6 @@ function frame(now){
  const ATTACK_DUR=.34;
  const attackPhase=player.attackT>0?1-player.attackT/ATTACK_DUR:0;
  const charMesh=buildCharacterBuffers(pal,player.walkPhase,moving?1:0,player.helmet,"ranger",player.attackT>0?attackPhase:0,player.specialT>0);
- const charBuf=makeBuffer(charMesh);
 
  let eye,target;
  if(emergeCutscene){
@@ -1648,14 +1785,17 @@ function frame(now){
   eye=[racc.x-5.5+pushIn,1.7,racc.z-4.5+pushIn*.6];
   target=[racc.x,emergeCutscene.phase==="buildup"?.1:1.6,racc.z];
  }else if(zone==="colosso"){
-  // prima persona fissa: il Colosso non cammina, si mira e si attacca e
-  // basta, come richiesto per tenere semplice lo scontro finale.
-  const shake=colosso&&colosso.shakeT>0?colosso.shakeT*3:0;
-  const sway=Math.sin(now/900)*.04;
-  // durante il colpo di grazia la telecamera si stringe sul gigante che crolla
-  const finishZ=colosso&&colosso.phase==="finishing"?(colosso.finishZoom||0)*(COLOSSO_CAM_Z-COLOSSO_GIANT_Z)*.5:0;
-  eye=[Math.sin(now/300)*shake*.3, COLOSSO_EYE_Y+Math.sin(now/300)*shake*.2, COLOSSO_CAM_Z-finishZ];
-  target=[Math.sin(now/300)*shake*.3+sway*4, COLOSSO_EYE_Y-1.5, COLOSSO_GIANT_Z];
+  if(colosso&&(colosso.phase==="combine"||colosso.phase==="reveal")){
+   // Cutscene esterna: robot completo + mostro nello stesso quadro.
+   const orbit=colosso.phase==="reveal"?Math.sin(colosso.t*.55)*2:0;
+   eye=[20+orbit,11,ARENA_CZ-4];target=[0,5.7,ARENA_CZ-12];
+  }else{
+   const shake=colosso&&colosso.shakeT>0?colosso.shakeT*3:0;
+   const sway=Math.sin(now/900)*.04+(colosso&&colosso.punchT>0?-.12:0);
+   const finishZ=colosso&&colosso.phase==="finishing"?(colosso.finishZoom||0)*(COLOSSO_CAM_Z-COLOSSO_GIANT_Z)*.5:0;
+   eye=[Math.sin(now/300)*shake*.3,COLOSSO_EYE_Y+Math.sin(now/300)*shake*.2,COLOSSO_CAM_Z-finishZ];
+   target=[Math.sin(now/300)*shake*.3+sway*4,COLOSSO_EYE_Y-1.5,COLOSSO_GIANT_Z];
+  }
  }else{
  // camera terza persona dietro il personaggio, con collisione contro i
  // muri: prima "sbatteva" dentro la geometria quando ci si girava vicino
@@ -1717,10 +1857,8 @@ function frame(now){
    const isSpeaking=dialogueActive&&dialogueQueue[dialogueIndex]&&
     ((mi===0&&dialogueQueue[dialogueIndex].speaker==="ARCO")||(mi===1&&dialogueQueue[dialogueIndex].speaker==="MERIDIANA"));
    const mesh=buildCharacterBuffers(m.pal||[PAL_ARCO,PAL_MERIDIANA,PAL_RANGER3,PAL_RANGER4][mi],idlePhase,.16,true,"ranger",0);
-   const mb=makeBuffer(mesh);
    const bump=isSpeaking?1.06:1;
-   drawBuffer(mb, mul(mat4.translate(m.x,0,m.z),mat4.rotY(m.yaw+Math.sin(idlePhase*.4)*.05),mat4.scale(bump,bump,bump)), vp);
-   gl.deleteBuffer(mb.posB);gl.deleteBuffer(mb.nrmB);gl.deleteBuffer(mb.colB);
+   drawDynamicMesh(mesh,mul(mat4.translate(m.x,0,m.z),mat4.rotY(m.yaw+Math.sin(idlePhase*.4)*.05),mat4.scale(bump,bump,bump)),vp);
   }
 
   // TIC: pattuglia tra i pannelli laterali facendo finta di controllarli,
@@ -1749,10 +1887,8 @@ function frame(now){
    const enAttackPhase=en.attackFlashT>0?1-en.attackFlashT/.5:0;
    const enMoving=en.state!=="retreat"&&facingDot(en.x,en.z,en.yaw,player.x,player.z).dist>(en.type==="raccoglitore"?2.05:1.65);
    const enMesh=buildCharacterBuffers(en.pal,en.walkPhaseE,enMoving?1:0,true,en.type,en.attackFlashT>0?enAttackPhase:0);
-   const enBuf=makeBuffer(enMesh);
    const enModel=mul(mat4.translate(en.x,en.y||0,en.z),mat4.rotY(en.yaw),mat4.scale(s,s,s));
-   drawBuffer(enBuf,enModel,vp,en.alpha);
-   gl.deleteBuffer(enBuf.posB);gl.deleteBuffer(enBuf.nrmB);gl.deleteBuffer(enBuf.colB);
+   drawDynamicMesh(enMesh,enModel,vp,en.alpha);
    if(en.state!=="retreat"){
     const barYaw=Math.atan2(eye[0]-en.x,eye[2]-en.z);
     const barY=(en.y||0)+(en.type==="raccoglitore"?2.55*en.scale:1.95*s);
@@ -1762,10 +1898,8 @@ function frame(now){
   if(colossoTeamPos){
    for(const tp of colossoTeamPos){
     const tMesh=buildCharacterBuffers(tp.pal,now/300,1,true,"ranger",0);
-    const tBuf=makeBuffer(tMesh);
     const tYaw=Math.atan2(player.x-tp.x,player.z-tp.z);
-    drawBuffer(tBuf, mul(mat4.translate(tp.x,0,tp.z),mat4.rotY(tYaw)), vp);
-    gl.deleteBuffer(tBuf.posB);gl.deleteBuffer(tBuf.nrmB);gl.deleteBuffer(tBuf.colB);
+    drawDynamicMesh(tMesh,mul(mat4.translate(tp.x,0,tp.z),mat4.rotY(tYaw)),vp);
    }
   }
  }else if(zone==="colosso"&&colosso){
@@ -1779,12 +1913,15 @@ function frame(now){
   const giantWobble=1+Math.sin(now/260)*.02;
   const finishTilt=colosso.phase==="finishing"?(colosso.finishTilt||0):0;
   const gm=mul(mat4.translate(ARENA_CX,0,COLOSSO_GIANT_Z),mat4.rotY(Math.PI),mat4.rotX(finishTilt),mat4.scale(colosso.giantScale*giantWobble,colosso.giantScale,colosso.giantScale*giantWobble));
-  const giantMesh=buildCharacterBuffers(PAL_RACCOGLITORE,now/450,0,true,"raccoglitore",0);
-  const giantBuf=makeBuffer(giantMesh);
-  drawBuffer(giantBuf,gm,vp);
-  gl.deleteBuffer(giantBuf.posB);gl.deleteBuffer(giantBuf.nrmB);gl.deleteBuffer(giantBuf.colB);
+  const giantPal=colosso.phase2?PAL_RACCOGLITORE_OVERLOAD:PAL_RACCOGLITORE;
+  const giantMesh=buildCharacterBuffers(giantPal,now/450,0,true,"raccoglitore",0);
+  drawDynamicMesh(giantMesh,gm,vp);
+  if(colosso.phase==="combine"||colosso.phase==="reveal")drawColossoRobot(vp,colosso.phase==="reveal"?1:Math.min(1,colosso.t/8),now);
+  if(colosso.phase==="finishing"){
+   const ep=Math.min(1,(colosso.finishT||0)/2);drawBuffer(burstBuf,mul(mat4.translate(ARENA_CX,COLOSSO_EYE_Y-1.0,COLOSSO_GIANT_Z+2),mat4.scale(1+ep*8,.7+ep*5,1+ep*8)),vp,Math.max(0,1-ep*.55));
+  }
 
-  if(colosso.phase==="fight"){
+  if(colosso.phase==="fight"||colosso.phase==="finishing"){
    // effetti: pugno = piccolo scoppio, speciale = fascio di luce dal Colosso al bersaglio
    for(const b of colosso.beamBursts){
     if(b.kind==="punch"){
@@ -1802,6 +1939,8 @@ function frame(now){
   drawBuffer(archivioWallBuf,mat4.identity(),vp);
   drawBuffer(archivioHelmetBuf,mat4.identity(),vp);
   drawBuffer(archivioTerminalBuf,mat4.identity(),vp);
+  drawBuffer(archivioOculoFrameBuf,mat4.identity(),vp);
+  if(archiveState.revealing)drawTexturedQuad(oculoTex,mul(mat4.translate(ARCH_OCULO_POS.x,ARCH_OCULO_POS.y,ARCH_OCULO_POS.z+.02),mat4.scale(2.35,1.35,1)),vp,.92);
   drawBuffer(capsuleFrameBuf,mat4.identity(),vp);
   for(let ci=0;ci<CAPSULE_POS.length;ci++){
    const cp=CAPSULE_POS[ci];
@@ -1809,16 +1948,14 @@ function frame(now){
    drawBuffer(capsuleGlassBuf, mul(mat4.translate(cp.x,1.15,cp.z+.30),mat4.scale(1,1,1)), vp, .38);
    drawBuffer(capsuleBeamBuf, mul(mat4.translate(cp.x,3.6,cp.z),mat4.scale(.5*pulse,3.0,.5*pulse)), vp, .16*pulse);
    const rMesh=buildCharacterBuffers(capsuleRangerPals[ci],0,0,true,"ranger",0);
-   const rBuf=makeBuffer(rMesh);
-   drawBuffer(rBuf, mul(mat4.translate(cp.x,0,cp.z+.05),mat4.rotY(Math.PI)), vp, .8);
-   gl.deleteBuffer(rBuf.posB);gl.deleteBuffer(rBuf.nrmB);gl.deleteBuffer(rBuf.colB);
+   drawDynamicMesh(rMesh,mul(mat4.translate(cp.x,0,cp.z+.05),mat4.rotY(Math.PI)),vp,.8);
   }
  }
 
  if(zone!=="colosso"){
   drawShadow(player.x,player.z,.42,vp);
   const charModel=mul(mat4.translate(player.x,0,player.z),mat4.rotY(player.yaw));
-  drawBuffer(charBuf,charModel,vp);
+  drawDynamicMesh(charMesh,charModel,vp);
  }
 
  // scoppi dell'attacco speciale: si espandono e sfumano nel giro di mezzo secondo
@@ -1836,8 +1973,6 @@ function frame(now){
   const a=Math.max(0,1-p*1.1);
   drawBuffer(burstBuf, mul(mat4.translate(b.x,b.y,b.z),mat4.rotY(p*2),mat4.scale(sc,.12+p*.3,sc)), vp, a*.8);
  }
-
- gl.deleteBuffer(charBuf.posB);gl.deleteBuffer(charBuf.nrmB);gl.deleteBuffer(charBuf.colB);
 
  // HUD: barra energia + barra vita + vignetta danno
  if(gameStarted){
@@ -1857,9 +1992,9 @@ function frame(now){
 }
 requestAnimationFrame(frame);
 
-// esposto per test/debug
-window.__rz={player,camState,startTransformation,enterArena,enterTorre,advanceDialogue,triggerGameOver,
- startColossoSequence,colossoPunch,colossoSpecial,startArchiveSequence,showChoiceScreen,triggerEnding,
+// Helper solo in modalita' sviluppo: aggiungere ?dev=1 all'URL.
+if(DEV_MODE)window.__rz={player,camState,startTransformation,enterArena,enterTorre,advanceDialogue,triggerGameOver,
+ startColossoSequence,startColossoFightDirect,colossoPunch,colossoSpecial,colossoGuard,startArchiveSequence,showChoiceScreen,triggerEnding,restoreCheckpoint,
  get enemies(){return enemies},get zone(){return zone},get dialogueActive(){return dialogueActive},
  get dialogueIndex(){return dialogueIndex},get gameOverActive(){return gameOverActive},get colosso(){return colosso}};
 })();
