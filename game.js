@@ -552,28 +552,36 @@ const consoleBuf=makeBuffer(bakeParts([
 // Parametrizzato per palette (tuta/accento) cosi' lo stesso rig serve sia
 // per il player sia per i membri della squadra, con o senza casco.
 // ============================================================
-function makePalette(suit,accent,skin){
- return {suit,accent,skin:skin||[.85,.63,.48],visor:[.15,.85,.95],boot:[.10,.10,.12],helmetShell:accent};
+function makePalette(suit,accent,skin,hair){
+ const under=suit.map(v=>Math.max(.035,v*.38));
+ return {suit,accent,under,skin:skin||[.85,.63,.48],hair:hair||[.14,.11,.10],visor:[.08,.72,.82],boot:[.07,.075,.09],helmetShell:suit};
 }
-const PAL_CIVILE=makePalette([.30,.30,.33],[.45,.45,.48]); // prima della trasformazione
-const PAL_ZERO   =makePalette([.58,.30,.11],[.50,.40,.18]); // Vermiglio bruciato/ruggine / Bronzo scuro (Ranger Zero) — deliberatamente piu' scuro/opaco di Arco
-const PAL_ARCO   =makePalette([.74,.10,.08],[.85,.66,.16]); // Vermiglio pieno acceso / Ottone dorato brillante
-const PAL_MERIDIANA=makePalette([.55,.72,.80],[.75,.78,.80]); // Blu ghiaccio / Argento
-const PAL_RANGER3=makePalette([.34,.18,.42],[.68,.56,.34]); // Viola profondo / Bronzo
-const PAL_RANGER4=makePalette([.14,.40,.28],[.74,.76,.78]); // Verde muschio / Argento chiaro
+// Civili: outfit diversi e leggibili. Le armature usano invece una sottotuta
+// scura + placche colorate, cosi' non sembrano piu' mute da sommozzatore.
+const PAL_CIVILE=makePalette([.18,.19,.22],[.58,.30,.11],[.85,.63,.48],[.12,.09,.07]);
+const PAL_ZERO   =makePalette([.58,.30,.11],[.50,.40,.18],[.85,.63,.48],[.12,.09,.07]);
+const PAL_ARCO   =makePalette([.74,.10,.08],[.85,.66,.16],[.78,.55,.40],[.13,.08,.05]);
+const PAL_MERIDIANA=makePalette([.42,.65,.76],[.80,.84,.88],[.78,.58,.46],[.08,.07,.08]);
+const PAL_RANGER3=makePalette([.34,.18,.42],[.68,.56,.34],[.76,.54,.40],[.10,.07,.05]);
+const PAL_RANGER4=makePalette([.14,.40,.28],[.74,.76,.78],[.84,.62,.47],[.07,.055,.045]);
+const PAL_ARCO_CIV=makePalette([.20,.22,.25],[.64,.16,.10],[.78,.55,.40],[.13,.08,.05]);
+const PAL_MERIDIANA_CIV=makePalette([.18,.24,.29],[.42,.65,.76],[.78,.58,.46],[.08,.07,.08]);
+const PAL_JUN_CIV=makePalette([.28,.22,.31],[.34,.18,.42],[.76,.54,.40],[.10,.07,.05]);
+const PAL_VALE_CIV=makePalette([.18,.27,.22],[.14,.40,.28],[.84,.62,.47],[.07,.055,.045]);
 
 const meshCache={};
 function partMeshFor(pal){
  const key=pal.suit.join(",")+"|"+pal.accent.join(",")+"|"+(pal===PAL_CIVILE?"c":"h");
  if(meshCache[key])return meshCache[key];
  const m={
-  torso:boxMesh(pal.suit), belt:boxMesh(pal.accent),
+  torso:boxMesh(pal.suit), under:boxMesh(pal.under||pal.suit), belt:boxMesh([.08,.09,.11]), buckle:boxMesh(pal.accent),
+  chestPlate:boxMesh(pal.suit), chestTrim:boxMesh(pal.accent), shoulderPad:boxMesh(pal.suit),
   head:boxMesh(pal.skin), visor:boxMesh(pal.visor),
-  hair:boxMesh([.14,.11,.10]), eye:boxMesh([.05,.05,.06]),
-  helmetShell:boxMesh(pal.helmetShell), helmetVisor:boxMesh(pal.visor), helmetCrest:boxMesh(pal.accent),
-  horn:boxMesh(pal.accent), shoulderPad:boxMesh(pal.accent),
-  upperArm:boxMesh(pal.suit), lowerArm:boxMesh(pal.skin), glove:boxMesh(pal.accent),
-  upperLeg:boxMesh(pal.suit), lowerLeg:boxMesh(pal.boot),
+  hair:boxMesh(pal.hair||[.14,.11,.10]), eye:boxMesh([.05,.05,.06]),
+  helmetShell:boxMesh(pal.helmetShell), helmetVisor:boxMesh([.025,.04,.055]), helmetCrest:boxMesh(pal.accent), jaw:boxMesh(pal.accent), helmetSide:boxMesh(pal.suit),
+  horn:boxMesh(pal.accent),
+  upperArm:boxMesh(pal.under||pal.suit), lowerArm:boxMesh(pal.skin), gauntlet:boxMesh(pal.accent), glove:boxMesh(pal.accent),
+  upperLeg:boxMesh(pal.under||pal.suit), lowerLeg:boxMesh(pal.boot), bootArmor:boxMesh(pal.suit), knee:boxMesh(pal.accent),
   bladeCore:boxMesh([.85,.92,.98]), bladeEdge:boxMesh(pal.accent), bladeHilt:boxMesh([.15,.14,.16]),
   menaceEye:boxMesh([1.0,.10,.04]),
  };
@@ -594,10 +602,21 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
  const bob=Math.abs(Math.cos(walkPhase))*.045*speedFactor;
  const hunch=kind==="scagnozzo"?.10:0;
  const torsoW=kind==="raccoglitore"?.54:kind==="scagnozzo"?.50:.46;
+ const armored=helmet&&kind==="ranger";
  const parts=[
-  {mesh:pm.torso, mtx:mul(mat4.translate(0,1.05+bob-hunch*.3,0),mat4.rotX(hunch),mat4.scale(torsoW,.62,.28))},
-  {mesh:pm.belt,  mtx:mul(mat4.translate(0,.76+bob,0),mat4.scale(.48,.10,.30))},
+  {mesh:armored?pm.under:pm.torso, mtx:mul(mat4.translate(0,1.05+bob-hunch*.3,0),mat4.rotX(hunch),mat4.scale(torsoW,.62,.28))},
+  {mesh:pm.belt,  mtx:mul(mat4.translate(0,.76+bob,0),mat4.scale(.49,.10,.31))},
  ];
+ if(armored){
+  // vera corazza tokusatsu sopra la sottotuta: petto, spalle, fibbia e
+  // dettagli geometrici. La silhouette diventa subito da Ranger.
+  parts.push({mesh:pm.chestPlate,mtx:mul(mat4.translate(0,1.15+bob,.10),mat4.scale(.43,.36,.20))});
+  parts.push({mesh:pm.chestTrim,mtx:mul(mat4.translate(0,1.16+bob,.215),mat4.rotZ(Math.PI/4),mat4.scale(.075,.40,.035))});
+  parts.push({mesh:pm.chestTrim,mtx:mul(mat4.translate(0,1.16+bob,.216),mat4.rotZ(-Math.PI/4),mat4.scale(.075,.40,.035))});
+  parts.push({mesh:pm.shoulderPad,mtx:mul(mat4.translate(.39,1.38+bob,0),mat4.scale(.20,.13,.27))});
+  parts.push({mesh:pm.shoulderPad,mtx:mul(mat4.translate(-.39,1.38+bob,0),mat4.scale(.20,.13,.27))});
+  parts.push({mesh:pm.buckle,mtx:mul(mat4.translate(0,.77+bob,.17),mat4.scale(.13,.10,.04))});
+ }
  if(kind==="raccoglitore"){
   // spallacci asimmetrici: uno più grande dell'altro, come pezzi di
   // armature diverse tenute insieme alla bell'e meglio.
@@ -605,9 +624,14 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
   parts.push({mesh:pm.shoulderPad, mtx:mul(mat4.translate(-.38,1.38+bob,0),mat4.scale(.15,.11,.17))});
  }
  if(helmet&&kind==="ranger"){
-  parts.push({mesh:pm.helmetShell, mtx:mul(mat4.translate(0,1.57+bob,0),mat4.scale(.33,.33,.33))});
-  parts.push({mesh:pm.helmetVisor, mtx:mul(mat4.translate(0,1.55+bob,.155),mat4.scale(.26,.14,.05))});
-  parts.push({mesh:pm.helmetCrest, mtx:mul(mat4.translate(0,1.80+bob,-.02),mat4.scale(.08,.10,.34))});
+  parts.push({mesh:pm.helmetShell, mtx:mul(mat4.translate(0,1.59+bob,0),mat4.scale(.34,.35,.34))});
+  // visiera nera larga + mandibola metallica + pinne laterali: molto piu'
+  // vicino alla grammatica tokusatsu di un casco da immersione.
+  parts.push({mesh:pm.helmetVisor, mtx:mul(mat4.translate(0,1.60+bob,.166),mat4.scale(.285,.135,.045))});
+  parts.push({mesh:pm.jaw, mtx:mul(mat4.translate(0,1.45+bob,.145),mat4.scale(.23,.075,.07))});
+  parts.push({mesh:pm.helmetSide, mtx:mul(mat4.translate(.335,1.59+bob,0),mat4.scale(.055,.15,.18))});
+  parts.push({mesh:pm.helmetSide, mtx:mul(mat4.translate(-.335,1.59+bob,0),mat4.scale(.055,.15,.18))});
+  parts.push({mesh:pm.helmetCrest, mtx:mul(mat4.translate(0,1.83+bob,-.02),mat4.scale(.075,.12,.34))});
  }else if(kind==="scagnozzo"){
   // niente cresta, visiera a fessura sottile, testa leggermente incassata:
   // deliberatamente meno "eroico", piu' anonimo/usa e getta.
@@ -643,16 +667,23 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
  const punch=attackPhase?Math.sin(Math.min(1,attackPhase)*Math.PI):0;
  const rArmRot=attackPhase? -1.9*punch : swing*.8;
  const rArmFwd=attackPhase? .30*punch : 0;
+ const lowerArmMesh=armored?pm.gauntlet:pm.lowerArm;
  parts.push(
   {mesh:pm.upperArm, mtx:mul(mat4.translate(.34,1.30+bob,0),mat4.rotX(rArmRot),mat4.translate(0,-.20,rArmFwd),mat4.scale(.16,.40,.16))},
-  {mesh:pm.lowerArm, mtx:mul(mat4.translate(.34,1.30+bob,0),mat4.rotX(rArmRot),mat4.translate(0,-.46,rArmFwd*1.6),mat4.scale(.14,.30,.14))},
+  {mesh:lowerArmMesh, mtx:mul(mat4.translate(.34,1.30+bob,0),mat4.rotX(rArmRot),mat4.translate(0,-.46,rArmFwd*1.6),mat4.scale(.15,.31,.15))},
   {mesh:pm.upperArm, mtx:mul(mat4.translate(-.34,1.30+bob,0),mat4.rotX(swingOpp*.8),mat4.translate(0,-.20,0),mat4.scale(.16,.40,.16))},
-  {mesh:pm.lowerArm, mtx:mul(mat4.translate(-.34,1.30+bob,0),mat4.rotX(swingOpp*.8),mat4.translate(0,-.46,0),mat4.scale(.14,.30,.14))},
+  {mesh:lowerArmMesh, mtx:mul(mat4.translate(-.34,1.30+bob,0),mat4.rotX(swingOpp*.8),mat4.translate(0,-.46,0),mat4.scale(.15,.31,.15))},
   {mesh:pm.upperLeg, mtx:mul(mat4.translate(.16,.74+bob,0),mat4.rotX(swingOpp),mat4.translate(0,-.24,0),mat4.scale(.19,.48,.19))},
   {mesh:pm.lowerLeg, mtx:mul(mat4.translate(.16,.74+bob,0),mat4.rotX(swingOpp),mat4.translate(0,-.56,0),mat4.scale(.17,.34,.19))},
   {mesh:pm.upperLeg, mtx:mul(mat4.translate(-.16,.74+bob,0),mat4.rotX(swing),mat4.translate(0,-.24,0),mat4.scale(.19,.48,.19))},
   {mesh:pm.lowerLeg, mtx:mul(mat4.translate(-.16,.74+bob,0),mat4.rotX(swing),mat4.translate(0,-.56,0),mat4.scale(.17,.34,.19))},
  );
+ if(armored){
+  parts.push({mesh:pm.knee,mtx:mul(mat4.translate(.16,.48+bob,.16),mat4.scale(.13,.10,.05))});
+  parts.push({mesh:pm.knee,mtx:mul(mat4.translate(-.16,.48+bob,.16),mat4.scale(.13,.10,.05))});
+  parts.push({mesh:pm.bootArmor,mtx:mul(mat4.translate(.16,.18+bob,.10),mat4.scale(.18,.22,.20))});
+  parts.push({mesh:pm.bootArmor,mtx:mul(mat4.translate(-.16,.18+bob,.10),mat4.scale(.18,.22,.20))});
+ }
  if(weaponOut){
   // lama energetica agganciata alla mano destra, inclinata in avanti come
   // se fosse impugnata pronta a colpire — compare solo durante l'attacco
@@ -675,11 +706,40 @@ const meridianaBuf=makeBuffer(buildCharacterBuffers(PAL_MERIDIANA,0,0,true));
 const ranger3Buf=makeBuffer(buildCharacterBuffers(PAL_RANGER3,0,0,true));
 const ranger4Buf=makeBuffer(buildCharacterBuffers(PAL_RANGER4,0,0,true));
 const teamMembers=[
- {buf:arcoBuf,      x:-3.6, z:-ROOM_D/2+3.9, yaw:.25},
- {buf:meridianaBuf, x:-1.2, z:-ROOM_D/2+3.3, yaw:.10},
- {buf:ranger3Buf,   x: 1.2, z:-ROOM_D/2+3.3, yaw:-.10},
- {buf:ranger4Buf,   x: 3.6, z:-ROOM_D/2+3.9, yaw:-.25},
+ {name:"ARCO",pal:PAL_ARCO,civPal:PAL_ARCO_CIV,x:-3.9,z:-4.2,yaw:.25,targetX:-3.9,targetZ:-4.2,walk:0},
+ {name:"MERIDIANA",pal:PAL_MERIDIANA,civPal:PAL_MERIDIANA_CIV,x:-4.6,z:-1.5,yaw:.65,targetX:-4.6,targetZ:-1.5,walk:1},
+ {name:"JUN",pal:PAL_RANGER3,civPal:PAL_JUN_CIV,x:3.7,z:-1.4,yaw:-.55,targetX:3.7,targetZ:-1.4,walk:2},
+ {name:"VALE",pal:PAL_RANGER4,civPal:PAL_VALE_CIV,x:3.8,z:-4.7,yaw:-.25,targetX:3.8,targetZ:-4.7,walk:3},
 ];
+let teamMode="civil"; // civil | ranger
+let introFreeRoam=false,introAlertStarted=false,morphUnlocked=false;
+let introTalked=new Set(),postBossTalked=new Set();
+let postBossElapsed=0;
+function setTeamTarget(name,x,z){const m=teamMembers.find(t=>t.name===name);if(m){m.targetX=x;m.targetZ=z;}}
+function resetTeamIntro(){
+ teamMode="civil";introFreeRoam=false;introAlertStarted=false;introTalked=new Set();postBossTalked=new Set();postBossElapsed=0;
+ const p=[[-3.9,-4.2],[-4.6,-1.5],[3.7,-1.4],[3.8,-4.7]];
+ teamMembers.forEach((m,i)=>{m.x=p[i][0];m.z=p[i][1];m.targetX=m.x;m.targetZ=m.z;m.walk=i;m.yaw=i<2?.3:-.3;});
+}
+function setupPostBossTeam(){
+ teamMode="civil";postBossElapsed=0;postBossTalked=new Set();
+ const starts=[[-2.0,-5.1],[-.8,-4.8],[1.2,-4.7],[2.7,-5.0]];
+ const targets=[[-3.8,-5.6],[-4.65,-2.0],[3.8,-1.0],[3.9,-5.3]];
+ teamMembers.forEach((m,i)=>{m.x=starts[i][0];m.z=starts[i][1];m.targetX=targets[i][0];m.targetZ=targets[i][1];m.walk=i;});
+}
+function updateTowerTeam(dt){
+ if(zone!=="torre")return;
+ if(postBossState)postBossElapsed+=dt;
+ for(const m of teamMembers){
+  const dx=m.targetX-m.x,dz=m.targetZ-m.z,dist=Math.hypot(dx,dz)||.001;
+  if(dist>.08){const sp=(postBossState?1.15:.65)*dt;m.x+=dx/dist*Math.min(dist,sp);m.z+=dz/dist*Math.min(dist,sp);m.yaw=Math.atan2(dx,dz);m.walk+=dt*7;}
+  else if(postBossState){
+   // alle postazioni guardano verso console/pannelli, non tutti verso Zero.
+   if(m.name==="MERIDIANA")m.yaw=-Math.PI/2; else if(m.name==="JUN")m.yaw=Math.PI/2; else m.yaw=Math.PI;
+  }
+ }
+}
+function teamMemberByName(name){return teamMembers.find(m=>m.name===name)||null;}
 // Posizioni usate per far girare la telecamera verso chi sta parlando
 // durante i dialoghi, cosi' si capisce subito chi e' senza dover indovinare
 // dal solo nome scritto nel balloon.
@@ -687,6 +747,8 @@ const DIALOGUE_FOCUS_POS={
  OCULO:{x:0,y:2.35,z:-ROOM_D/2+.30},
  ARCO:{x:teamMembers[0].x,y:1.5,z:teamMembers[0].z},
  MERIDIANA:{x:teamMembers[1].x,y:1.5,z:teamMembers[1].z},
+ JUN:{x:teamMembers[2].x,y:1.5,z:teamMembers[2].z},
+ VALE:{x:teamMembers[3].x,y:1.5,z:teamMembers[3].z},
  TIC:{x:-5.6,y:2.3,z:-2.6},
 };
 
@@ -1090,9 +1152,9 @@ document.getElementById("colossoOutcomeBtn").addEventListener("click",()=>{
  colossoOutcomeEl.classList.remove("show");
  if(colosso&&colosso.phase==="lost"){restoreCheckpoint("colosso");return;}
  colosso=null;missionHintEl.classList.remove("show");colossoHpWrapEl.classList.remove("show");
- archivioUnlocked=true;postBossState=true;enterTorre();saveCheckpoint("postboss");
+ archivioUnlocked=true;postBossState=true;morphUnlocked=true;enterTorre();setupPostBossTeam();saveCheckpoint("postboss");
  afterGame(450,()=>playDialogue(postBossLines,()=>{
-  missionHintEl.textContent="CONTROLLA IL PANNELLO ANOMALO";missionHintEl.classList.add("show");
+  missionHintEl.textContent="PARLA CON LA SQUADRA O CONTROLLA IL PANNELLO // R = ARMATURA";missionHintEl.classList.add("show");
  }));
 });
 
@@ -1106,8 +1168,8 @@ function initArenaAllies(){
  arenaAllies=[
   {name:"ARCO",pal:PAL_ARCO,x:ARENA_CX-5.5,z:ARENA_CZ+6.5,yaw:Math.PI,cd:.2,attackT:0,walk:0},
   {name:"MERIDIANA",pal:PAL_MERIDIANA,x:ARENA_CX+5.5,z:ARENA_CZ+6.0,yaw:Math.PI,cd:.7,attackT:0,walk:1},
-  {name:"RANGER V",pal:PAL_RANGER3,x:ARENA_CX-7.0,z:ARENA_CZ+3.0,yaw:Math.PI,cd:1.0,attackT:0,walk:2},
-  {name:"RANGER G",pal:PAL_RANGER4,x:ARENA_CX+7.0,z:ARENA_CZ+3.0,yaw:Math.PI,cd:1.3,attackT:0,walk:3},
+  {name:"JUN",pal:PAL_RANGER3,x:ARENA_CX-7.0,z:ARENA_CZ+3.0,yaw:Math.PI,cd:1.0,attackT:0,walk:2},
+  {name:"VALE",pal:PAL_RANGER4,x:ARENA_CX+7.0,z:ARENA_CZ+3.0,yaw:Math.PI,cd:1.3,attackT:0,walk:3},
  ];
 }
 function addWave(stage){
@@ -1275,11 +1337,19 @@ const capsuleBeamMesh=boxMesh([.55,.90,.98]);
 const capsuleBeamBuf=makeBuffer(capsuleBeamMesh);
 
 let archivioUnlocked=false;
+const archiveCompanion={meriX:ARCHIVIO_CX-1.1,meriZ:ARCHIVIO_CZ+ARCHIVIO_D/2-2.2,meriTX:ARCHIVIO_CX-1.1,meriTZ:ARCHIVIO_CZ+ARCHIVIO_D/2-2.2,ticX:ARCHIVIO_CX+1.0,ticZ:ARCHIVIO_CZ+ARCHIVIO_D/2-2.0,t:0};
+function resetArchiveCompanions(){archiveCompanion.meriX=ARCHIVIO_CX-1.1;archiveCompanion.meriZ=ARCHIVIO_CZ+ARCHIVIO_D/2-2.2;archiveCompanion.meriTX=TERMINAL_POS?TERMINAL_POS.x+1.0:ARCHIVIO_CX-1;archiveCompanion.meriTZ=TERMINAL_POS?TERMINAL_POS.z-.4:ARCHIVIO_CZ+5;archiveCompanion.ticX=ARCHIVIO_CX+1.0;archiveCompanion.ticZ=ARCHIVIO_CZ+ARCHIVIO_D/2-2.0;archiveCompanion.t=0;}
+function updateArchiveCompanions(dt){
+ if(zone!=="archivio")return;archiveCompanion.t+=dt;
+ const dx=archiveCompanion.meriTX-archiveCompanion.meriX,dz=archiveCompanion.meriTZ-archiveCompanion.meriZ,d=Math.hypot(dx,dz)||.001;
+ if(d>.08){archiveCompanion.meriX+=dx/d*Math.min(d,dt*.95);archiveCompanion.meriZ+=dz/d*Math.min(d,dt*.95);}
+ // TIC continua a scandire davvero la stanza, oscillando fra terminale e capsule.
+ const p=(Math.sin(archiveCompanion.t*.45)+1)/2;archiveCompanion.ticX=ARCHIVIO_CX+1.35+Math.sin(archiveCompanion.t*.8)*.55;archiveCompanion.ticZ=(ARCHIVIO_CZ+ARCHIVIO_D/2-2.5)*(1-p)+(CAPSULE_ZONE_Z-4.2)*p;
+}
 function enterArchivio(){
- zone="archivio";
+ zone="archivio";teamMode="civil";
  player.x=ARCHIVIO_CX; player.z=ARCHIVIO_CZ+ARCHIVIO_D/2-1.5; player.yaw=Math.PI;
- teleportFlash();
- playAmbient("archivio");
+ resetArchiveCompanions();teleportFlash();playAmbient("archivio");
 }
 DIALOGUE_FOCUS_POS.REGISTRO={x:ARCHIVIO_CX-ARCHIVIO_W/2+.9,y:1.3,z:ARCHIVIO_CZ+ARCHIVIO_D/2-2.5};
 DIALOGUE_FOCUS_POS.CAPSULE={x:ARCHIVIO_CX,y:1.3,z:CAPSULE_ZONE_Z-5};
@@ -1332,7 +1402,7 @@ function clearTransientState(){
 function readCheckpoint(){try{return JSON.parse(localStorage.getItem(CHECKPOINT_KEY)||"null");}catch(e){return null;}}
 function refreshContinueButton(){if(!continueBtnEl)return;const cp=readCheckpoint();continueBtnEl.disabled=!cp;continueBtnEl.style.opacity=cp?1:.38;}
 function saveCheckpoint(id){
- currentCheckpoint=id;try{localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({id,ts:Date.now(),version:24}));}catch(e){}refreshContinueButton();
+ currentCheckpoint=id;try{localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({id,ts:Date.now(),version:25,transformed:!!player.transformed,morphUnlocked:!!morphUnlocked}));}catch(e){}refreshContinueButton();
 }
 function clearCheckpoint(){try{localStorage.removeItem(CHECKPOINT_KEY);}catch(e){}currentCheckpoint=null;refreshContinueButton();}
 function showRuntimeError(title,msg){
@@ -1380,16 +1450,18 @@ function enterTorre(){
  zone="torre";player.x=0;player.z=4.0;player.yaw=Math.PI;missionHintEl.classList.remove("show");teleportFlash();playAmbient("torre");
 }
 const ANOMALO_POS={x:-ROOM_W/2+.78,z:-2.2};
-function restoreCheckpoint(id){
+function restoreCheckpoint(id,cpState){
  clearTransientState();paused=false;if(pauseScreenEl)pauseScreenEl.classList.remove("show");if(actx)try{actx.resume();}catch(e){}
  gameStarted=true;titleEl.style.display="none";hudEl.style.display="block";document.body.classList.add("started");
  player.hp=player.hpMax;player.energy=0;player.attackT=player.dodgeT=player.dodgeCd=player.invuln=player.hitFlashT=player.specialT=0;
- colosso=null;colossoTeamPos=null;colossoHpWrapEl.classList.remove("show");postBossState=false;archiveState={terminalRead:false,capsuleRead:false,revealing:false};
- if(id==="arena"){player.transformed=true;player.helmet=true;enterArena(true);}
- else if(id==="colosso"){player.transformed=true;player.helmet=true;startColossoFightDirect();}
- else if(id==="postboss"){player.transformed=true;player.helmet=true;postBossState=true;enterTorre();saveCheckpoint("postboss");afterGame(250,()=>playDialogue(postBossLines,()=>{missionHintEl.textContent="CONTROLLA IL PANNELLO ANOMALO";missionHintEl.classList.add("show");}));}
- else if(id==="archivio"){player.transformed=true;player.helmet=true;startArchiveSequence();}
- else{player.transformed=false;player.helmet=false;enterTorre();saveCheckpoint("torre");startIntro();}
+ colosso=null;colossoTeamPos=null;colossoHpWrapEl.classList.remove("show");postBossState=false;archiveState={terminalRead:false,capsuleRead:false,revealing:false,capsuleAwake:false};
+ const savedForm=cpState&&typeof cpState.transformed==="boolean"?cpState.transformed:true;
+ morphUnlocked=!!(cpState&&cpState.morphUnlocked);
+ if(id==="arena"){morphUnlocked=true;player.transformed=true;player.helmet=true;teamMode="ranger";enterArena(true);}
+ else if(id==="colosso"){morphUnlocked=true;player.transformed=true;player.helmet=true;teamMode="ranger";startColossoFightDirect();}
+ else if(id==="postboss"){morphUnlocked=true;player.transformed=savedForm;player.helmet=savedForm;postBossState=true;enterTorre();setupPostBossTeam();saveCheckpoint("postboss");afterGame(250,()=>playDialogue(postBossLines,()=>{missionHintEl.textContent="PARLA CON LA SQUADRA O CONTROLLA IL PANNELLO // R = ARMATURA";missionHintEl.classList.add("show");}));}
+ else if(id==="archivio"){morphUnlocked=true;player.transformed=savedForm;player.helmet=savedForm;teamMode="civil";startArchiveSequence();}
+ else{morphUnlocked=false;player.transformed=false;player.helmet=false;resetTeamIntro();enterTorre();saveCheckpoint("torre");startIntro();}
 }
 function teleportFlash(){
  clearKeys();sfx.teleport();
@@ -1420,9 +1492,13 @@ function showDialogueLine(){
  dialogueTextEl.textContent=l.text;
  // la telecamera si gira verso chi sta parlando, cosi' si capisce subito
  // chi e' — prima restava fissa sul giocatore per tutta la scena.
- if(zone==="archivio"&&l.speaker==="MERIDIANA")dialogueFocus=DIALOGUE_FOCUS_POS.CAPSULE;
+ const tm=teamMemberByName(l.speaker);
+ if(zone==="archivio"&&l.speaker==="MERIDIANA")dialogueFocus={x:archiveCompanion.meriX,y:1.45,z:archiveCompanion.meriZ};
+ else if(zone==="archivio"&&l.speaker==="TIC")dialogueFocus={x:archiveCompanion.ticX,y:2.0,z:archiveCompanion.ticZ};
+ else if(zone==="archivio"&&l.speaker==="VECCHIO RANGER")dialogueFocus={x:CAPSULE_POS[0].x,y:1.5,z:CAPSULE_POS[0].z};
  else if(zone==="archivio"&&l.speaker==="OCULO")dialogueFocus=DIALOGUE_FOCUS_POS.ARCH_OCULO;
  else if(l.speaker==="ZERO")dialogueFocus={x:player.x,y:1.45,z:player.z};
+ else if(zone==="torre"&&tm)dialogueFocus={x:tm.x,y:1.45,z:tm.z};
  else dialogueFocus=DIALOGUE_FOCUS_POS[l.speaker]||null;
 }
 function advanceDialogue(){
@@ -1442,46 +1518,97 @@ function advanceDialogue(){
 }
 dialogueBoxEl.addEventListener("click",advanceDialogue);
 
-// Intro: Oculo finisce di spiegare perche' il protagonista e' li', due
-// battute con la squadra (con dentro un riferimento discreto a IT SHIFT —
-// "badge", "sessione", roba amministrativa che non dovrebbe esistere qui),
-// poi l'allarme che porta dritti al combattimento in spiaggia.
-const introLines=[
+// ============================================================
+// CHARACTER ARC — la prima parte non corre piu' direttamente all'allarme.
+// Oculo presenta Zero, poi il giocatore deve conoscere i quattro compagni
+// in civile. Solo dopo parte la puntata tokusatsu vera.
+// ============================================================
+const introBriefLines=[
  {speaker:"OCULO",text:"La Torre protegge questo mondo da generazioni. Da oggi farai parte di qualcosa piu' grande di te."},
- {speaker:"OCULO",text:"Benvenuto, unita' Zero."},
- {speaker:"ARCO",text:"Non fare quella faccia. Ci siamo passati tutti. Io sono Arco, comando la squadra sul campo — resta vicino e andra' bene."},
- {speaker:"MERIDIANA",text:"Meridiana. Io tengo d'occhio quello che gli altri preferiscono non guardare."},
- {speaker:"TIC",text:"IO SONO TIC! Supporto tattico, morale, e tecnicamente l'unico qui che si ricorda gli anniversari."},
- {speaker:"OCULO",text:"Allarme. Presenza ostile sulla costa sud — scagnozzi, e qualcosa di piu' grande dietro di loro."},
- {speaker:"OCULO",text:"Squadra, in posizione. Zero — trasformati, e vai."},
+ {speaker:"OCULO",text:"Benvenuto, unita' Zero. Prima dell'assegnazione, conosci la squadra."},
+ {speaker:"TIC",text:"Suggerimento operativo: parlare con le persone riduce del 34% l'imbarazzo durante una trasformazione collettiva."},
+];
+const introTalkLines={
+ ARCO:[
+  {speaker:"ARCO",text:"Prima missione? Tranquillo. Io sono Arco, comando sul campo. Se qualcosa esplode, resta vicino a me."},
+  {speaker:"ZERO",text:"Succede spesso?"},
+  {speaker:"ARCO",text:"Abbastanza da non farci piu' caso. Vedrai: dopo il primo allarme ti sembrera' casa."},
+ ],
+ MERIDIANA:[
+  {speaker:"MERIDIANA",text:"Meridiana. Analisi, coordinate, diagnostica. Il tuo identificativo e'... insolito."},
+  {speaker:"ZERO",text:"Zero?"},
+  {speaker:"MERIDIANA",text:"Non il nome. La numerazione della sessione. Lascia stare — per ora."},
+ ],
+ JUN:[
+  {speaker:"JUN",text:"Jun. Il mio compito ufficiale e' alleggerire la tensione. Quello non ufficiale e' evitare di chiedere a Oculo le percentuali."},
+  {speaker:"ZERO",text:"Percentuali di cosa?"},
+  {speaker:"JUN",text:"Esatto. Stai gia' imparando."},
+ ],
+ VALE:[
+  {speaker:"VALE",text:"Vale. Una squadra funziona perche' ognuno rispetta il protocollo."},
+  {speaker:"ZERO",text:"Sempre?"},
+  {speaker:"VALE",text:"Soprattutto quando non capisci ancora perche' esiste."},
+ ],
+};
+const introAlertLines=[
+ {speaker:"TIC",text:"ALLARME! Firma ostile sulla costa sud. Multipli bersagli in avvicinamento."},
+ {speaker:"ARCO",text:"Eccoci. Prima puntata, Zero. Respira."},
+ {speaker:"OCULO",text:"Squadra, in posizione. Unita' Zero — trasformati e difendete la costa."},
 ];
 function startIntro(){
- // Ogni nuova partita deve mostrare per intero il rituale tokusatsu:
- // briefing -> allarme -> trasformazione -> trasferimento. Nessun checkpoint
- // o stato precedente puo' lasciare Zero gia' trasformato.
- player.transformed=false;player.helmet=false;transformState=null;clearKeys();
+ player.transformed=false;player.helmet=false;transformState=null;morphUnlocked=false;clearKeys();resetTeamIntro();
  missionHintEl.classList.remove("show");playAmbient("torre");
- playDialogue(introLines,()=>{
-  clearKeys();missionHintEl.textContent="ALLARME — UNITÀ ZERO, PREPARATI";missionHintEl.classList.add("show");sfx.alarm();
-  afterGame(450,()=>{
-   missionHintEl.textContent="ZERO — TRASFORMAZIONE!";
-   startTransformation();
-   afterGame(1250,()=>{
-    // Aspettiamo che la trasformazione sia realmente terminata prima di
-    // lasciare la Torre: niente salto diretto al Ranger gia' pronto.
-    if(!player.transformed){player.transformed=true;player.helmet=true;transformState=null;}
-    missionHintEl.textContent="TRASFERIMENTO IN CORSO";
-    afterGame(700,()=>enterArena());
-   });
-  });
+ playDialogue(introBriefLines,()=>{
+  introFreeRoam=true;missionHintEl.textContent="CONOSCI LA SQUADRA // PARLA CON ARCO, MERIDIANA, JUN E VALE";missionHintEl.classList.add("show");
  });
 }
+function maybeTriggerIntroAlert(){
+ if(introAlertStarted||introTalked.size<4)return;introAlertStarted=true;introFreeRoam=false;nearInteractable=null;interactPromptEl.classList.remove("show");
+ afterGame(500,()=>playDialogue(introAlertLines,()=>{
+  clearKeys();teamMode="civil";missionHintEl.textContent="ALLARME — UNITÀ ZERO, PREPARATI";missionHintEl.classList.add("show");sfx.alarm();
+  afterGame(450,()=>{missionHintEl.textContent="ZERO — TRASFORMAZIONE!";startTransformation();
+   afterGame(1250,()=>{if(!player.transformed){player.transformed=true;player.helmet=true;transformState=null;}morphUnlocked=true;missionHintEl.textContent="TRASFERIMENTO IN CORSO";afterGame(700,()=>enterArena());});
+  });
+ }));
+}
 const postBossLines=[
- {speaker:"OCULO",text:"Missione completata. Prestazione conforme ai parametri."},
- {speaker:"TIC",text:"Ehm... Oculo? Ho un sottosistema che continua a rispondere. Settore non indicizzato."},
- {speaker:"MERIDIANA",text:"Da quando abbiamo settori non indicizzati?"},
- {speaker:"OCULO",text:"Errore diagnostico. Ignoratelo."},
+ {speaker:"OCULO",text:"Raccoglitore neutralizzato. La citta' e' salva. Prestazione conforme ai parametri."},
+ {speaker:"ARCO",text:"Prima missione, Colosso incluso. Non male, Zero."},
+ {speaker:"JUN",text:"Io voto per non rifarlo mai piu'. Soprattutto la parte in cui il palazzo era piu' piccolo del mio stivale."},
+ {speaker:"VALE",text:"Rapporto danni avviato. Protocollo di rientro regolare."},
+ {speaker:"MERIDIANA",text:"Aspetta. TIC, ripeti la firma energetica del Raccoglitore."},
+ {speaker:"TIC",text:"SIGNATURE MATCH: RANGER CORE. Ehm... questo risultato non mi piace."},
+ {speaker:"OCULO",text:"Errore di classificazione. Ignoratelo e tornate alle postazioni."},
 ];
+const postBossTalkLines={
+ ARCO:[
+  {speaker:"ARCO",text:"Meridiana vede anomalie anche nel caffe'. Oculo ci ha portati a casa, Zero. Per me e' questo che conta."},
+  {speaker:"ARCO",text:"Ma... se scopri che TIC ha ragione, chiamami prima di fare qualcosa di stupido."},
+ ],
+ MERIDIANA:[
+  {speaker:"MERIDIANA",text:"Non era un errore. La firma del Raccoglitore e' compatibile con la nostra armatura."},
+  {speaker:"MERIDIANA",text:"Quel pannello laterale sta rispondendo allo stesso segnale. Oculo non vuole che lo tocchiamo."},
+ ],
+ JUN:[
+  {speaker:"JUN",text:"Sul serio: io scherzo quando ho paura. E in questo momento sto preparando materiale per una stagione intera."},
+  {speaker:"JUN",text:"Ho visto quel valore sullo scanner. Diceva RANGER. Non 'simile a Ranger'. RANGER."},
+ ],
+ VALE:[
+  {speaker:"VALE",text:"Abbiamo appena salvato migliaia di persone seguendo gli ordini di Oculo."},
+  {speaker:"VALE",text:"Non trasformare un errore diagnostico in una ragione per distruggere la squadra."},
+ ],
+};
+function doTowerNpcInteract(id){
+ const name=id.replace("npc:","");
+ if(introFreeRoam){
+  const lines=introTalkLines[name];if(!lines)return;
+  playDialogue(lines,()=>{introTalked.add(name);missionHintEl.textContent=`CONOSCI LA SQUADRA // ${introTalked.size}/4`;missionHintEl.classList.add("show");maybeTriggerIntroAlert();});
+  return;
+ }
+ if(postBossState){
+  const lines=postBossTalkLines[name];if(!lines)return;postBossTalked.add(name);playDialogue(lines,()=>{missionHintEl.textContent="CONTROLLA IL PANNELLO ANOMALO // R = ARMATURA";missionHintEl.classList.add("show");});
+ }
+}
 
 // ------------------------------------------------------------
 // Archivio: ora giocabile, non solo narrativo — il giocatore cammina
@@ -1500,33 +1627,53 @@ const terminalLines=[
  {speaker:"REGISTRO",text:"SESSION_01 // TYPE: STUDIO // STATUS: CLOSED"},
  {speaker:"REGISTRO",text:"ERRORE — DATA TYPE MISMATCH. ACCESSO AL BLOCCO LMN_01 NEGATO."},
 ];
-const capsuleLines=[
- {speaker:"MERIDIANA",text:"Zero... non sono morti."},
- {speaker:"MERIDIANA",text:"Sono ancora li' dentro. Li tengono cosi', e continuano a prendere quello che gli resta."},
- {speaker:"MERIDIANA",text:"Quando l'output scende troppo, non li liberano. Reclutano un'altra unita'."},
-];
+function getCapsuleLines(){
+ const formLines=player.transformed?[
+  {speaker:"REGISTRO",text:"RANGER SIGNATURE DETECTED // UNIT CLASS: ZERO"},
+  {speaker:"VECCHIO RANGER",text:"Un altro..."},
+ ]:[
+  {speaker:"REGISTRO",text:"NO ACTIVE COMBAT FRAME // IDENTITY: ZERO"},
+  {speaker:"VECCHIO RANGER",text:"Toglila sempre, quando puoi."},
+  {speaker:"ZERO",text:"La tuta?"},
+  {speaker:"VECCHIO RANGER",text:"E' cosi' che ti tengono legato alla Torre."},
+ ];
+ return [
+  ...formLines,
+  {speaker:"MERIDIANA",text:"Zero... non sono morti."},
+  {speaker:"TIC",text:"Unita' cosciente. Segni vitali deboli, ma cosciente."},
+  {speaker:"MERIDIANA",text:"Li tengono in stasi e continuano a prendere quello che gli resta."},
+  {speaker:"VECCHIO RANGER",text:"Che squadra siete?"},
+  {speaker:"MERIDIANA",text:"Squadra Zero."},
+  {speaker:"VECCHIO RANGER",text:"...quindi siamo gia' arrivati a Zero."},
+ ];
+}
 const oculoRevealLines=[
- {speaker:"OCULO",text:"Zero. Hai seguito il protocollo."},
- {speaker:"OCULO",text:"Anche quando lui esitava."},
+ {speaker:"MERIDIANA",text:"Quante Meridiana ci sono state prima di me?"},
+ {speaker:"REGISTRO",text:"MERIDIANA_03 // TERMINATA. MERIDIANA_04 // STASI. MERIDIANA_05 // STASI."},
+ {speaker:"TIC",text:"Io... conosco questa stanza. Ho aperto queste capsule. Ma non ricordo di esserci mai stato."},
+ {speaker:"OCULO",text:"TIC. Memoria non autorizzata. Interrompi la diagnostica."},
+ {speaker:"MERIDIANA",text:"No. Questa volta no."},
+ {speaker:"OCULO",text:"Zero. Hai seguito il protocollo. Anche quando lui esitava."},
  {speaker:"ZERO",text:"Lui chi?"},
  {speaker:"OCULO",text:"Non parlavo con te."},
  {speaker:"OCULO",text:"Tu, dall'altra parte dello schermo: registriamo ogni sessione. Ogni scelta. Ogni modo in cui fai avanzare un'unita'."},
+ {speaker:"OCULO",text:"L'armatura non e' un premio. E' il collegamento. Combatte con voi, vi misura, e quando non servite piu' alimenta cio' che viene dopo."},
  {speaker:"OCULO",text:"OCULO non e' soltanto un nome. E' il nodo di supervisione. Qualcuno deve osservare, selezionare, sostituire."},
  {speaker:"REGISTRO",text:"SUPERVISOR NODE: OCULO // SUCCESSOR SLOT: AVAILABLE"},
  {speaker:"OCULO",text:"Allora scegli tu. Cosa ne facciamo di questo ciclo — e di loro?"},
 ];
 const TERMINAL_POS={x:ARCHIVIO_CX-ARCHIVIO_W/2+.9,z:ARCHIVIO_CZ+ARCHIVIO_D/2-2.5};
 const CAPSULE_INTERACT_POS={x:ARCHIVIO_CX,z:CAPSULE_ZONE_Z-5};
-let archiveState={terminalRead:false,capsuleRead:false,revealing:false};
+let archiveState={terminalRead:false,capsuleRead:false,revealing:false,capsuleAwake:false};
 let nearInteractable=null;
 function doArchiveInteract(){
- if(nearInteractable==="terminal"&&!archiveState.terminalRead){archiveState.terminalRead=true;playDialogue(terminalLines,maybeStartOculoReveal);}
- else if(nearInteractable==="capsule"&&!archiveState.capsuleRead){archiveState.capsuleRead=true;playDialogue(capsuleLines,maybeStartOculoReveal);}
+ if(nearInteractable==="terminal"&&!archiveState.terminalRead){archiveState.terminalRead=true;archiveCompanion.meriTX=TERMINAL_POS.x+1.0;archiveCompanion.meriTZ=TERMINAL_POS.z-.4;playDialogue(terminalLines,()=>{archiveCompanion.meriTX=CAPSULE_INTERACT_POS.x-1.0;archiveCompanion.meriTZ=CAPSULE_INTERACT_POS.z+1.0;maybeStartOculoReveal();});}
+ else if(nearInteractable==="capsule"&&!archiveState.capsuleRead){archiveState.capsuleRead=true;archiveState.capsuleAwake=true;archiveCompanion.meriTX=CAPSULE_INTERACT_POS.x-1.0;archiveCompanion.meriTZ=CAPSULE_INTERACT_POS.z+1.0;playDialogue(getCapsuleLines(),maybeStartOculoReveal);}
 }
 function doAnomalyInteract(){if(!postBossState)return;postBossState=false;missionHintEl.classList.remove("show");startArchiveSequence();}
 function startArchiveSequence(){
- archiveState={terminalRead:false,capsuleRead:false,revealing:false};enterArchivio();saveCheckpoint("archivio");
- afterGame(600,()=>{missionHintEl.textContent="ESPLORA L'ARCHIVIO — CERCA IL TERMINALE, POI VAI IN FONDO";missionHintEl.classList.add("show");});
+ archiveState={terminalRead:false,capsuleRead:false,revealing:false,capsuleAwake:false};enterArchivio();saveCheckpoint("archivio");
+ afterGame(600,()=>{missionHintEl.textContent="ESPLORA L'ARCHIVIO // R = TRASFORMA / RILASCIA ARMATURA";missionHintEl.classList.add("show");});
 }
 function maybeStartOculoReveal(){
  if(archiveState.terminalRead&&archiveState.capsuleRead&&!archiveState.revealing){archiveState.revealing=true;missionHintEl.classList.remove("show");afterGame(900,()=>playDialogue(oculoRevealLines,showChoiceScreen));}
@@ -1537,9 +1684,9 @@ const endingScreenEl=document.getElementById("endingScreen");
 const cliffFlashEl=document.getElementById("cliffFlash");
 const cliffEyeEl=document.getElementById("cliffEye");
 const ENDINGS={
- good:{cls:"good",title:"CICLO INTERROTTO",text:"Apri le capsule. Meridiana e TIC ti coprono mentre i vecchi Ranger tornano a respirare da soli. Rinunci al protocollo e al potere che lo alimenta. Il ciclo, per ora, si ferma."},
- normal:{cls:"normal",title:"ARCHIVIO RICHIUSO",text:"Richiudi l'Archivio. Accetti che le perdite siano parte del protocollo. Le unita' restano in stasi e la Torre torna in silenzio. La missione continua."},
- evil:{cls:"evil",title:"SUPERVISORE AUTORIZZATO",text:"Assumi il nodo di supervisione. Oculo non viene distrutto: viene sostituito. Le capsule restano da amministrare, e alla porta della Torre qualcuno di nuovo sta per entrare."},
+ good:{cls:"good",title:"CICLO INTERROTTO",text:"Meridiana resta al terminale, TIC sblocca le capsule e Zero spezza il proprio legame con l'armatura. Le camere si aprono una dopo l'altra. Arco arriva troppo tardi per fermarvi — e sceglie di aiutarvi. Il ciclo, per ora, si ferma."},
+ normal:{cls:"normal",title:"ARCHIVIO RICHIUSO",text:"Zero chiude il registro. Meridiana lo chiama per nome, ma lui si allontana. TIC abbassa l'occhio. Le capsule tornano silenziose e Vale attende fuori dalla porta. La missione continua."},
+ evil:{cls:"evil",title:"SUPERVISORE AUTORIZZATO",text:"Zero assume il nodo. L'occhio di Oculo si spegne e si riaccende con la sua firma. Meridiana guarda il monitor. La nuova voce ordina: 'Unita' Meridiana. Torna alla postazione.' Le capsule restano da amministrare."},
 };
 function showChoiceScreen(){
  choiceRowEl.innerHTML="";
@@ -1580,15 +1727,15 @@ function prepareStartedGame(){
  unlockAudio();gameStarted=true;paused=false;titleEl.style.display="none";hudEl.style.display="block";document.body.classList.add("started");clearKeys();
 }
 function beginNewGame(){
- if(gameStarted)return;clearCheckpoint();prepareStartedGame();player.transformed=false;player.helmet=false;player.hp=player.hpMax;player.energy=0;enterTorre();saveCheckpoint("torre");startIntro();
+ if(gameStarted)return;clearCheckpoint();prepareStartedGame();morphUnlocked=false;resetTeamIntro();player.transformed=false;player.helmet=false;player.hp=player.hpMax;player.energy=0;enterTorre();saveCheckpoint("torre");startIntro();
 }
 function continueGame(){
- if(gameStarted)return;const cp=readCheckpoint();if(!cp){beginNewGame();return;}prepareStartedGame();restoreCheckpoint(cp.id||"torre");
+ if(gameStarted)return;const cp=readCheckpoint();if(!cp){beginNewGame();return;}prepareStartedGame();restoreCheckpoint(cp.id||"torre",cp);
 }
 refreshContinueButton();
 document.getElementById("newGameBtn").addEventListener("click",e=>{e.stopPropagation();beginNewGame();});
 continueBtnEl.addEventListener("click",e=>{e.stopPropagation();if(!continueBtnEl.disabled)continueGame();});
-const edgeKeys=new Set(["Space","KeyF","KeyC","ShiftLeft","ShiftRight","KeyP","Escape","KeyT","KeyM"]);
+const edgeKeys=new Set(["Space","KeyF","KeyC","KeyR","ShiftLeft","ShiftRight","KeyP","Escape","KeyT","KeyM"]);
 window.addEventListener("keydown",e=>{
  if(e.repeat&&edgeKeys.has(e.code))return;
  keys[e.code]=true;
@@ -1601,7 +1748,9 @@ window.addEventListener("keydown",e=>{
  if(e.code==="Space"&&dialogueActive){advanceDialogue();return;}
  if(e.code==="Space"&&zone==="colosso"&&colosso&&colosso.phase==="tutorial"){beginGiantBattle();return;}
  if(e.code==="Space"&&zone==="archivio"&&nearInteractable){doArchiveInteract();return;}
+ if(e.code==="Space"&&zone==="torre"&&nearInteractable&&nearInteractable.startsWith("npc:")){doTowerNpcInteract(nearInteractable);return;}
  if(e.code==="Space"&&zone==="torre"&&nearInteractable==="anomaly"){doAnomalyInteract();return;}
+ if(e.code==="KeyR"&&morphUnlocked&&(zone==="torre"||zone==="archivio")&&!dialogueActive&&!transformState){startTransformation(true);return;}
  if(gameOverActive)return;
  if(DEV_MODE&&e.code==="KeyT")startTransformation();
  if(DEV_MODE&&e.code==="KeyM"&&gameStarted&&!transformState&&!dialogueActive){if(zone==="torre")enterArena();else enterTorre();}
@@ -1625,9 +1774,9 @@ document.getElementById("runtimeReloadBtn").addEventListener("click",()=>locatio
 // vera cinematic a stati invece che un semplice timer unico.
 // ------------------------------------------------------------
 let transformState=null; // null oppure {t, toRanger}
-function startTransformation(){
+function startTransformation(manual){
  if(transformState)return;
- transformState={t:0, toRanger:!player.transformed};
+ transformState={t:0, toRanger:!player.transformed,manual:!!manual};
  sfx.transform();
 }
 function updateTransformation(dt){
@@ -1643,8 +1792,12 @@ function updateTransformation(dt){
  if(t>.36&&player.transformed!==transformState.toRanger){
   player.transformed=transformState.toRanger;
   player.helmet=transformState.toRanger;
+  if(introAlertStarted&&transformState.toRanger&&!transformState.manual)teamMode="ranger";
  }
- if(t>.9)transformState=null;
+ if(t>.9){
+  const wasManual=transformState.manual,toRanger=transformState.toRanger;transformState=null;
+  if(wasManual){missionHintEl.textContent=toRanger?"ARMATURA RANGER // ONLINE":"ARMATURA RILASCIATA // FIRMA RIDOTTA";missionHintEl.classList.add("show");afterGame(1100,()=>missionHintEl.classList.remove("show"));if(currentCheckpoint==="postboss"||currentCheckpoint==="archivio")saveCheckpoint(currentCheckpoint);}
+ }
 }
 
 // ------------------------------------------------------------
@@ -1954,6 +2107,8 @@ function frame(now){
  if(zone==="arena"&&gameStarted&&!transformState)updateEnemies(dt);
  if(colosso)updateColosso(dt);
  if(zone==="arena")updateEmergeCutscene(dt);
+ if(zone==="torre")updateTowerTeam(dt);
+ if(zone==="archivio")updateArchiveCompanions(dt);
 
  // Archivio: mostra il prompt "SPAZIO — LEGGI" quando ci si avvicina al
  // terminale o alla sala delle capsule in fondo, cosi' l'esplorazione e'
@@ -1962,11 +2117,13 @@ function frame(now){
   const dT=Math.hypot(player.x-TERMINAL_POS.x,player.z-TERMINAL_POS.z),dC=Math.hypot(player.x-CAPSULE_INTERACT_POS.x,player.z-CAPSULE_INTERACT_POS.z);
   if(dT<1.6&&!archiveState.terminalRead){nearInteractable="terminal";interactPromptEl.textContent="SPAZIO — LEGGI IL REGISTRO";interactPromptEl.classList.add("show");}
   else if(dC<2.4&&!archiveState.capsuleRead){nearInteractable="capsule";interactPromptEl.textContent="SPAZIO — GUARDA LE CAPSULE";interactPromptEl.classList.add("show");}
-  else{nearInteractable=null;interactPromptEl.classList.remove("show");}
- }else if(zone==="torre"&&postBossState&&!dialogueActive){
-  const dA=Math.hypot(player.x-ANOMALO_POS.x,player.z-ANOMALO_POS.z);
-  if(dA<1.65){nearInteractable="anomaly";interactPromptEl.textContent="SPAZIO — ISPEZIONA IL PANNELLO ANOMALO";interactPromptEl.classList.add("show");}
-  else{nearInteractable=null;interactPromptEl.classList.remove("show");}
+  else{nearInteractable=null;if(morphUnlocked){interactPromptEl.textContent=player.transformed?"R — RILASCIA ARMATURA":"R — TRASFORMA";interactPromptEl.classList.add("show");}else interactPromptEl.classList.remove("show");}
+ }else if(zone==="torre"&&!dialogueActive&&(introFreeRoam||postBossState)){
+  let nearest=null,nd=1.55;for(const m of teamMembers){const d=Math.hypot(player.x-m.x,player.z-m.z);if(d<nd){nearest=m;nd=d;}}
+  const dA=postBossState?Math.hypot(player.x-ANOMALO_POS.x,player.z-ANOMALO_POS.z):999;
+  if(nearest){nearInteractable="npc:"+nearest.name;interactPromptEl.textContent=`SPAZIO — PARLA CON ${nearest.name}`;interactPromptEl.classList.add("show");}
+  else if(postBossState&&dA<1.65){nearInteractable="anomaly";interactPromptEl.textContent="SPAZIO — ISPEZIONA IL PANNELLO ANOMALO";interactPromptEl.classList.add("show");}
+  else{nearInteractable=null;if(morphUnlocked&&postBossState){interactPromptEl.textContent=player.transformed?"R — RILASCIA ARMATURA":"R — TRASFORMA";interactPromptEl.classList.add("show");}else interactPromptEl.classList.remove("show");}
  }else if(nearInteractable){nearInteractable=null;interactPromptEl.classList.remove("show");}
 
  player.walkPhase+=dt*(moving?8.5:0);
@@ -2056,19 +2213,16 @@ function frame(now){
   const eyeModel=mul(mat4.translate(0,EYE_Y,EYE_Z+.01),mat4.scale(3.5*pulse,2.15*pulse,1));
   drawTexturedQuad(oculoTex,eyeModel,vp,flicker);
 
-  // squadra: 4 Ranger con casco, colori da bibbia personaggi. Non piu'
-  // completamente immobili: un leggero dondolio/spostamento del peso per
-  // dare un minimo di vita, e chi sta parlando in quel momento si illumina
-  // un po' di piu' cosi' si riconosce anche senza leggere il nome.
+  // Squadra viva nella Torre: civili durante briefing/rientro, Ranger solo
+  // quando la puntata e' in allarme. I waypoint post-boss li fanno realmente
+  // attraversare la sala e lavorare alle console invece di stare in fila.
   for(let mi=0;mi<teamMembers.length;mi++){
-   const m=teamMembers[mi];
-   drawShadow(m.x,m.z,.40,vp);
-   const idlePhase=now/900+mi*1.7;
-   const isSpeaking=dialogueActive&&dialogueQueue[dialogueIndex]&&
-    ((mi===0&&dialogueQueue[dialogueIndex].speaker==="ARCO")||(mi===1&&dialogueQueue[dialogueIndex].speaker==="MERIDIANA"));
-   const mesh=buildCharacterBuffers(m.pal||[PAL_ARCO,PAL_MERIDIANA,PAL_RANGER3,PAL_RANGER4][mi],idlePhase,.16,true,"ranger",0);
-   const bump=isSpeaking?1.06:1;
-   drawDynamicMesh(mesh,mul(mat4.translate(m.x,0,m.z),mat4.rotY(m.yaw+Math.sin(idlePhase*.4)*.05),mat4.scale(bump,bump,bump)),vp);
+   const m=teamMembers[mi];drawShadow(m.x,m.z,.40,vp);const idlePhase=m.walk+now/1300+mi*.7;
+   const isSpeaking=dialogueActive&&dialogueQueue[dialogueIndex]&&dialogueQueue[dialogueIndex].speaker===m.name;
+   const armored=teamMode==="ranger",pal=armored?m.pal:m.civPal;
+   const movingTeam=Math.hypot(m.targetX-m.x,m.targetZ-m.z)>.10;
+   const mesh=buildCharacterBuffers(pal,idlePhase,movingTeam?1:.10,armored,"ranger",0);
+   const bump=isSpeaking?1.045:1;drawDynamicMesh(mesh,mul(mat4.translate(m.x,0,m.z),mat4.rotY(m.yaw+Math.sin(idlePhase*.25)*.025),mat4.scale(bump,bump,bump)),vp);
   }
 
   // TIC: pattuglia tra i pannelli laterali facendo finta di controllarli,
@@ -2077,7 +2231,8 @@ function frame(now){
   const seg=Math.floor(patrolT/2.4), segT=Math.min(1,(patrolT%2.4)/1.6);
   const pA=TIC_PATROL[seg], pB=TIC_PATROL[(seg+1)%TIC_PATROL.length];
   const easeT=segT<1?(1-Math.cos(segT*Math.PI))/2:1;
-  const ticX=pA.x+(pB.x-pA.x)*easeT, ticZ=pA.z+(pB.z-pA.z)*easeT;
+  let ticX=pA.x+(pB.x-pA.x)*easeT, ticZ=pA.z+(pB.z-pA.z)*easeT;
+  if(postBossState){const p=Math.min(1,postBossElapsed/4.0),e=1-Math.pow(1-p,3);ticX=4.8+(ANOMALO_POS.x+.75-4.8)*e;ticZ=1.4+(ANOMALO_POS.z-1.4)*e;}
   const ticY=2.1+Math.sin(now/500)*.10;
   const ticFaceYaw=Math.atan2(pB.x-pA.x,pB.z-pA.z);
   const ticModel=mul(mat4.translate(ticX,ticY,ticZ),mat4.rotY(ticFaceYaw));
@@ -2166,20 +2321,24 @@ function frame(now){
    }
   }
  }else if(zone==="archivio"){
-  drawBuffer(archivioFloorBuf,mat4.identity(),vp);
-  drawBuffer(archivioWallBuf,mat4.identity(),vp);
-  drawBuffer(archivioHelmetBuf,mat4.identity(),vp);
-  drawBuffer(archivioTerminalBuf,mat4.identity(),vp);
-  drawBuffer(archivioOculoFrameBuf,mat4.identity(),vp);
+  drawBuffer(archivioFloorBuf,mat4.identity(),vp);drawBuffer(archivioWallBuf,mat4.identity(),vp);drawBuffer(archivioHelmetBuf,mat4.identity(),vp);drawBuffer(archivioTerminalBuf,mat4.identity(),vp);drawBuffer(archivioOculoFrameBuf,mat4.identity(),vp);
   if(archiveState.revealing)drawTexturedQuad(oculoTex,mul(mat4.translate(ARCH_OCULO_POS.x,ARCH_OCULO_POS.y,ARCH_OCULO_POS.z+.02),mat4.scale(2.35,1.35,1)),vp,.92);
+  // Meridiana entra davvero con Zero e si sposta fra terminale e capsule.
+  drawShadow(archiveCompanion.meriX,archiveCompanion.meriZ,.38,vp,.28);
+  const meriYaw=Math.atan2(player.x-archiveCompanion.meriX,player.z-archiveCompanion.meriZ);
+  const meriMesh=buildCharacterBuffers(PAL_MERIDIANA_CIV,now/900,.18,false,"ranger",0);
+  drawDynamicMesh(meriMesh,mul(mat4.translate(archiveCompanion.meriX,0,archiveCompanion.meriZ),mat4.rotY(meriYaw)),vp,.96);
+  // TIC scandisce l'Archivio invece di sparire dalla storia.
+  drawBuffer(ticBuf,mul(mat4.translate(archiveCompanion.ticX,2.0+Math.sin(now/420)*.08,archiveCompanion.ticZ),mat4.rotY(Math.PI)),vp);
   drawBuffer(capsuleFrameBuf,mat4.identity(),vp);
   for(let ci=0;ci<CAPSULE_POS.length;ci++){
    const cp=CAPSULE_POS[ci];
    const pulse=.75+Math.sin(now/620+ci*1.3)*.25;
    drawBuffer(capsuleGlassBuf, mul(mat4.translate(cp.x,1.15,cp.z+.30),mat4.scale(1,1,1)), vp, .38);
    drawBuffer(capsuleBeamBuf, mul(mat4.translate(cp.x,3.6,cp.z),mat4.scale(.5*pulse,3.0,.5*pulse)), vp, .16*pulse);
-   const rMesh=buildCharacterBuffers(capsuleRangerPals[ci],0,0,true,"ranger",0);
-   drawDynamicMesh(rMesh,mul(mat4.translate(cp.x,0,cp.z+.05),mat4.rotY(Math.PI)),vp,.8);
+   const awake=(ci===0&&archiveState.capsuleAwake);
+   const rMesh=buildCharacterBuffers(capsuleRangerPals[ci],awake?now/260:0,0,true,"ranger",awake?.28:0);
+   drawDynamicMesh(rMesh,mul(mat4.translate(cp.x,0,cp.z+.05),mat4.rotY(Math.PI)),vp,awake?.92:.8);
   }
  }
 
@@ -2225,7 +2384,7 @@ requestAnimationFrame(frame);
 
 // Helper solo in modalita' sviluppo: aggiungere ?dev=1 all'URL.
 if(DEV_MODE)window.__rz={player,camState,startTransformation,enterArena,enterTorre,advanceDialogue,triggerGameOver,
- startColossoSequence,startColossoFightDirect,colossoPunch,colossoSpecial,colossoGuard,startArchiveSequence,showChoiceScreen,triggerEnding,restoreCheckpoint,
- get enemies(){return enemies},get arenaAllies(){return arenaAllies},get arenaWave(){return arenaWave},get colossoTeamPos(){return colossoTeamPos},get zone(){return zone},get dialogueActive(){return dialogueActive},
+ startColossoSequence,startColossoFightDirect,colossoPunch,colossoSpecial,colossoGuard,startArchiveSequence,showChoiceScreen,triggerEnding,restoreCheckpoint,doTowerNpcInteract,doArchiveInteract,startTransformation,
+ get enemies(){return enemies},get arenaAllies(){return arenaAllies},get arenaWave(){return arenaWave},get colossoTeamPos(){return colossoTeamPos},get teamMembers(){return teamMembers},get introFreeRoam(){return introFreeRoam},get introTalked(){return introTalked},get teamMode(){return teamMode},get morphUnlocked(){return morphUnlocked},get archiveState(){return archiveState},get nearInteractable(){return nearInteractable},get zone(){return zone},get dialogueActive(){return dialogueActive},
  get dialogueIndex(){return dialogueIndex},get gameOverActive(){return gameOverActive},get colosso(){return colosso}};
 })();
