@@ -55,6 +55,86 @@ const sfx={
  lose:()=>{tone(220,.5,"sawtooth",.11,60);},
 };
 
+// ------------------------------------------------------------
+// Musica d'ambiente: anche questa sintetizzata (droni con oscillatori
+// scordati + rumore filtrato per il mare), non file audio. Un bus dedicato
+// (musicGain) per poter dissolvere in/out quando si cambia zona invece di
+// tagliare di netto. playAmbient(zona) e' idempotente: chiamarla di nuovo
+// con la stessa zona non fa nulla, cosi' si puo' richiamare tranquillamente
+// ad ogni ingresso zona senza doversi preoccupare di duplicare i droni.
+// ------------------------------------------------------------
+let musicGain=null, musicNodes=[], musicZone=null;
+function ensureMusicGain(){
+ if(!actx)return null;
+ if(!musicGain){ musicGain=actx.createGain(); musicGain.gain.value=0; musicGain.connect(actx.destination); }
+ return musicGain;
+}
+function makeLoopNoiseBuffer(dur){
+ const bufSize=Math.floor(actx.sampleRate*dur);
+ const buf=actx.createBuffer(1,bufSize,actx.sampleRate);
+ const data=buf.getChannelData(0);
+ let last=0;
+ for(let i=0;i<bufSize;i++){ const w=Math.random()*2-1; last=(last+.02*w)/1.02; data[i]=last*3.2; }
+ return buf;
+}
+function stopAmbient(fadeTime){
+ if(!musicGain)return;
+ const t=actx.currentTime, f=fadeTime===undefined?1.0:fadeTime;
+ musicGain.gain.cancelScheduledValues(t);
+ musicGain.gain.setValueAtTime(musicGain.gain.value,t);
+ musicGain.gain.linearRampToValueAtTime(0,t+f);
+ const toStop=musicNodes; musicNodes=[];
+ setTimeout(()=>{ toStop.forEach(n=>{ try{n.stop();}catch(e){} }); },(f*1000)+150);
+}
+const AMBIENT_PRESETS={
+ // Torre: basso, sparso, quasi immobile — la sensazione di essere osservati
+ torre:{base:55,detune:3.5,wave:"sine",vol:.055,filt:850,waves:false},
+ // Spiaggia: un pelo piu' teso, con un fondo di mare filtrato
+ arena:{base:73,detune:5,wave:"triangle",vol:.05,filt:1300,waves:true},
+ colosso:{base:73,detune:5,wave:"triangle",vol:.05,filt:1300,waves:true},
+ // Archivio: il piu' spoglio e dissonante di tutti, apposta
+ archivio:{base:48,detune:7,wave:"sawtooth",vol:.04,filt:500,waves:false},
+};
+function playAmbient(zoneKey){
+ if(!actx)return;
+ const p=AMBIENT_PRESETS[zoneKey];
+ if(!p||musicZone===zoneKey)return;
+ musicZone=zoneKey;
+ stopAmbient(1.0);
+ const gain=ensureMusicGain();
+ const t=actx.currentTime+0.05;
+ const nodes=[];
+ for(const df of [0,p.detune]){
+  const osc=actx.createOscillator(); osc.type=p.wave;
+  osc.frequency.setValueAtTime(p.base+df,t);
+  const og=actx.createGain(); og.gain.value=p.vol;
+  const filt=actx.createBiquadFilter(); filt.type="lowpass"; filt.frequency.value=p.filt;
+  osc.connect(filt); filt.connect(og); og.connect(gain);
+  osc.start(t);
+  nodes.push(osc);
+ }
+ const osc2=actx.createOscillator(); osc2.type=p.wave;
+ osc2.frequency.setValueAtTime((p.base+p.detune*.5)*2,t);
+ const og2=actx.createGain(); og2.gain.value=p.vol*.28;
+ osc2.connect(og2); og2.connect(gain);
+ osc2.start(t);
+ nodes.push(osc2);
+ if(p.waves){
+  const src=actx.createBufferSource();
+  src.buffer=makeLoopNoiseBuffer(4); src.loop=true;
+  const wf=actx.createBiquadFilter(); wf.type="lowpass"; wf.frequency.value=480;
+  const wg=actx.createGain(); wg.gain.value=.055;
+  src.connect(wf); wf.connect(wg); wg.connect(gain);
+  src.start(t);
+  nodes.push(src);
+ }
+ musicNodes=nodes;
+ gain.gain.cancelScheduledValues(t);
+ gain.gain.setValueAtTime(gain.gain.value,t);
+ gain.gain.linearRampToValueAtTime(1,t+1.6);
+}
+
+
 // ============================================================
 // mat4 minimale
 // ============================================================
@@ -670,7 +750,8 @@ function colossoPunch(){
  player.energy=Math.min(player.energyMax,player.energy+9);
  colosso.beamBursts.push({t:0,kind:"punch"});
  sfx.giantHit();
- if(colosso.giantHp<=0)colossoWin();
+ triggerSlowMo(.09,.08);
+ if(colosso.giantHp<=0)startColossoFinish();
 }
 function colossoSpecial(){
  if(!colosso||colosso.phase!=="fight"||player.energy<player.energyMax||colosso.beamT>0||colosso.punchT>0)return;
@@ -681,7 +762,25 @@ function colossoSpecial(){
  setTimeout(()=>{specialFlashEl.style.opacity=0;},140);
  colosso.beamBursts.push({t:0,kind:"beam"});
  sfx.special();
- if(colosso.giantHp<=0)colossoWin();
+ triggerSlowMo(.16,.1);
+ if(colosso.giantHp<=0)startColossoFinish();
+}
+// Colpo di grazia in rallentatore: la telecamera si stringe sul gigante
+// mentre crolla, invece di saltare dritti alla schermata di vittoria —
+// il momento che dovrebbe sentirsi piu' epico di tutti.
+function startColossoFinish(){
+ if(colosso.phase==="finishing"||colosso.phase==="won")return;
+ colosso.phase="finishing";
+ colosso.finishT=0;
+ triggerSlowMo(2.2,.22);
+ sfx.alarm();
+}
+function updateColossoFinish(dt){
+ colosso.finishT+=dt;
+ const p=Math.min(1,colosso.finishT/2.0);
+ colosso.finishZoom=p;
+ colosso.finishTilt=p*p*1.1; // il gigante si piega in avanti crollando
+ if(colosso.finishT>2.0)colossoWin();
 }
 function colossoWin(){
  colosso.phase="won";
@@ -717,6 +816,7 @@ function updateColosso(dt){
    flashEl.style.opacity=1;
    setTimeout(()=>{flashEl.style.opacity=0;},220);
    sfx.transform();
+   playAmbient("colosso");
   }
   return;
  }
@@ -729,6 +829,7 @@ function updateColosso(dt){
   }
   return;
  }
+ if(colosso.phase==="finishing"){ updateColossoFinish(dt); return; }
  if(colosso.phase!=="fight")return;
  colosso.punchT=Math.max(0,colosso.punchT-dt);
  colosso.beamT=Math.max(0,colosso.beamT-dt);
@@ -761,11 +862,43 @@ function spawnWave(){
   {type:"scagnozzo",pal:PAL_SCAGNOZZO,x:ARENA_CX-4,z:ARENA_CZ-2,yaw:0,hp:30,hpMax:30,state:"idle",cd:0,scale:1,alpha:1,dead:false,walkPhaseE:0,hitFlash:0,attackFlashT:0},
   {type:"scagnozzo",pal:PAL_SCAGNOZZO,x:ARENA_CX+4,z:ARENA_CZ-2,yaw:0,hp:30,hpMax:30,state:"idle",cd:0,scale:1,alpha:1,dead:false,walkPhaseE:0,hitFlash:0,attackFlashT:0},
   {type:"scagnozzo",pal:PAL_SCAGNOZZO,x:ARENA_CX,z:ARENA_CZ-6,yaw:0,hp:30,hpMax:30,state:"idle",cd:1.2,scale:1,alpha:1,dead:false,walkPhaseE:0,hitFlash:0,attackFlashT:0},
-  // Il Raccoglitore parte vicino alla riva — non ancora "uscito dal mare"
-  // in senso vero e proprio (quello arriva con la fase 2), ma gia'
-  // posizionato li' per quando costruiremo l'emersione.
-  {type:"raccoglitore",pal:PAL_RACCOGLITORE,x:ARENA_CX,z:SEA_EDGE_Z+1.5,yaw:0,hp:160,hpMax:160,state:"idle",cd:2,scale:1.55,alpha:1,dead:false,retreated:false,walkPhaseE:0,hitFlash:0,attackFlashT:0},
+  // Il Raccoglitore resta sommerso e "hidden" (non attaccabile, non
+  // renderizzato in scena) finche' gli scagnozzi non sono stati ripuliti —
+  // solo allora emerge davvero dal mare con tanto di schizzo e ruggito,
+  // invece di startare gia' fermo li' dall'inizio.
+  {type:"raccoglitore",pal:PAL_RACCOGLITORE,x:ARENA_CX,z:SEA_EDGE_Z+1.5,y:0,yaw:0,hp:160,hpMax:160,state:"idle",cd:2,scale:1.55,alpha:1,dead:false,retreated:false,walkPhaseE:0,hitFlash:0,attackFlashT:0,hidden:true,emerging:false,emerged:false},
  ];
+}
+let emergeCutscene=null;
+function maybeEmergeRaccoglitore(){
+ const racc=enemies.find(e=>e.type==="raccoglitore");
+ if(!racc||racc.emerging||racc.emerged||emergeCutscene)return;
+ const mooksLeft=enemies.some(e=>e.type==="scagnozzo"&&!e.dead);
+ if(mooksLeft)return;
+ racc.emerging=true;
+ racc.emergeT=0;
+ emergeCutscene={t:0,phase:"buildup",racc};
+ missionHintEl.textContent="QUALCOSA SI MUOVE NELL'ACQUA...";
+ missionHintEl.classList.add("show");
+}
+function updateEmergeCutscene(dt){
+ if(!emergeCutscene)return;
+ emergeCutscene.t+=dt;
+ const racc=emergeCutscene.racc;
+ if(emergeCutscene.phase==="buildup"&&emergeCutscene.t>2.2){
+  emergeCutscene.phase="rising";
+  emergeCutscene.t=0;
+  racc.hidden=false;
+  sfx.alarm();
+  triggerSlowMo(.6,.3);
+  missionHintEl.textContent="IL RACCOGLITORE";
+ }else if(emergeCutscene.phase==="rising"&&racc.emerged){
+  emergeCutscene.phase="hold";
+  emergeCutscene.t=0;
+ }else if(emergeCutscene.phase==="hold"&&emergeCutscene.t>1.3){
+  emergeCutscene=null;
+  missionHintEl.classList.remove("show");
+ }
 }
 
 // ============================================================
@@ -812,6 +945,7 @@ function enterArchivio(){
  zone="archivio";
  player.x=ARCHIVIO_CX; player.z=ARCHIVIO_CZ+ARCHIVIO_D/2-1.5; player.yaw=Math.PI;
  teleportFlash();
+ playAmbient("archivio");
 }
 DIALOGUE_FOCUS_POS.REGISTRO={x:ARCHIVIO_CX-ARCHIVIO_W/2+.9,y:1.3,z:ARCHIVIO_CZ};
 
@@ -830,6 +964,7 @@ const hudEl=document.getElementById("gameHud");
 const energyFillEl=document.getElementById("energyFill");
 const hpFillEl=document.getElementById("hpFill");
 const missionHintEl=document.getElementById("missionHint");
+const interactPromptEl=document.getElementById("interactPrompt");
 const dmgVignetteEl=document.getElementById("dmgVignette");
 const gameOverEl=document.getElementById("gameOver");
 const colossoHpWrapEl=document.getElementById("colossoHpWrap");
@@ -879,12 +1014,14 @@ function enterArena(){
  missionHintEl.textContent="MISSIONE: sconfiggi gli scagnozzi e Il Raccoglitore";
  missionHintEl.classList.add("show");
  teleportFlash();
+ playAmbient("arena");
 }
 function enterTorre(){
  zone="torre";
  player.x=0; player.z=4.0; player.yaw=Math.PI;
  missionHintEl.classList.remove("show");
  teleportFlash();
+ playAmbient("torre");
 }
 function teleportFlash(){
  sfx.teleport();
@@ -962,29 +1099,60 @@ function startIntro(){
 }
 
 // ------------------------------------------------------------
-// Archivio: la rivelazione (le vecchie squadre, il registro, gli elmi) e
-// la rottura della quarta parete — Oculo smette di parlare a "unita' Zero"
-// e comincia a rivolgersi a chi sta giocando davvero. Finisce con la
-// scelta a tre vie gia' prevista in pre-produzione.
+// Archivio: ora giocabile, non solo narrativo — il giocatore cammina
+// liberamente e scopre il registro e gli elmi avvicinandosi e premendo
+// SPAZIO, invece di subire tutto in automatico. Solo dopo aver scoperto
+// entrambi, Oculo rompe la quarta parete e offre la scelta finale.
 // ------------------------------------------------------------
-const archiveLines=[
+const terminalLines=[
  {speaker:"REGISTRO",text:"SQUADRA_07 — STATO: TERMINATA."},
  {speaker:"REGISTRO",text:"SQUADRA_08 — STATO: TERMINATA."},
  {speaker:"REGISTRO",text:"SQUADRA_09 — STATO: TERMINATA."},
+];
+const helmetLines=[
+ {speaker:"MERIDIANA",text:"Quello... conosco quel colore. Era di uno di prima. Non me l'hanno mai detto cosa gli e' successo davvero."},
+ {speaker:"MERIDIANA",text:"Andiamo via da qui, Zero."},
+];
+const oculoRevealLines=[
  {speaker:"OCULO",text:"Non dovevi vederlo. Ma hai vinto, e chi vince guadagna il diritto di guardare."},
  {speaker:"OCULO",text:"L'armatura che hai combattuto non e' nata dal nulla. Era fatta di loro — di chi e' venuto prima di te."},
  {speaker:"OCULO",text:"E tu, che stai leggendo questo — non tu, unita' Zero. Tu, dall'altra parte dello schermo."},
  {speaker:"OCULO",text:"Registriamo ogni sessione. Ogni scelta. So che stai scegliendo per lui in questo momento, come hai scelto per altri prima."},
  {speaker:"OCULO",text:"Allora scegli tu. Cosa ne facciamo di questo ciclo?"},
 ];
+const TERMINAL_POS={x:ARCHIVIO_CX-ARCHIVIO_W/2+.9,z:ARCHIVIO_CZ};
+const HELMET_POS={x:ARCHIVIO_CX+ARCHIVIO_W/2-.6,z:ARCHIVIO_CZ};
+let archiveState={terminalRead:false,helmetsRead:false,revealing:false};
+let nearInteractable=null;
+function doArchiveInteract(){
+ if(nearInteractable==="terminal"&&!archiveState.terminalRead){
+  archiveState.terminalRead=true;
+  playDialogue(terminalLines,maybeStartOculoReveal);
+ }else if(nearInteractable==="helmets"&&!archiveState.helmetsRead){
+  archiveState.helmetsRead=true;
+  playDialogue(helmetLines,maybeStartOculoReveal);
+ }
+}
 function startArchiveSequence(){
+ archiveState={terminalRead:false,helmetsRead:false,revealing:false};
  enterArchivio();
- setTimeout(()=>{ playDialogue(archiveLines,showChoiceScreen); },600);
+ setTimeout(()=>{
+  missionHintEl.textContent="ESPLORA L'ARCHIVIO";
+  missionHintEl.classList.add("show");
+ },600);
+}
+function maybeStartOculoReveal(){
+ if(archiveState.terminalRead&&archiveState.helmetsRead&&!archiveState.revealing){
+  archiveState.revealing=true;
+  missionHintEl.classList.remove("show");
+  setTimeout(()=>{ playDialogue(oculoRevealLines,showChoiceScreen); },900);
+ }
 }
 const choiceScreenEl=document.getElementById("choiceScreen");
 const choiceRowEl=document.getElementById("choiceRow");
 const endingScreenEl=document.getElementById("endingScreen");
 const cliffFlashEl=document.getElementById("cliffFlash");
+const cliffEyeEl=document.getElementById("cliffEye");
 const ENDINGS={
  good:{cls:"good",title:"CICLO INTERROTTO",
   text:"Distruggi il sistema di trasformazione dall'interno. Meridiana e TIC ti aiutano a coprirti. Oculo non dice altro. Il ciclo, per ora, si ferma."},
@@ -1024,19 +1192,26 @@ function triggerEnding(kind){
  endingScreenEl.querySelector("h1").textContent=e.title;
  endingScreenEl.querySelector("p").textContent=e.text;
  endingScreenEl.classList.add("show");
+ stopAmbient(3.5);
  sfx.win();
- // cliffhanger: un lampo breve con un accenno (colore/forma) di qualcos'altro
- // — non spiegato, non commentato — poi buio VERO, non si torna al gioco.
+ // cliffhanger: un lampo breve, poi l'occhio di Oculo compare enorme al
+ // centro e resta li' a fissare — non "la scena", ma chi sta guardando lo
+ // schermo — prima di sparire nel buio vero (non si torna al gioco).
  setTimeout(()=>{
+  const h1=endingScreenEl.querySelector("h1"), p=endingScreenEl.querySelector("p"), code=endingScreenEl.querySelector(".code");
+  [h1,p,code].forEach(el=>{ el.style.transition="opacity .8s ease"; el.style.opacity=0; });
   cliffFlashEl.style.transition="opacity .04s linear";
   cliffFlashEl.style.opacity=1;
+  sfx.alarm();
   setTimeout(()=>{
-   cliffFlashEl.style.transition="opacity 1.4s ease";
+   cliffFlashEl.style.transition="opacity 1.1s ease";
    cliffFlashEl.style.opacity=0;
-   // solo il testo sfuma nel buio, lo sfondo nero resta per sempre: la
-   // sessione e' davvero finita, non deve rivelare la scena dietro.
-   const h1=endingScreenEl.querySelector("h1"), p=endingScreenEl.querySelector("p"), code=endingScreenEl.querySelector(".code");
-   [h1,p,code].forEach(el=>{ el.style.transition="opacity 1.6s ease"; el.style.opacity=0; });
+   cliffEyeEl.classList.add("show");
+   setTimeout(()=>{
+    cliffEyeEl.style.transition="opacity 1.8s ease";
+    cliffEyeEl.classList.remove("show");
+    cliffEyeEl.style.opacity=0;
+   },3400);
   },90);
  },4200);
 }
@@ -1048,6 +1223,7 @@ function beginGame(){
  titleEl.style.display="none";
  hudEl.style.display="block";
  document.body.classList.add("started");
+ playAmbient("torre");
  startIntro();
 }
 titleEl.addEventListener("click",beginGame);
@@ -1055,6 +1231,7 @@ window.addEventListener("keydown",e=>{
  keys[e.code]=true;
  if(e.code==="Space"&&!gameStarted){beginGame();return;}
  if(e.code==="Space"&&dialogueActive){advanceDialogue();return;}
+ if(e.code==="Space"&&zone==="archivio"&&nearInteractable){doArchiveInteract();return;}
  if(gameOverActive)return;
  if(e.code==="KeyT")startTransformation();
  if(e.code==="KeyM"&&gameStarted&&!transformState&&!dialogueActive){ if(zone==="torre")enterArena(); else enterTorre(); }
@@ -1109,7 +1286,7 @@ function tryAttack(){
  player.attackT=.34;
  sfx.attack();
  for(const en of enemies){
-  if(en.dead)continue;
+  if(en.dead||en.hidden)continue;
   const f=facingDot(player.x,player.z,player.yaw,en.x,en.z);
   if(f.dist<1.7&&f.dot>.55){
    damageEnemy(en,16);
@@ -1118,6 +1295,7 @@ function tryAttack(){
  }
 }
 let specialBursts=[];
+let splashBursts=[];
 function trySpecial(){
  if(!player.transformed||transformState||player.energy<player.energyMax||player.attackT>0)return;
  player.attackT=.5;
@@ -1128,7 +1306,7 @@ function trySpecial(){
  setTimeout(()=>{specialFlashEl.style.opacity=0;},110);
  let hitAny=false;
  for(const en of enemies){
-  if(en.dead)continue;
+  if(en.dead||en.hidden)continue;
   const f=facingDot(player.x,player.z,player.yaw,en.x,en.z);
   if(f.dist<2.6&&f.dot>.25){
    damageEnemy(en,42);
@@ -1145,6 +1323,7 @@ function tryDodge(){
 }
 function damageEnemy(en,amt){
  en.hp-=amt;en.hitFlash=.15;
+ triggerSlowMo(.07,.06); // hit-stop: un colpo che va a segno si sente
  if(en.hp<=0){
   sfx.enemyDefeat();
   if(en.type==="raccoglitore"&&!en.retreated){
@@ -1152,6 +1331,7 @@ function damageEnemy(en,amt){
    // parte la fase 2 — cresce gigante, i 5 Ranger si combinano nel
    // Colosso, scontro finale in prima persona.
    en.retreated=true;en.state="retreat";
+   triggerSlowMo(.35,.18); // colpo finale sui mob normali, un pelo piu' lungo
    setTimeout(startColossoSequence,900);
   }else{
    en.dead=true;
@@ -1161,8 +1341,19 @@ function damageEnemy(en,amt){
  }
 }
 function updateEnemies(dt){
+ maybeEmergeRaccoglitore();
  for(const en of enemies){
   if(en.dead)continue;
+  if(en.emerging&&!en.emerged&&!en.hidden){
+   en.emergeT=(en.emergeT||0)+dt;
+   if(en.emergeT<.05)splashBursts.push({x:en.x,y:.1,z:en.z,t:0});
+   const p=Math.min(1,en.emergeT/1.7);
+   const ease=1-Math.pow(1-p,2);
+   en.y=-2.6+ease*2.6;
+   if(p>=1){en.emerged=true;en.y=0;}
+   continue; // resta passivo finche' non e' emerso del tutto
+  }
+  if(en.hidden)continue;
   if(en.hitFlash>0)en.hitFlash-=dt;
   if(en.state==="retreat"){
    en.alpha=Math.max(0,en.alpha-dt*.6);
@@ -1227,11 +1418,31 @@ resize();
 const burstMesh=boxMesh([1,.92,.55]);
 const burstBuf=makeBuffer(burstMesh);
 
+// ombra a terra condivisa: un box scuro schiacciato, riusato sotto ogni
+// personaggio invece di costruirne una per ciascuno. Senza, tutti
+// sembravano leggermente "fluttuare" sul pavimento.
+const shadowMesh=boxMesh([0,0,0]);
+const shadowBuf=makeBuffer(shadowMesh);
+function drawShadow(x,z,radius,vp,alpha){
+ drawBuffer(shadowBuf, mul(mat4.translate(x,.012,z),mat4.scale(radius,.02,radius*.85)), vp, alpha===undefined?.35:alpha);
+}
+
+// Rallentatore/hit-stop: un fattore di scala globale sul tempo di gioco,
+// usato sia per i micro-freeze quando un colpo va a segno (hit-stop, molto
+// breve e deciso) sia per il rallentatore vero e proprio sul colpo di
+// grazia del Colosso (piu' lungo, meno estremo). Il conto alla rovescia
+// va in tempo REALE (rawDt), non in quello scalato, altrimenti non
+// finirebbe mai.
+let slowMoT=0, slowMoFactor=1;
+function triggerSlowMo(duration,factor){ slowMoT=duration; slowMoFactor=factor; }
+
 let last=performance.now();
 function frame(now){
- const dt=Math.min(.05,(now-last)/1000);last=now;
+ const rawDt=Math.min(.05,(now-last)/1000);last=now;
+ let dt=rawDt;
+ if(slowMoT>0){ dt=rawDt*slowMoFactor; slowMoT-=rawDt; }
  updateTransformation(dt);
- const inputLocked=!!transformState||!gameStarted||dialogueActive||gameOverActive||zone==="colosso"||(colosso&&colosso.phase==="converge")||choiceScreenEl.classList.contains("show")||endingScreenEl.classList.contains("show");
+ const inputLocked=!!transformState||!gameStarted||dialogueActive||gameOverActive||zone==="colosso"||(colosso&&colosso.phase==="converge")||choiceScreenEl.classList.contains("show")||endingScreenEl.classList.contains("show")||!!emergeCutscene;
  if(gameStarted)energyFillEl.style.width=(74+Math.sin(now/900)*4)+"%";
 
  // rotazione del personaggio (A/D) — indipendente dal movimento, niente
@@ -1286,7 +1497,7 @@ function frame(now){
  if(zone==="arena"){
   const pr=.32;
   for(const en of enemies){
-   if(en.dead||en.state==="retreat")continue;
+   if(en.dead||en.state==="retreat"||en.hidden)continue;
    const er=(en.type==="raccoglitore"?.55:.40)*en.scale;
    const dx=player.x-en.x, dz=player.z-en.z, dist=Math.hypot(dx,dz)||.001;
    const minDist=pr+er;
@@ -1307,8 +1518,23 @@ function frame(now){
  player.hitFlashT=Math.max(0,player.hitFlashT-dt);
  player.specialT=Math.max(0,player.specialT-dt);
  for(let i=specialBursts.length-1;i>=0;i--){specialBursts[i].t+=dt;if(specialBursts[i].t>.5)specialBursts.splice(i,1);}
+ for(let i=splashBursts.length-1;i>=0;i--){splashBursts[i].t+=dt;if(splashBursts[i].t>.7)splashBursts.splice(i,1);}
  if(zone==="arena"&&gameStarted&&!transformState)updateEnemies(dt);
  if(colosso)updateColosso(dt);
+ if(zone==="arena")updateEmergeCutscene(dt);
+
+ // Archivio: mostra il prompt "SPAZIO — LEGGI" quando ci si avvicina al
+ // terminale o alla parete degli elmi, cosi' l'esplorazione e' guidata ma
+ // resta libera (il giocatore decide quando e se avvicinarsi).
+ if(zone==="archivio"&&!dialogueActive){
+  const dT=Math.hypot(player.x-TERMINAL_POS.x,player.z-TERMINAL_POS.z);
+  const dH=Math.hypot(player.x-HELMET_POS.x,player.z-HELMET_POS.z);
+  if(dT<1.6&&!archiveState.terminalRead){ nearInteractable="terminal"; interactPromptEl.textContent="SPAZIO — LEGGI IL REGISTRO"; interactPromptEl.classList.add("show"); }
+  else if(dH<1.8&&!archiveState.helmetsRead){ nearInteractable="helmets"; interactPromptEl.textContent="SPAZIO — GUARDA GLI ELMI"; interactPromptEl.classList.add("show"); }
+  else{ nearInteractable=null; interactPromptEl.classList.remove("show"); }
+ }else if(nearInteractable){
+  nearInteractable=null; interactPromptEl.classList.remove("show");
+ }
 
  player.walkPhase+=dt*(moving?8.5:0);
  const pal=player.transformed?PAL_ZERO:PAL_CIVILE;
@@ -1319,12 +1545,21 @@ function frame(now){
  const charBuf=makeBuffer(charMesh);
 
  let eye,target;
- if(zone==="colosso"){
+ if(emergeCutscene){
+  // scena bloccata sull'emersione: telecamera fissa di lato, leggermente
+  // bassa, cosi' quello che sale dall'acqua si sente davvero grande.
+  const racc=emergeCutscene.racc;
+  const pushIn=emergeCutscene.phase==="rising"?Math.min(1,emergeCutscene.t/1.7)*1.2:0;
+  eye=[racc.x-5.5+pushIn,1.7,racc.z-4.5+pushIn*.6];
+  target=[racc.x,emergeCutscene.phase==="buildup"?.1:1.6,racc.z];
+ }else if(zone==="colosso"){
   // prima persona fissa: il Colosso non cammina, si mira e si attacca e
   // basta, come richiesto per tenere semplice lo scontro finale.
   const shake=colosso&&colosso.shakeT>0?colosso.shakeT*3:0;
   const sway=Math.sin(now/900)*.04;
-  eye=[Math.sin(now/300)*shake*.3, COLOSSO_EYE_Y+Math.sin(now/300)*shake*.2, COLOSSO_CAM_Z];
+  // durante il colpo di grazia la telecamera si stringe sul gigante che crolla
+  const finishZ=colosso&&colosso.phase==="finishing"?(colosso.finishZoom||0)*(COLOSSO_CAM_Z-COLOSSO_GIANT_Z)*.5:0;
+  eye=[Math.sin(now/300)*shake*.3, COLOSSO_EYE_Y+Math.sin(now/300)*shake*.2, COLOSSO_CAM_Z-finishZ];
   target=[Math.sin(now/300)*shake*.3+sway*4, COLOSSO_EYE_Y-1.5, COLOSSO_GIANT_Z];
  }else{
  // camera terza persona dietro il personaggio, con collisione contro i
@@ -1382,6 +1617,7 @@ function frame(now){
   // un po' di piu' cosi' si riconosce anche senza leggere il nome.
   for(let mi=0;mi<teamMembers.length;mi++){
    const m=teamMembers[mi];
+   drawShadow(m.x,m.z,.40,vp);
    const idlePhase=now/900+mi*1.7;
    const isSpeaking=dialogueActive&&dialogueQueue[dialogueIndex]&&
     ((mi===0&&dialogueQueue[dialogueIndex].speaker==="ARCO")||(mi===1&&dialogueQueue[dialogueIndex].speaker==="MERIDIANA"));
@@ -1410,14 +1646,15 @@ function frame(now){
   drawBuffer(arenaPropBuf,mat4.identity(),vp);
   drawBuffer(arenaEdgeBuf,mat4.identity(),vp);
   for(const en of enemies){
-   if(en.dead)continue;
+   if(en.dead||en.hidden)continue;
+   drawShadow(en.x,en.z,.40*en.scale,vp,.35*(en.alpha!==undefined?en.alpha:1));
    const hitPulse=en.hitFlash>0?1+en.hitFlash*1.6:1;
    const s=en.scale*hitPulse;
    const enAttackPhase=en.attackFlashT>0?1-en.attackFlashT/.5:0;
    const enMoving=en.state!=="retreat"&&facingDot(en.x,en.z,en.yaw,player.x,player.z).dist>(en.type==="raccoglitore"?2.05:1.65);
    const enMesh=buildCharacterBuffers(en.pal,en.walkPhaseE,enMoving?1:0,true,en.type,en.attackFlashT>0?enAttackPhase:0);
    const enBuf=makeBuffer(enMesh);
-   const enModel=mul(mat4.translate(en.x,0,en.z),mat4.rotY(en.yaw),mat4.scale(s,s,s));
+   const enModel=mul(mat4.translate(en.x,en.y||0,en.z),mat4.rotY(en.yaw),mat4.scale(s,s,s));
    drawBuffer(enBuf,enModel,vp,en.alpha);
    gl.deleteBuffer(enBuf.posB);gl.deleteBuffer(enBuf.nrmB);gl.deleteBuffer(enBuf.colB);
   }
@@ -1438,7 +1675,8 @@ function frame(now){
   // Colosso), cresce durante la cutscene e resta fisso a scala massima
   // durante il combattimento.
   const giantWobble=1+Math.sin(now/260)*.02;
-  const gm=mul(mat4.translate(ARENA_CX,0,COLOSSO_GIANT_Z),mat4.rotY(Math.PI),mat4.scale(colosso.giantScale*giantWobble,colosso.giantScale,colosso.giantScale*giantWobble));
+  const finishTilt=colosso.phase==="finishing"?(colosso.finishTilt||0):0;
+  const gm=mul(mat4.translate(ARENA_CX,0,COLOSSO_GIANT_Z),mat4.rotY(Math.PI),mat4.rotX(finishTilt),mat4.scale(colosso.giantScale*giantWobble,colosso.giantScale,colosso.giantScale*giantWobble));
   const giantMesh=buildCharacterBuffers(PAL_RACCOGLITORE,now/450,0,true,"raccoglitore",0);
   const giantBuf=makeBuffer(giantMesh);
   drawBuffer(giantBuf,gm,vp);
@@ -1465,6 +1703,7 @@ function frame(now){
  }
 
  if(zone!=="colosso"){
+  drawShadow(player.x,player.z,.42,vp);
   const charModel=mul(mat4.translate(player.x,0,player.z),mat4.rotY(player.yaw));
   drawBuffer(charBuf,charModel,vp);
  }
@@ -1475,6 +1714,14 @@ function frame(now){
   const sc=.15+p*1.1;
   const a=Math.max(0,1-p);
   drawBuffer(burstBuf, mul(mat4.translate(b.x,b.y,b.z),mat4.rotY(p*4),mat4.scale(sc,sc,sc)), vp, a*.9);
+ }
+ // schizzo d'acqua quando Il Raccoglitore emerge: piu' largo e piatto,
+ // colore chiaro/spumeggiante invece che dorato come i colpi speciali
+ for(const b of splashBursts){
+  const p=b.t/.7;
+  const sc=.3+p*2.4;
+  const a=Math.max(0,1-p*1.1);
+  drawBuffer(burstBuf, mul(mat4.translate(b.x,b.y,b.z),mat4.rotY(p*2),mat4.scale(sc,.12+p*.3,sc)), vp, a*.8);
  }
 
  gl.deleteBuffer(charBuf.posB);gl.deleteBuffer(charBuf.nrmB);gl.deleteBuffer(charBuf.colB);

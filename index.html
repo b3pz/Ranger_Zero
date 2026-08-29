@@ -4,8 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>RANGER ZERO — vertical slice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  html,body{margin:0;padding:0;background:#000;overflow:hidden;height:100%;font-family:"Courier New",Courier,monospace}
+  html,body{margin:0;padding:0;background:#000;overflow:hidden;height:100%;font-family:"Rajdhani","Courier New",Courier,monospace}
   #c{display:block;width:100vw;height:100vh}
   #hud{position:absolute;left:12px;top:12px;color:#ffb43a;font-weight:700;font-size:13px;letter-spacing:1px;
        background:rgba(4,6,10,.75);border:1px solid rgba(255,180,58,.5);padding:8px 12px;text-shadow:1px 1px #000}
@@ -34,28 +37,19 @@
   #gameOver h1{color:#ff4a3a;font-size:52px;letter-spacing:6px;margin:0 0 14px;text-shadow:3px 3px #000}
   #gameOver p{color:#ffb49a;font-size:14px;margin:0 0 26px}
   #gameOver button{background:rgba(255,90,60,.15);border:1px solid rgba(255,120,90,.7);color:#ffdcc8;
-    font:700 14px "Courier New",Courier,monospace;letter-spacing:1px;padding:10px 24px;cursor:pointer}
+    font:700 15px "Rajdhani","Courier New",monospace;letter-spacing:1px;padding:10px 24px;cursor:pointer}
   #gameOver button:hover{background:rgba(255,90,60,.3)}
 
-  #dialogueBox{position:absolute;left:50%;bottom:8%;transform:translateX(-50%);width:min(78vw,760px);
-    display:none;padding:18px 22px;cursor:pointer;z-index:60;
-    background-color:rgba(6,6,10,.94);
-    background-repeat:no-repeat;
-    background-image:
-     linear-gradient(#25c9d6,#25c9d6),linear-gradient(#25c9d6,#25c9d6),
-     linear-gradient(#25c9d6,#25c9d6),linear-gradient(#25c9d6,#25c9d6),
-     linear-gradient(#25c9d6,#25c9d6),linear-gradient(#25c9d6,#25c9d6),
-     linear-gradient(#25c9d6,#25c9d6),linear-gradient(#25c9d6,#25c9d6);
-    background-size:18px 2px,2px 18px,18px 2px,2px 18px,18px 2px,2px 18px,18px 2px,2px 18px;
-    background-position:0 0,0 0,100% 0,100% 0,0 100%,0 100%,100% 100%,100% 100%;
-    box-shadow:5px 5px 0 #000,inset 1px 1px 0 rgba(255,255,255,.06),inset -2px -2px 0 rgba(0,0,0,.6);
-    border:1px solid rgba(37,201,214,.35)}
+  #dialogueBox{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);width:min(82vw,900px);
+    aspect-ratio:2172/724;display:none;cursor:pointer;z-index:60;
+    background:url('dialogue_frame.png') center/100% 100% no-repeat}
   #dialogueBox.show{display:block}
-  #dialogueName{display:inline-block;color:#7fc4ff;font-weight:700;font-size:12px;letter-spacing:1px;
-    margin-bottom:8px;padding:3px 12px;background:rgba(0,0,0,.4);border:1px solid rgba(127,196,255,.4)}
-  #dialogueName.oculo{color:#ff8a6b;border-color:rgba(255,138,107,.4)}
-  #dialogueText{color:#e8eefc;font-size:15px;line-height:1.5}
-  #dialoguePrompt{color:#5a6a8a;font-size:10px;text-align:right;margin-top:8px;animation:blink 1.4s infinite}
+  #dialogueName{position:absolute;left:5.5%;top:12%;width:17%;height:16%;display:flex;align-items:center;
+    justify-content:center;color:#7fc4ff;font-weight:700;font-size:13px;letter-spacing:1px;text-align:center}
+  #dialogueName.oculo{color:#ff8a6b}
+  #dialogueText{position:absolute;left:24%;top:30%;width:70%;height:56%;overflow:hidden;
+    color:#e8eefc;font-size:15px;line-height:1.5;display:flex;align-items:center}
+  #dialoguePrompt{position:absolute;right:8%;bottom:15%;color:#5a6a8a;font-size:10px;animation:blink 1.4s infinite}
 
   #colossoHpWrap{position:absolute;left:50%;top:16px;transform:translateX(-50%);width:min(60vw,560px);
     display:none;flex-direction:column;align-items:center;gap:4px}
@@ -71,16 +65,18 @@
   #colossoOutcome.win h1{color:#ffd24a}
   #colossoOutcome p{color:#cdd8f0;font-size:14px;margin:0 0 26px}
   #colossoOutcome button{background:rgba(255,210,74,.15);border:1px solid rgba(255,210,74,.7);color:#fff2c8;
-    font:700 14px "Courier New",Courier,monospace;letter-spacing:1px;padding:10px 24px;cursor:pointer}
+    font:700 15px "Rajdhani","Courier New",monospace;letter-spacing:1px;padding:10px 24px;cursor:pointer}
   #colossoOutcome button:hover{background:rgba(255,210,74,.3)}
 
-  #choiceScreen{position:absolute;inset:0;background:rgba(2,2,4,.92);display:none;align-items:center;
-    justify-content:center;flex-direction:column;z-index:96;text-align:center;padding:0 20px}
+  #choiceScreen{position:absolute;inset:0;background:rgba(2,2,4,.86);display:none;align-items:center;
+    justify-content:center;flex-direction:column;z-index:96;text-align:center;padding:0 20px;
+    background-image:radial-gradient(rgba(2,2,4,.55),rgba(2,2,4,.94)),url('oculo_eye.png');
+    background-size:cover,42vh;background-position:center,center 18%;background-repeat:no-repeat}
   #choiceScreen.show{display:flex}
-  #choiceScreen h2{color:#ff8a6b;font-size:22px;letter-spacing:3px;margin:0 0 30px;text-shadow:2px 2px #000}
+  #choiceScreen h2{color:#ff8a6b;font-size:20px;letter-spacing:3px;margin:38vh 0 24px;text-shadow:2px 2px #000}
   #choiceRow{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
   .choiceBtn{background:rgba(20,20,28,.9);border:1px solid rgba(140,180,255,.4);color:#dfe8ff;
-    font:700 13px "Courier New",Courier,monospace;letter-spacing:.5px;padding:16px 20px;cursor:pointer;
+    font:700 14px "Rajdhani","Courier New",monospace;letter-spacing:.5px;padding:16px 20px;cursor:pointer;
     max-width:230px;text-align:left;line-height:1.5}
   .choiceBtn:hover{background:rgba(50,60,90,.9);border-color:#7fc4ff}
   .choiceBtn .lbl{display:block;color:#7fc4ff;font-size:11px;letter-spacing:1px;margin-bottom:6px}
@@ -94,7 +90,16 @@
   #endingScreen.good h1{color:#7fe0a0}
   #endingScreen.normal h1{color:#e0c060}
   #endingScreen.evil h1{color:#ff5a5a}
-  #cliffFlash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+  #cliffFlash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:100}
+  #cliffEye{position:absolute;left:50%;top:50%;width:70vh;max-width:90vw;transform:translate(-50%,-50%) scale(.85);
+    opacity:0;pointer-events:none;filter:drop-shadow(0 0 60px rgba(37,201,214,.7));
+    transition:opacity 1.6s ease,transform 3s ease;z-index:101}
+  #cliffEye.show{opacity:1;transform:translate(-50%,-50%) scale(1.05)}
+  #interactPrompt{position:absolute;left:50%;bottom:22%;transform:translateX(-50%);color:#dfe8ff;
+    font-size:12px;font-weight:700;letter-spacing:1px;background:rgba(6,6,10,.85);
+    border:1px solid rgba(140,180,255,.5);padding:8px 16px;opacity:0;transition:opacity .2s ease;
+    pointer-events:none}
+  #interactPrompt.show{opacity:1;animation:blink 1.6s infinite}
 
   #titleScreen{position:absolute;inset:0;background:#000 url('title_cover.png') center center/cover no-repeat;
     display:flex;align-items:flex-end;cursor:pointer;z-index:50}
@@ -167,6 +172,8 @@ i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del 
   <div class="code">LMN_02 // SESSIONE REGISTRATA</div>
 </div>
 <div id="cliffFlash"></div>
+<img id="cliffEye" src="oculo_eye.png">
+<div id="interactPrompt">SPAZIO — LEGGI</div>
 <div id="gameHud">
   <div id="energyTrack"><div id="energyFill"></div></div>
   <div id="hudText">RANGER ZERO<div class="small">LA TORRE // SALA DI COMANDO</div></div>

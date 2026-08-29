@@ -155,14 +155,108 @@ Questa versione (v12) aggiunge, rispetto a quanto descritto sopra:
   cutscene 2.8s = 4.3s prima che `colosso.phase` diventi `"fight"`) — se si scrivono altri
   test o si aggiungono altre fasi, tenerne conto nei tempi di attesa.
 
+## Aggiornamento v14 — Archivio giocabile, occhio come cliffhanger, immagini nelle scelte
+- **Archivio ora è esplorabile, non più solo narrativo**: il giocatore cammina liberamente,
+  si avvicina al terminale o alla parete degli elmi, e preme SPAZIO quando appare il prompt
+  per scoprire il pezzo di storia corrispondente (`TERMINAL_POS`, `HELMET_POS`,
+  `nearInteractable`, `doArchiveInteract()`). Solo dopo aver scoperto ENTRAMBI
+  (`archiveState.terminalRead` e `.helmetsRead`), parte automaticamente la rivelazione di
+  Oculo (`maybeStartOculoReveal()`) che porta alla scelta finale. Aggiunge un vero elemento
+  di gioco/scoperta invece di un blocco di dialogo forzato.
+- **Cliffhanger sull'occhio**: dopo il lampo bianco, l'immagine di Oculo (`oculo_eye.png`,
+  gia' usata per la Torre) compare enorme al centro dello schermo su sfondo nero puro, resta
+  a fissare per qualche secondo, poi sfuma nel buio permanente. Sostituisce il vecchio
+  lampo bianco semplice.
+- **Immagine nella schermata di scelta**: l'occhio di Oculo ora e' anche lo sfondo
+  atmosferico dietro ai tre bottoni (RIFIUTA/COMPLETA/PRENDI IL SUO POSTO), invece di un
+  semplice testo su nero.
+- **Nota tecnica per chi riprende**: durante i test e' emerso che i controlli di
+  prossimita' (`Math.hypot(...)<soglia`) vanno verificati con margine — un test posizionato
+  esattamente al valore soglia (es. distanza 1.6 con condizione `<1.6`) puo' fallire per
+  arrotondamento float. Non e' un bug del gioco, ma va tenuto a mente scrivendo altri
+  controlli di distanza in futuro.
+
+## Aggiornamento v15 — balloon dei dialoghi con immagine vera
+- Il balloon dei dialoghi (prima solo CSS con angoli a mirino, giudicato "non bello"
+  dall'utente) ora usa un'immagine vera generata con ChatGPT (`dialogue_frame.png`),
+  stessa famiglia visiva di `hud_frame.png` (rosso/oro/ciano). Sfondo reso trasparente da
+  Claude via script PIL (solo il nero puro delle punte esterne, non il pannello interno
+  scuro che serve da sfondo al testo — soglia RGB<3).
+- Nome dello speaker (`#dialogueName`) posizionato nella "tab" in alto a sinistra
+  dell'immagine, testo (`#dialogueText`) nel pannello centrale, prompt "SPAZIO PER
+  CONTINUARE" (`#dialoguePrompt`) in basso a destra — tutti posizionati in percentuale
+  sopra l'immagine di sfondo, NON generati a parte. Se si cambia l'immagine della cornice
+  in futuro, ricontrollare queste percentuali (`left/top/width/height` in `%`) perche' sono
+  tarate sulle proporzioni esatte di questa immagine (2172×724).
+
+## Aggiornamento v16 — font
+- Sostituito Courier New (monospazio generico) con **Rajdhani** da Google Fonts (pesi
+  400/500/600/700), caricato via `<link>` in `index.html`. Fallback a Courier New se
+  offline, quindi nessuna rottura se il font non si carica.
+- **Nota per chi riprende**: se si cambia ancora il font, occhio ai 3 bottoni
+  (`gameOverBtn`, `colossoOutcomeBtn`, `.choiceBtn`) — non ereditano `font-family` dal
+  `body` per via del comportamento di default dei browser sui `<button>`, hanno una
+  dichiarazione `font:` scorciatoia separata che va aggiornata a mano.
+
+## Aggiornamento v17 — momenti epici + correzione bug vero
+- **Rallentatore/hit-stop globale** (`slowMoT`, `slowMoFactor`, `triggerSlowMo(durata,fattore)`
+  in cima al file): un fattore di scala applicato a `dt` nel loop principale. Il countdown
+  va in tempo REALE (non scalato), altrimenti non finirebbe mai. Usato per: micro-freeze sui
+  colpi normali (`damageEnemy`), sui pugni/speciali del Colosso (`colossoPunch`/
+  `colossoSpecial`), e per il colpo di grazia finale (piu' lungo e marcato).
+- **Sequenza vera per l'emersione de Il Raccoglitore** (`emergeCutscene`, 
+  `maybeEmergeRaccoglitore()`, `updateEmergeCutscene()`): prima l'emersione succedeva sullo
+  sfondo mentre il giocatore restava libero di muoversi, ora e' una scena bloccata a tutti
+  gli effetti — telecamera fissa cinematica sul mare, input del giocatore bloccato, fasi
+  "buildup" (2.2s di tensione) → "rising" (l'emersione vera, con spruzzo/ruggito) → "hold"
+  (si resta a inquadrarlo un attimo) → ritorno al controllo normale. Si attiva solo dopo
+  aver ripulito tutti gli scagnozzi (`maybeEmergeRaccoglitore` controlla
+  `enemies.some(scagnozzo && !dead)`).
+- **Colpo di grazia in rallentatore sul Colosso**: nuova fase `colosso.phase==="finishing"`
+  tra il combattimento e la vittoria — la telecamera si stringe sul gigante
+  (`colosso.finishZoom`) mentre crolla in avanti (`colosso.finishTilt`), invece di saltare
+  dritti alla schermata di vittoria. Nota: essendo in rallentatore, la sequenza dura piu'
+  a lungo in tempo REALE di quanto suggerisca la sua durata "di gioco" (2.0s scalati a
+  fattore .22 diventano ~9s di orologio se il rallentatore non si esaurisse prima — dato
+  che `triggerSlowMo` ha un tetto massimo in tempo reale, il rallentatore finisce prima e
+  il resto scorre a velocita' normale: nei test la sequenza completa richiede ~9-10s reali).
+- **Ombre a terra** (`drawShadow()`, mesh condivisa `shadowBuf`) sotto il giocatore, i 4
+  Ranger nella Torre, e i nemici in spiaggia (scalate in base alla loro `scale`).
+- **Bug vero trovato e corretto**: `#interactPrompt` (il prompt "SPAZIO — LEGGI" 
+  dell'Archivio) aveva l'animazione CSS `blink` applicata SEMPRE, non solo con la classe
+  `.show` — le animazioni CSS sovrascrivono il valore statico di `opacity`, quindi il
+  prompt lampeggiava debolmente anche quando avrebbe dovuto essere invisibile (opacity:0).
+  Scoperto testando la cutscene dell'emersione in una zona diversa dall'Archivio. Corretto
+  spostando `animation:blink` dentro la regola `.show`. **Attenzione per chi riprende**: se
+  si aggiungono altri elementi con `opacity:0` di base PIU' un'animazione CSS, la stessa
+  trappola puo' ripresentarsi — l'animazione va sempre gated dietro la classe che controlla
+  la visibilita', mai nella regola base.
+
+## Aggiornamento v18 — musica d'ambiente
+- Aggiunto un sistema di musica d'ambiente sintetizzata (droni con oscillatori scordati +
+  rumore filtrato per il mare), stessa filosofia degli SFX — nessun file audio esterno.
+  Vedi il blocco subito dopo `sfx{}`: `ensureMusicGain()`, `stopAmbient(fade)`,
+  `playAmbient(zona)`, preset in `AMBIENT_PRESETS` (torre/arena/colosso/archivio, ognuno
+  con la propria base di frequenza, forma d'onda, filtro, e se ha o no il "mare" di fondo).
+- `playAmbient()` è idempotente — chiamarla di nuovo con la stessa zona non fa nulla, quindi
+  si può richiamare tranquillamente ad ogni ingresso zona senza doversi preoccupare di
+  duplicare i droni. Dissolvenza automatica tra una zona e l'altra (mai un taglio secco).
+- Musica si ferma in dissolvenza lunga (3.5s) quando parte il finale/cliffhanger — il gioco
+  finisce nel silenzio, non con la musica che continua sotto la schermata nera.
+- **Nota per chi riprende**: non è possibile verificare il suono per davvero in un ambiente
+  di test headless senza scheda audio — verificato solo che il codice non generi errori e
+  che i nodi Web Audio si creino/distruggano senza eccezioni lungo tutto il flusso di gioco
+  (Torre→Spiaggia→Colosso→finale). Se in futuro si sente che qualcosa non suona come
+  dovrebbe, il problema è probabile sia nei valori dei preset (`AMBIENT_PRESETS`), non nella
+  meccanica del sistema (quella è stata testata a fondo).
+
 ## Cosa manca ancora
 1. Musica/ambiente di sottofondo (solo SFX puntuali per ora).
-2. Un vero sistema di interazione generico (il pannello IT SHIFT nella Sala di Comando è
-   ancora solo un prop visivo, il resto ora usa sequenze scriptate invece).
-3. Bilanciamento vero del combattimento (numeri di danno/HP scelti a naso, mai testati per
-   difficolta' reale).
-4. I tre finali sono scritti ma minimali (poche righe di testo) — se si vuole approfondirli
-   narrativamente, farlo mantenendo la struttura a tre vie gia' in pre-produzione.
+2. Bilanciamento vero del combattimento (numeri di danno/HP scelti a naso).
+3. I tre finali restano testualmente essenziali — la struttura regge un approfondimento
+   narrativo futuro senza bisogno di ricostruire il sistema.
+4. Il combattimento in spiaggia e la fase Colosso restano gli unici segmenti "action" veri
+   — l'Archivio e' esplorazione+lettura, non combattimento, per scelta narrativa.
 
 ## Metodo di lavoro da rispettare
 - **Testa sempre prima di consegnare.** In questa cartella non c'è modo di "vedere" il
