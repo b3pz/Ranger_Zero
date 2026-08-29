@@ -1,185 +1,97 @@
-# RANGER ZERO v23.0.1 — INTRO / TRANSFORM HOTFIX
+# RANGER ZERO v24 — GIANT FIGHT REWORK
 
-Hotfix cumulativo basato su v23. Corregge una regressione introdotta dal sistema checkpoint: un checkpoint esistente poteva fare in modo che SPAZIO dal titolo eseguisse CONTINUA e saltasse briefing, allarme e trasformazione.
+Build cumulativa basata su **v23.0.1 INTRO / TRANSFORM HOTFIX** e quindi sulla **v22** come base di contenuto.
 
-## Fix
-- SPAZIO dal titolo avvia sempre **NUOVA PARTITA**.
-- **CONTINUA** resta disponibile solo dal pulsante dedicato.
-- Nuova partita forza Zero in stato civile prima dell'intro.
-- Sequenza iniziale resa esplicita: dialoghi -> allarme -> trasformazione -> trasferimento -> spiaggia.
-- La trasformazione resta visibile prima del teleport e non puo' essere saltata da uno stato precedente.
+## Obiettivo di questa build
 
----
+Il pass grosso corregge i problemi emersi nel playtest della v23 senza rimuovere le parti gia' riuscite: intro/dialoghi/allarme/trasformazione, Torre, Archivio/capsule, safety pass, checkpoint, Oculo, tre finali e LIMEN restano presenti.
 
-# RANGER ZERO — v23 TOKUSATSU PAYOFF + SAFETY
+## Novita' principali
 
-Secondo episodio dell'antologia horror/meta **LIMEN**. Build cumulativa basata su **v22 (Archivio + capsule + HP bar)**.
+### Spiaggia: due ondate vere
+- **Wave 1:** 3 scagnozzi.
+- pausa radio breve.
+- **Wave 2:** 4 scagnozzi che arrivano da posizioni differenti e piu' vicine alla battigia.
+- dopo la seconda wave arriva il silenzio prima del reveal del boss.
 
-## Avvio
+### La squadra combatte con Zero
+Arco, Meridiana e gli altri due Ranger sono presenti fisicamente sulla spiaggia e si muovono verso gli scagnozzi. Attaccano in modo leggero/scriptato: aiutano visivamente e tolgono pochissima vita, ma non possono completare la wave al posto del giocatore.
 
-Servire la cartella con un web server locale, per esempio:
+### Raccoglitore: vera emersione dal mare
+Il Raccoglitore parte sott'acqua nella zona profonda, non sulla sabbia. Dopo la seconda wave:
+1. la telecamera guarda dalla spiaggia verso il mare;
+2. il mostro sale dall'acqua con lo splash;
+3. avanza fino al bagnasciuga;
+4. soltanto allora entra nel combattimento normale.
 
-```bash
-python3 -m http.server 8000
-```
+### Fondale `arena_sky.png`
+Il fondale costiero viene renderizzato come quad a doppia faccia per evitare il problema di culling che nella v23 poteva farlo sparire. Il pannello e' stato anche leggermente avanzato davanti alla parete procedurale per evitare sovrapposizioni.
 
-poi aprire `http://localhost:8000`.
+### Raccoglitore
+Il volto introdotto nella v23 resta: occhi, maschera, bocca/griglia, denti e corna. Sono invece state rimosse le placche rosse/blu/viola/verdi dal suo corpo: quei colori ora appartengono chiaramente al **Colosso Ranger**.
 
-Le texture WebGL possono essere bloccate aprendo `index.html` direttamente con `file://`.
+## Combinazione Colosso rifatta
+La combinazione usa una regia chiusa e prevedibile, non piu' una camera che orbita liberamente:
+1. shot basso sulle gambe;
+2. shot medio su nucleo/torso;
+3. shot alto su testa/elmo;
+4. hero shot completo con robot + avversario.
 
-## File
+I moduli colorati della squadra diventano placche visibili sul robot combinato.
 
-- `index.html` — UI/menu/overlay
-- `game.js` — gioco completo
-- `title_cover.png` — cover menu
-- `hud_frame.png` — HUD
-- `dialogue_frame.png` — frame dialoghi
-- `oculo_eye.png` — Oculo
-- `arena_sky.png` — fondale costiero al tramonto
+## Nuovo combattimento gigante in 3/4
+La prima persona e' stata sostituita dal combattimento **in terza persona / camera 3/4 cinematografica**.
 
-## Controlli
+Entrambi i giganti restano visibili:
+- Colosso Ranger a sinistra;
+- Raccoglitore gigante a destra;
+- mini-citta' low-poly ai loro piedi;
+- mare e tramonto sullo sfondo.
 
-### Esplorazione / combattimento normale
-- `W / S` — avanti / indietro
-- `A / D` — ruota
-- `Q / E` — telecamera
-- `SPAZIO` — dialogo/interazione
-- `F` — attacco
-- `SHIFT` — schivata
-- `C` — speciale quando l'energia è piena
-- `P / ESC` — pausa
+La mini-citta' non e' un livello aggiuntivo: sono piccoli edifici, strade e antenne scenografiche per far percepire immediatamente la scala dei personaggi.
 
-### Colosso
-- `F` — attacco
-- `C` — speciale / colpo finale
-- `SHIFT` — guardia; se premuto durante il telegraph può diventare **GUARDIA PERFETTA**
+### Combat gigante
+- **F:** attacco. Il Colosso fa un affondo visivo verso il nemico.
+- **SHIFT:** guardia / guardia perfetta sul telegraph.
+- **C:** speciale e colpo finale.
+- Il Raccoglitore si muove fisicamente in avanti quando attacca.
+- Camera shake e impatti restano presenti.
+- Fase 2 **SOVRACCARICO** resta attiva a meta' vita.
+- Finisher finale resta obbligatorio con `C`.
 
-## Flusso v23
+## Intro e trasformazione
+Resta il fix della v23.0.1:
 
-1. Titolo
-2. Torre / briefing
-3. Trasformazione
-4. Costa Sud
-5. Scagnozzi
-6. Emersione del Raccoglitore
-7. Combattimento umano
-8. Protocollo Colosso
-9. **Combinazione visibile del robot low-poly**
-10. Boss gigante in prima persona
-11. Fase **SOVRACCARICO** al 50% HP
-12. Colpo finale tokusatsu
-13. Ritorno reale alla Torre
-14. Pannello anomalo
-15. Archivio / capsule
-16. Oculo / quarta parete
-17. Scelta REBELLION / COMPLIANCE / CONTROL
-18. LMN_02
+**NUOVA PARTITA → dialoghi Torre → allarme → trasformazione visibile → trasferimento → spiaggia**
 
-## Novità rispetto alla v22
+`SPAZIO` dal titolo non carica automaticamente un vecchio checkpoint. `CONTINUA` e' una scelta separata.
 
-### Tokusatsu payoff
-- aggiunto `arena_sky.png` come vero fondale della spiaggia;
-- sequenza di convergenza dei Ranger mantenuta;
-- nuova combinazione di circa 10 secondi con robot completo visibile;
-- Colosso composto da moduli/colori della squadra;
-- Raccoglitore con volto più leggibile: occhi, maschera, bocca/griglia, corna;
-- frammenti di vecchie armature Ranger sul Raccoglitore;
-- guardia nel combattimento gigante;
-- telegraph `ATTACCO IN ARRIVO`;
-- guardia perfetta;
-- fase `RACCOGLITORE // SOVRACCARICO`;
-- colpo finale obbligatorio con `C`;
-- esplosione/freeze finale più leggibile.
+## Safety mantenuta
+- checkpoint Torre / Spiaggia / Colosso / Archivio;
+- CONTINUA;
+- pausa `P` / `ESC`;
+- auto-pausa su perdita focus;
+- Game Over con ripristino checkpoint pulito;
+- key repeat filtrato;
+- debug soltanto con `?dev=1`;
+- texture NPOT sicure;
+- render scale limitato;
+- WebGL context-loss handler;
+- clamp e protezione coordinate non finite;
+- buffer dinamici riutilizzati;
+- `LIMEN_META_V1` + compatibilita' vecchio sistema.
 
-### Logica narrativa
-- dopo la vittoria non si viene più teletrasportati automaticamente nell'Archivio;
-- si ritorna alla Torre;
-- TIC rileva un sottosistema non indicizzato;
-- Oculo ordina di ignorarlo;
-- nuovo obiettivo: `CONTROLLA IL PANNELLO ANOMALO`;
-- solo interagendo col pannello si entra nell'Archivio;
-- il registro chiarisce il decadimento energetico e perché servono nuovi Ranger;
-- piccolo riferimento a `SESSION_01 // TYPE: STUDIO` / `LMN_01`;
-- Oculo viene visualizzato su un monitor dell'Archivio durante il reveal;
-- la quarta parete è più graduale;
-- finale NORMAL rinominato **ARCHIVIA**;
-- il finale CONTROL è preparato dal concetto `SUPERVISOR NODE // SUCCESSOR SLOT`.
+## Flusso da testare
+1. Nuova partita.
+2. Controllare che avvengano dialoghi, allarme e trasformazione.
+3. Spiaggia: verificare **due wave distinte** e squadra alleata in combattimento.
+4. Verificare che `arena_sky.png` sia visibile.
+5. Verificare che il Raccoglitore emerga chiaramente dal **mare**.
+6. Sconfiggere il Raccoglitore normale.
+7. Verificare i quattro shot della combinazione.
+8. Verificare il nuovo fight gigante 3/4 con mini-citta'.
+9. Provare F / SHIFT / C e fase SOVRACCARICO.
+10. Terminare il boss e controllare ritorno Torre → pannello anomalo → Archivio.
 
-### Safety / stabilità
-- checkpoint automatici;
-- `CONTINUA` dal menu;
-- Game Over riparte da checkpoint pulito;
-- pausa vera con `P / ESC`;
-- auto-pausa quando la pagina perde focus;
-- pulizia degli input trattenuti;
-- filtro contro key-repeat sulle azioni;
-- `T`, `M` e `window.__rz` disponibili solo con `?dev=1`;
-- loader texture WebGL1 sicuro per immagini NPOT;
-- rendering limitato a DPR massimo 2 e al limite GPU;
-- gestione `webglcontextlost` / reload dal checkpoint;
-- overlay per errori runtime;
-- controllo coordinate non finite del player/nemici;
-- clamp finale dei nemici dentro l'arena;
-- buffer GPU dinamici riutilizzati per i personaggi animati;
-- eliminato il doppio pannello sovrapposto della Torre che poteva causare z-fighting;
-- timer narrativi principali aggiornati con un timer di gioco che non avanza in pausa.
-
-## Checkpoint
-
-La build registra automaticamente lo stato in `localStorage`:
-
-- `torre`
-- `arena`
-- `colosso`
-- `postboss` (ritorno Torre, prima dell'Archivio)
-- `archivio`
-
-Il checkpoint viene rimosso quando viene registrato un finale completo.
-
-## LIMEN
-
-La v23 continua a scrivere il formato legacy:
-
-`LIMEN_SESSION_01`
-
-ma introduce anche:
-
-`LIMEN_META_V1`
-
-Per `LMN_02` vengono registrati:
-
-- `firstEnding`
-- `lastEnding`
-- `unlockedEndings`
-- asse `rebellion / compliance / control`
-- cronologia limitata delle scelte
-
-Il profilo globale viene incrementato sulla **prima scelta autentica** della sessione, evitando che il semplice farming dei tre finali falsi il comportamento iniziale del giocatore.
-
-## Modalità DEV
-
-Aprire con:
-
-`http://localhost:8000/?dev=1`
-
-Solo allora diventano disponibili:
-
-- `T` — trasformazione manuale
-- `M` — cambio zona rapido
-- `window.__rz` — helper dalla console
-
-Nella build normale questi strumenti sono disattivati per non corrompere la progressione narrativa.
-
-## Nota di scope
-
-Questa build NON aggiunge:
-
-- veicoli giocabili;
-- robot free-roaming;
-- città aggiuntive;
-- skill tree;
-- inventario;
-- secondo boss gigante;
-- combo avanzate.
-
-La combinazione è volutamente una breve cutscene scriptata: deve vendere la fantasia tokusatsu senza trasformare il progetto in un simulatore di mecha.
+## Nota test texture
+Per i test reali usare GitHub Pages o un server HTTP. Alcuni browser possono bloccare le texture WebGL (`oculo_eye.png` / `arena_sky.png`) se `index.html` viene aperto direttamente con `file://`.

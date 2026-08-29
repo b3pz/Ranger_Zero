@@ -301,6 +301,9 @@ const quadBuf=(()=>{
 function drawTexturedQuad(tex,model,vp,alpha){
  if(!tex||tex.failed)return;
  gl.useProgram(texProg);
+ // Quad UI/fondali: doppia faccia. In v23 arena_sky poteva sparire a seconda
+ // dell'orientamento del winding/camera perche' il culling globale era attivo.
+ const cullWas=gl.isEnabled(gl.CULL_FACE); if(cullWas)gl.disable(gl.CULL_FACE);
  gl.bindBuffer(gl.ARRAY_BUFFER,quadBuf.posB);gl.enableVertexAttribArray(texAPos);gl.vertexAttribPointer(texAPos,3,gl.FLOAT,false,0,0);
  gl.bindBuffer(gl.ARRAY_BUFFER,quadBuf.uvB);gl.enableVertexAttribArray(texAUV);gl.vertexAttribPointer(texAUV,2,gl.FLOAT,false,0,0);
  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex);
@@ -311,6 +314,7 @@ function drawTexturedQuad(tex,model,vp,alpha){
  gl.depthMask(false);
  gl.drawArrays(gl.TRIANGLES,0,6);
  gl.depthMask(true);gl.disable(gl.BLEND);
+ if(cullWas)gl.enable(gl.CULL_FACE);
  gl.useProgram(prog);
 }
 
@@ -587,11 +591,9 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
   parts.push({mesh:RACC_SCRAP.tooth, mtx:mul(mat4.translate(.06,1.505+bob,.228),mat4.rotZ(-.18),mat4.scale(.025,.045,.012))});
   parts.push({mesh:pm.horn, mtx:mul(mat4.translate(-.18,1.88+bob,0),mat4.rotZ(.40),mat4.scale(.07,.24,.07))});
   parts.push({mesh:pm.horn, mtx:mul(mat4.translate(.18,1.88+bob,0),mat4.rotZ(-.40),mat4.scale(.07,.24,.07))});
-  // frammenti di armature di vecchi Ranger: pochi, leggibili e asimmetrici.
-  parts.push({mesh:RACC_SCRAP.violet,mtx:mul(mat4.translate(.29,1.16+bob,.285),mat4.rotZ(-.12),mat4.scale(.18,.26,.035))});
-  parts.push({mesh:RACC_SCRAP.green,mtx:mul(mat4.translate(-.34,1.37+bob,.16),mat4.scale(.17,.12,.12))});
-  parts.push({mesh:RACC_SCRAP.red,mtx:mul(mat4.translate(-.18,.82+bob,.305),mat4.rotZ(.18),mat4.scale(.14,.12,.035))});
-  parts.push({mesh:RACC_SCRAP.blue,mtx:mul(mat4.translate(.35,.57+bob,.10),mat4.scale(.10,.18,.10))});
+  // v24: il Raccoglitore conserva volto, corna e armatura asimmetrica, ma
+  // NON porta piu' placche colorate dei Ranger. Quei colori appartengono
+  // chiaramente al Colosso combinato; l'Archivio spiega il riciclo del ciclo.
  }else{
   parts.push({mesh:pm.head,  mtx:mul(mat4.translate(0,1.55+bob,0),mat4.scale(.30,.30,.30))});
   parts.push({mesh:pm.hair,  mtx:mul(mat4.translate(0,1.665+bob,-.01),mat4.scale(.305,.14,.30))});
@@ -745,7 +747,30 @@ const arenaSkyBuf=makeBuffer(bakeParts([
 const arenaSkyTex=loadTexture("arena_sky.png");
 // Il fondale fornito e' circa 3:1: manteniamo quasi lo stesso aspect ratio
 // per non schiacciare il tramonto verticalmente.
-const ARENA_SKY_PANEL={x:ARENA_CX,y:8.0,z:ARENA_CZ-ARENA_D/2-1.9,w:60,h:20};
+const ARENA_SKY_PANEL={x:ARENA_CX,y:8.0,z:ARENA_CZ-ARENA_D/2-1.25,w:60,h:20};
+
+// Mini-citta' scenografica per lo scontro gigante: non e' una nuova mappa,
+// sono solo volumi PS1 molto piccoli ai piedi dei due giganti. Serve a dare
+// immediatamente la scala tokusatsu senza creare un livello urbano completo.
+const cityParts=[];
+const cityCols=[[.24,.27,.31],[.30,.30,.29],[.20,.25,.29],[.34,.28,.24]];
+const cityLayout=[
+ [-9,-65,1.3,1.5,1.1],[-7,-63,1.5,2.0,1.4],[-9,-60,1.2,1.0,1.0],[-6,-57,1.8,1.3,1.3],
+ [-3,-66,1.0,.8,1.0],[-1,-64,1.5,1.2,1.2],[2,-66,1.3,1.8,1.0],[5,-64,1.7,1.1,1.4],
+ [8,-66,1.2,2.2,1.0],[9,-61,1.5,1.4,1.3],[7,-57,1.1,.9,1.1],[4,-55,1.4,1.7,1.0],
+ [-8,-53,1.5,1.0,1.2],[-4,-53,1.2,1.5,1.0],[0,-53,1.7,2.0,1.4],[5,-52,1.2,1.1,1.1]
+];
+cityParts.push({mesh:boxMesh([.10,.11,.13]),mtx:mul(mat4.translate(0,.015,-59.5),mat4.scale(23,.03,15))});
+for(let i=0;i<cityLayout.length;i++){
+ const [x,z,w,h,d]=cityLayout[i], col=cityCols[i%cityCols.length];
+ cityParts.push({mesh:boxMesh(col),mtx:mul(mat4.translate(x,h/2,z),mat4.scale(w,h,d))});
+ // tetto/antenna semplice su alcuni edifici
+ if(i%4===1)cityParts.push({mesh:boxMesh([.42,.44,.46]),mtx:mul(mat4.translate(x,h+.35,z),mat4.scale(.08,.7,.08))});
+}
+// due strade chiare che tagliano la citta' e fanno leggere ancora meglio la scala.
+cityParts.push({mesh:boxMesh([.18,.18,.19]),mtx:mul(mat4.translate(0,.04,-59.5),mat4.scale(22,.04,.9))});
+cityParts.push({mesh:boxMesh([.18,.18,.19]),mtx:mul(mat4.translate(0,.045,-59.5),mat4.scale(.9,.04,14))});
+const giantCityBuf=makeBuffer(bakeParts(cityParts));
 
 // ============================================================
 // NEMICI — scagnozzi (deboli, in gruppo) e Il Raccoglitore (piu' forte,
@@ -770,7 +795,7 @@ const raccoglitoreBuf=makeBuffer(buildCharacterBuffers(PAL_RACCOGLITORE,0,0,true
 // ============================================================
 // FASE 2 — IL COLOSSO: payoff tokusatsu vero ma economico. I compagni
 // convergono, una breve cutscene mostra i moduli che formano un robot
-// low-poly completo, poi si entra nella prima persona del cockpit.
+// low-poly completo, poi si passa allo scontro gigante in camera 3/4.
 // ============================================================
 let colosso=null;
 const COLOSSO_EYE_Y=6.5;
@@ -789,15 +814,25 @@ const COLOSSO_BOX={
 };
 function partProgress(p,a,b){return Math.max(0,Math.min(1,(p-a)/(b-a)));}
 function easeOut3(t){return 1-Math.pow(1-t,3);}
-function drawColossoRobot(vp,p,now){
- const base=mul(mat4.translate(0,0,COLOSSO_ROBOT_Z),mat4.rotY(Math.PI));
+function drawColossoRobot(vp,p,now,opts){
+ opts=opts||{};
+ const wx=opts.x===undefined?-5.2:opts.x, wz=opts.z===undefined?ARENA_CZ+1.0:opts.z;
+ const yaw=opts.yaw===undefined?Math.PI:opts.yaw;
+ const attack=Math.max(0,Math.min(1,opts.attack||0));
+ const guard=Math.max(0,Math.min(1,opts.guard||0));
+ const lunge=Math.sin(attack*Math.PI)*1.25;
+ const gx=opts.targetX===undefined?5.0:opts.targetX, gz=opts.targetZ===undefined?ARENA_CZ-5.0:opts.targetZ;
+ const dirX=gx-wx,dirZ=gz-wz,dl=Math.hypot(dirX,dirZ)||1;
+ const base=mul(mat4.translate(wx+dirX/dl*lunge,0,wz+dirZ/dl*lunge),mat4.rotY(yaw),mat4.rotZ(guard*.035*Math.sin(now/90)));
  const drawPart=(buf,fx,fy,fz,sx,sy,sz,stage,fromX,fromY,fromZ,rz=0)=>{
   const q=easeOut3(partProgress(p,stage,Math.min(1,stage+.24)));
   if(q<=0)return;
-  const x=fromX+(fx-fromX)*q, y=fromY+(fy-fromY)*q, z=fromZ+(fz-fromZ)*q;
+  let x=fromX+(fx-fromX)*q, y=fromY+(fy-fromY)*q, z=fromZ+(fz-fromZ)*q;
+  // Il braccio blu e' quello che legge meglio come pugno nella camera 3/4.
+  if(buf===COLOSSO_BOX.blue){z+=attack*1.8;y-=attack*.15;}
+  if(guard>0&&(buf===COLOSSO_BOX.red||buf===COLOSSO_BOX.blue)){z+=guard*.9;y+=guard*.25;}
   drawBuffer(buf,mul(base,mat4.translate(x,y,z),mat4.rotZ(rz*(1-q)),mat4.scale(sx,sy,sz)),vp);
  };
- // gambe, torso, braccia, testa: arrivano da direzioni diverse come moduli.
  drawPart(COLOSSO_BOX.violet,-.92,2.0,0,1.25,3.6,1.35,.00,-8,-1,3,.5);
  drawPart(COLOSSO_BOX.green,.92,2.0,0,1.25,3.6,1.35,.05,8,-1,3,-.5);
  drawPart(COLOSSO_BOX.dark,-.92,.35,.28,1.45,.65,1.9,.04,-8,-2,5,.3);
@@ -810,7 +845,15 @@ function drawColossoRobot(vp,p,now){
  drawPart(COLOSSO_BOX.bronze,0,7.35,0,1.65,1.45,1.55,.60,0,14,2,0);
  drawPart(COLOSSO_BOX.cyan,0,7.45,.79,1.20,.43,.08,.68,0,14,2,0);
  drawPart(COLOSSO_BOX.gold,0,8.35,-.05,.24,.65,1.35,.74,0,15,0,0);
- // piastra centrale e simbolo si accendono per ultimi.
+ // Placche cromatiche della squadra sul COLOSSO: qui e' chiarissimo che
+ // sono i cinque moduli Ranger a formare l'armatura del robot.
+ const armorQ=partProgress(p,.55,1);
+ if(armorQ>0){
+  drawBuffer(COLOSSO_BOX.red,mul(base,mat4.translate(-1.55,5.65,.92),mat4.scale(.62,.38,.10)),vp,armorQ);
+  drawBuffer(COLOSSO_BOX.blue,mul(base,mat4.translate(1.55,5.65,.92),mat4.scale(.62,.38,.10)),vp,armorQ);
+  drawBuffer(COLOSSO_BOX.violet,mul(base,mat4.translate(-.88,2.35,.76),mat4.scale(.40,.95,.08)),vp,armorQ);
+  drawBuffer(COLOSSO_BOX.green,mul(base,mat4.translate(.88,2.35,.76),mat4.scale(.40,.95,.08)),vp,armorQ);
+ }
  const q=partProgress(p,.78,1);
  if(q>0){
   const pulse=.88+Math.sin(now/110)*.12;
@@ -821,7 +864,8 @@ function drawColossoRobot(vp,p,now){
 function newColossoState(phase){
  return {phase:phase||"fight",t:0,giantHp:400,giantHpMax:400,playerHp:100,playerHpMax:100,
   giantScale:7.15,attackCd:2.8,punchT:0,beamT:0,shakeT:0,beamBursts:[],guardT:0,
-  perfectGuard:false,attackTelegraph:false,phase2:false,finisherReady:false,messageT:0};
+  perfectGuard:false,attackTelegraph:false,phase2:false,finisherReady:false,messageT:0,
+  robotX:-5.0,robotZ:ARENA_CZ+2.0,giantX:5.0,giantZ:ARENA_CZ-5.0,giantAttackT:0};
 }
 function startColossoSequence(){
  if(colosso)return;
@@ -872,7 +916,7 @@ function updateColossoThresholds(){
 function colossoPunch(){
  if(!colosso||colosso.phase!=="fight"||colosso.punchT>0||colosso.beamT>0)return;
  if(colosso.finisherReady){missionHintEl.textContent="C — COLPO FINALE";missionHintEl.classList.add("show");return;}
- colosso.punchT=.32;
+ colosso.punchT=.48;
  colosso.giantHp=Math.max(0,colosso.giantHp-18);
  player.energy=Math.min(player.energyMax,player.energy+9);
  colosso.beamBursts.push({t:0,kind:"punch",ox:(Math.random()-.5)*2.2,oy:Math.random()*1.6-.2});
@@ -894,7 +938,7 @@ function colossoSpecial(){
 }
 function colossoGuard(){
  if(!colosso||colosso.phase!=="fight"||colosso.finisherReady)return;
- colosso.guardT=.42;
+ colosso.guardT=.58;
  colosso.perfectGuard=!!colosso.attackTelegraph;
  if(colosso.perfectGuard){
   missionHintEl.textContent="GUARDIA PERFETTA";missionHintEl.classList.add("show");colosso.messageT=.65;sfx.dodge();
@@ -947,6 +991,7 @@ function updateColosso(dt){
  if(colosso.phase==="finishing"){updateColossoFinish(dt);return;}
  if(colosso.phase!=="fight")return;
  colosso.punchT=Math.max(0,colosso.punchT-rawDtGlobal);colosso.beamT=Math.max(0,colosso.beamT-rawDtGlobal);
+ colosso.giantAttackT=Math.max(0,(colosso.giantAttackT||0)-rawDtGlobal);
  colosso.shakeT=Math.max(0,colosso.shakeT-dt);colosso.guardT=Math.max(0,colosso.guardT-rawDtGlobal);
  if(colosso.messageT>0){colosso.messageT-=rawDtGlobal;if(colosso.messageT<=0&&!colosso.finisherReady&&!colosso.attackTelegraph)missionHintEl.classList.remove("show");}
  for(let i=colosso.beamBursts.length-1;i>=0;i--){colosso.beamBursts[i].t+=dt;if(colosso.beamBursts[i].t>.55)colosso.beamBursts.splice(i,1);}
@@ -959,6 +1004,7 @@ function updateColosso(dt){
   const baseDmg=colosso.phase2?20:16;
   const guarded=colosso.guardT>0;
   const dmg=guarded?(colosso.perfectGuard?0:Math.ceil(baseDmg*.25)):baseDmg;
+  colosso.giantAttackT=.58;
   colosso.shakeT=guarded?.18:.40;colosso.playerHp=Math.max(0,colosso.playerHp-dmg);
   if(guarded){missionHintEl.textContent=colosso.perfectGuard?"GUARDIA PERFETTA":"GUARDIA";missionHintEl.classList.add("show");colosso.messageT=.55;sfx.dodge();}
   else sfx.hitPlayer();
@@ -977,47 +1023,81 @@ document.getElementById("colossoOutcomeBtn").addEventListener("click",()=>{
 });
 
 let enemies=[];
-function spawnWave(){
- enemies=[
-  {type:"scagnozzo",pal:PAL_SCAGNOZZO,x:ARENA_CX-4,z:ARENA_CZ-2,yaw:0,hp:30,hpMax:30,state:"idle",cd:0,scale:1,alpha:1,dead:false,walkPhaseE:0,hitFlash:0,attackFlashT:0},
-  {type:"scagnozzo",pal:PAL_SCAGNOZZO,x:ARENA_CX+4,z:ARENA_CZ-2,yaw:0,hp:30,hpMax:30,state:"idle",cd:0,scale:1,alpha:1,dead:false,walkPhaseE:0,hitFlash:0,attackFlashT:0},
-  {type:"scagnozzo",pal:PAL_SCAGNOZZO,x:ARENA_CX,z:ARENA_CZ-6,yaw:0,hp:30,hpMax:30,state:"idle",cd:1.2,scale:1,alpha:1,dead:false,walkPhaseE:0,hitFlash:0,attackFlashT:0},
-  // Il Raccoglitore resta sommerso e "hidden" (non attaccabile, non
-  // renderizzato in scena) finche' gli scagnozzi non sono stati ripuliti —
-  // solo allora emerge davvero dal mare con tanto di schizzo e ruggito,
-  // invece di startare gia' fermo li' dall'inizio.
-  {type:"raccoglitore",pal:PAL_RACCOGLITORE,x:ARENA_CX,z:SEA_EDGE_Z+1.5,y:0,yaw:0,hp:160,hpMax:160,state:"idle",cd:2,scale:1.55,alpha:1,dead:false,retreated:false,walkPhaseE:0,hitFlash:0,attackFlashT:0,hidden:true,emerging:false,emerged:false},
+let arenaWave=0,arenaWaveTransition=false;
+let arenaAllies=[];
+const RACC_SEA_Z=ARENA_CZ-ARENA_D/2+2.8;
+const RACC_SHORE_Z=SEA_EDGE_Z+.85;
+function makeMook(x,z,cd){return {type:"scagnozzo",pal:PAL_SCAGNOZZO,x,z,yaw:0,hp:30,hpMax:30,state:"idle",cd:cd||0,scale:1,alpha:1,dead:false,walkPhaseE:0,hitFlash:0,attackFlashT:0};}
+function initArenaAllies(){
+ arenaAllies=[
+  {name:"ARCO",pal:PAL_ARCO,x:ARENA_CX-5.5,z:ARENA_CZ+6.5,yaw:Math.PI,cd:.2,attackT:0,walk:0},
+  {name:"MERIDIANA",pal:PAL_MERIDIANA,x:ARENA_CX+5.5,z:ARENA_CZ+6.0,yaw:Math.PI,cd:.7,attackT:0,walk:1},
+  {name:"RANGER V",pal:PAL_RANGER3,x:ARENA_CX-7.0,z:ARENA_CZ+3.0,yaw:Math.PI,cd:1.0,attackT:0,walk:2},
+  {name:"RANGER G",pal:PAL_RANGER4,x:ARENA_CX+7.0,z:ARENA_CZ+3.0,yaw:Math.PI,cd:1.3,attackT:0,walk:3},
  ];
+}
+function addWave(stage){
+ if(stage===1){
+  enemies.push(makeMook(ARENA_CX-4.5,ARENA_CZ-3,.2),makeMook(ARENA_CX+4.0,ARENA_CZ-3,.7),makeMook(ARENA_CX,ARENA_CZ-7,1.1));
+ }else{
+  // seconda ondata: arriva dai lati e piu' vicino alla battigia, cosi' e'
+  // visivamente distinta dalla prima e non sembra lo stesso fight ripetuto.
+  enemies.push(makeMook(ARENA_CX-9,ARENA_CZ-5,.2),makeMook(ARENA_CX+9,ARENA_CZ-5,.5),makeMook(ARENA_CX-3,ARENA_CZ-9,.9),makeMook(ARENA_CX+3,ARENA_CZ-9,1.2));
+ }
+}
+function spawnWave(){
+ enemies=[];arenaWave=1;arenaWaveTransition=false;initArenaAllies();addWave(1);
+ // Il Raccoglitore nasce DAVVERO nel mare profondo. Non verra' clampato
+ // sulla sabbia e solo dopo l'emersione avanzera' fino alla battigia.
+ enemies.push({type:"raccoglitore",pal:PAL_RACCOGLITORE,x:ARENA_CX,z:RACC_SEA_Z,y:-2.8,yaw:0,hp:160,hpMax:160,state:"submerged",cd:2,scale:1.55,alpha:1,dead:false,retreated:false,walkPhaseE:0,hitFlash:0,attackFlashT:0,hidden:true,emerging:false,emerged:false});
+}
+function aliveMooks(){return enemies.filter(e=>e.type==="scagnozzo"&&!e.dead);}
+function maybeAdvanceArenaWave(){
+ if(arenaWaveTransition||emergeCutscene)return;
+ if(arenaWave===1&&aliveMooks().length===0){
+  arenaWaveTransition=true;arenaWave=2;
+  missionHintEl.textContent="ARCO // NON E' FINITA. SECONDA ONDATA!";missionHintEl.classList.add("show");
+  afterGame(1050,()=>{addWave(2);arenaWaveTransition=false;missionHintEl.textContent="SECONDA ONDATA // TENETE LA LINEA";});
+ }else if(arenaWave===2&&aliveMooks().length===0){
+  arenaWave=3;missionHintEl.textContent="...SILENZIO";missionHintEl.classList.add("show");
+  afterGame(650,maybeEmergeRaccoglitore);
+ }
+}
+function updateArenaAllies(dt){
+ if(zone!=="arena")return;
+ for(let i=0;i<arenaAllies.length;i++){
+  const a=arenaAllies[i];a.cd-=rawDtGlobal;a.attackT=Math.max(0,a.attackT-rawDtGlobal);
+  const targets=aliveMooks();
+  if(!targets.length){a.yaw=Math.atan2(ARENA_CX-a.x,RACC_SHORE_Z-a.z);continue;}
+  const t=targets[(i+arenaWave)%targets.length];
+  const dx=t.x-a.x,dz=t.z-a.z,dist=Math.hypot(dx,dz)||.001;a.yaw=Math.atan2(dx,dz);
+  if(dist>1.65){const sp=.95*dt;a.x+=dx/dist*sp;a.z+=dz/dist*sp;a.walk+=dt*6;}
+  else if(a.cd<=0){a.cd=1.0+i*.12;a.attackT=.38;
+   // aiuto leggero ma non autonomo: la squadra combatte DAVVERO, senza
+   // poter cancellare la wave da sola mentre il giocatore guarda.
+   t.hp=Math.max(1,t.hp-2);t.hitFlash=.08;
+  }
+ }
 }
 let emergeCutscene=null;
 function maybeEmergeRaccoglitore(){
  const racc=enemies.find(e=>e.type==="raccoglitore");
- if(!racc||racc.emerging||racc.emerged||emergeCutscene)return;
- const mooksLeft=enemies.some(e=>e.type==="scagnozzo"&&!e.dead);
- if(mooksLeft)return;
- racc.emerging=true;
- racc.emergeT=0;
+ if(arenaWave<3||!racc||racc.emerging||racc.emerged||emergeCutscene)return;
+ racc.emerging=true;racc.emergeT=0;racc.state="emerging";
  emergeCutscene={t:0,phase:"buildup",racc};
- missionHintEl.textContent="QUALCOSA SI MUOVE NELL'ACQUA...";
- missionHintEl.classList.add("show");
+ missionHintEl.textContent="QUALCOSA SI MUOVE NELL'ACQUA...";missionHintEl.classList.add("show");
 }
 function updateEmergeCutscene(dt){
  if(!emergeCutscene)return;
- emergeCutscene.t+=dt;
- const racc=emergeCutscene.racc;
- if(emergeCutscene.phase==="buildup"&&emergeCutscene.t>2.2){
-  emergeCutscene.phase="rising";
-  emergeCutscene.t=0;
-  racc.hidden=false;
-  sfx.alarm();
-  triggerSlowMo(.6,.3);
-  missionHintEl.textContent="IL RACCOGLITORE";
+ emergeCutscene.t+=dt;const racc=emergeCutscene.racc;
+ if(emergeCutscene.phase==="buildup"&&emergeCutscene.t>2.0){
+  emergeCutscene.phase="rising";emergeCutscene.t=0;racc.hidden=false;sfx.alarm();triggerSlowMo(.6,.3);missionHintEl.textContent="IL RACCOGLITORE";
  }else if(emergeCutscene.phase==="rising"&&racc.emerged){
-  emergeCutscene.phase="hold";
-  emergeCutscene.t=0;
- }else if(emergeCutscene.phase==="hold"&&emergeCutscene.t>1.3){
-  emergeCutscene=null;
-  missionHintEl.classList.remove("show");
+  emergeCutscene.phase="advance";emergeCutscene.t=0;
+ }else if(emergeCutscene.phase==="advance"&&racc.state!=="approach"){
+  emergeCutscene.phase="hold";emergeCutscene.t=0;
+ }else if(emergeCutscene.phase==="hold"&&emergeCutscene.t>1.0){
+  emergeCutscene=null;missionHintEl.classList.remove("show");
  }
 }
 
@@ -1164,7 +1244,7 @@ function clearTransientState(){
 function readCheckpoint(){try{return JSON.parse(localStorage.getItem(CHECKPOINT_KEY)||"null");}catch(e){return null;}}
 function refreshContinueButton(){if(!continueBtnEl)return;const cp=readCheckpoint();continueBtnEl.disabled=!cp;continueBtnEl.style.opacity=cp?1:.38;}
 function saveCheckpoint(id){
- currentCheckpoint=id;try{localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({id,ts:Date.now(),version:23}));}catch(e){}refreshContinueButton();
+ currentCheckpoint=id;try{localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({id,ts:Date.now(),version:24}));}catch(e){}refreshContinueButton();
 }
 function clearCheckpoint(){try{localStorage.removeItem(CHECKPOINT_KEY);}catch(e){}currentCheckpoint=null;refreshContinueButton();}
 function showRuntimeError(title,msg){
@@ -1205,7 +1285,7 @@ function zoneBounds(){
 function enterArena(force){
  if(zone==="arena"&&!force)return;zone="arena";
  player.x=ZONES.arena.cx;player.z=ZONES.arena.cz+9;player.yaw=Math.PI;player.hp=player.hpMax;player.energy=0;
- spawnWave();missionHintEl.textContent="MISSIONE: sconfiggi gli scagnozzi e Il Raccoglitore";missionHintEl.classList.add("show");
+ spawnWave();missionHintEl.textContent="MISSIONE: DIFENDI LA COSTA // PRIMA ONDATA";missionHintEl.classList.add("show");
  teleportFlash();playAmbient("arena");saveCheckpoint("arena");
 }
 function enterTorre(){
@@ -1536,7 +1616,7 @@ function damageEnemy(en,amt){
   if(en.type==="raccoglitore"&&!en.retreated){
    // Il Raccoglitore non muore qui: si ritira verso il mare, e da li'
    // parte la fase 2 — cresce gigante, i 5 Ranger si combinano nel
-   // Colosso, scontro finale in prima persona.
+   // Colosso, scontro finale in 3/4 con mini-citta'.
    en.retreated=true;en.state="retreat";
    triggerSlowMo(.35,.18); // colpo finale sui mob normali, un pelo piu' lungo
    afterGame(900,startColossoSequence);
@@ -1548,7 +1628,7 @@ function damageEnemy(en,amt){
  }
 }
 function updateEnemies(dt){
- maybeEmergeRaccoglitore();
+ maybeAdvanceArenaWave();updateArenaAllies(dt);
  for(const en of enemies){
   if(en.dead)continue;
   if(en.emerging&&!en.emerged&&!en.hidden){
@@ -1557,10 +1637,18 @@ function updateEnemies(dt){
    const p=Math.min(1,en.emergeT/1.7);
    const ease=1-Math.pow(1-p,2);
    en.y=-2.6+ease*2.6;
-   if(p>=1){en.emerged=true;en.y=0;}
+   if(p>=1){en.emerged=true;en.y=0;en.state="approach";}
    continue; // resta passivo finche' non e' emerso del tutto
   }
   if(en.hidden)continue;
+  if(en.type==="raccoglitore"&&en.state==="approach"){
+   // Dopo essersi alzato dall'acqua cammina verso la riva. Solo quando ha
+   // raggiunto il bagnasciuga entra nell'AI di combattimento normale.
+   const dz=RACC_SHORE_Z-en.z;en.yaw=0;
+   en.z+=Math.sign(dz)*Math.min(Math.abs(dz),dt*1.55);en.walkPhaseE+=dt*6;
+   if(Math.abs(RACC_SHORE_Z-en.z)<.06){en.z=RACC_SHORE_Z;en.state="idle";}
+   continue;
+  }
   if(en.hitFlash>0)en.hitFlash-=dt;
   if(en.state==="retreat"){
    en.alpha=Math.max(0,en.alpha-dt*.6);
@@ -1612,8 +1700,13 @@ function updateEnemies(dt){
  }
  // sicurezza finale: separazione e AI non possono spingere un nemico fuori
  // dai limiti validi dell'arena o propagare coordinate non finite.
- const b=ZONES.arena;const xmin=b.cx-b.w/2+.7,xmax=b.cx+b.w/2-.7,zmin=SEA_EDGE_Z+.55,zmax=b.cz+b.d/2-.7;
- for(const en of enemies){if(!Number.isFinite(en.x)||!Number.isFinite(en.z)){en.x=ARENA_CX;en.z=ARENA_CZ;}en.x=Math.max(xmin,Math.min(xmax,en.x));en.z=Math.max(zmin,Math.min(zmax,en.z));}
+ const b=ZONES.arena;const xmin=b.cx-b.w/2+.7,xmax=b.cx+b.w/2-.7,zmax=b.cz+b.d/2-.7;
+ for(const en of enemies){
+  if(!Number.isFinite(en.x)||!Number.isFinite(en.z)){en.x=ARENA_CX;en.z=en.type==="raccoglitore"?RACC_SEA_Z:ARENA_CZ;}
+  en.x=Math.max(xmin,Math.min(xmax,en.x));
+  const zmin=en.type==="raccoglitore"?RACC_SEA_Z:SEA_EDGE_Z+.55;
+  en.z=Math.max(zmin,Math.min(zmax,en.z));
+ }
 }
 
 function resize(){
@@ -1800,19 +1893,27 @@ function frame(now){
   // bassa, cosi' quello che sale dall'acqua si sente davvero grande.
   const racc=emergeCutscene.racc;
   const pushIn=emergeCutscene.phase==="rising"?Math.min(1,emergeCutscene.t/1.7)*1.2:0;
-  eye=[racc.x-5.5+pushIn,1.7,racc.z-4.5+pushIn*.6];
-  target=[racc.x,emergeCutscene.phase==="buildup"?.1:1.6,racc.z];
+  // camera dalla spiaggia verso il mare: la linea d'acqua resta nel quadro,
+  // cosi' e' inequivocabile che il mostro sale dall'acqua e NON dalla sabbia.
+  eye=[racc.x+7.0-pushIn,2.3,RACC_SHORE_Z+5.0];
+  target=[racc.x,emergeCutscene.phase==="buildup"?.15:1.5,racc.z];
  }else if(zone==="colosso"){
-  if(colosso&&(colosso.phase==="combine"||colosso.phase==="reveal")){
-   // Cutscene esterna: robot completo + mostro nello stesso quadro.
-   const orbit=colosso.phase==="reveal"?Math.sin(colosso.t*.55)*2:0;
-   eye=[20+orbit,11,ARENA_CZ-4];target=[0,5.7,ARENA_CZ-12];
+  const sh=colosso&&colosso.shakeT>0?colosso.shakeT:0;
+  if(colosso&&colosso.phase==="combine"){
+   // Regia BLINDATA: quattro shot fissi, nessuna orbita/camera libera che
+   // possa finire dentro la mesh e sembrare bloccata.
+   const t=colosso.t;
+   if(t<2.0){eye=[10,3.4,ARENA_CZ+10];target=[-5,2.4,ARENA_CZ+2];}
+   else if(t<4.3){eye=[13,6.2,ARENA_CZ+8];target=[-5,5.0,ARENA_CZ+2];}
+   else if(t<6.4){eye=[8,10.5,ARENA_CZ+8];target=[-5,7.5,ARENA_CZ+2];}
+   else{eye=[18,10.5,ARENA_CZ+8];target=[0,4.8,ARENA_CZ-2];}
+  }else if(colosso&&colosso.phase==="reveal"){
+   eye=[18,10.5,ARENA_CZ+8];target=[0,4.8,ARENA_CZ-2];
   }else{
-   const shake=colosso&&colosso.shakeT>0?colosso.shakeT*3:0;
-   const sway=Math.sin(now/900)*.04+(colosso&&colosso.punchT>0?-.12:0);
-   const finishZ=colosso&&colosso.phase==="finishing"?(colosso.finishZoom||0)*(COLOSSO_CAM_Z-COLOSSO_GIANT_Z)*.5:0;
-   eye=[Math.sin(now/300)*shake*.3,COLOSSO_EYE_Y+Math.sin(now/300)*shake*.2,COLOSSO_CAM_Z-finishZ];
-   target=[Math.sin(now/300)*shake*.3+sway*4,COLOSSO_EYE_Y-1.5,COLOSSO_GIANT_Z];
+   // Boss fight 3/4: entrambi i giganti rimangono sempre leggibili con la
+   // mini-citta' ai piedi. Piccolo shake solamente sugli impatti.
+   eye=[18+Math.sin(now/90)*sh*.35,10.5+Math.sin(now/75)*sh*.2,ARENA_CZ+8];
+   target=[0,4.4,ARENA_CZ-2];
   }
  }else{
  // camera terza persona dietro il personaggio, con collisione contro i
@@ -1836,7 +1937,7 @@ function frame(now){
  }
  }
  const view=mat4.lookAt(eye,target,[0,1,0]);
- const proj=mat4.perspective(60*Math.PI/180, c.width/c.height, .1, 100);
+ const proj=mat4.perspective(60*Math.PI/180, c.width/c.height, .1, 140);
  const vp=mat4.multiply(proj,view);
 
  if(zone==="arena"||zone==="colosso")gl.clearColor(.08,.10,.20,1);
@@ -1897,6 +1998,14 @@ function frame(now){
   drawBuffer(arenaSeaBuf,mat4.identity(),vp);
   drawBuffer(arenaPropBuf,mat4.identity(),vp);
   drawBuffer(arenaEdgeBuf,mat4.identity(),vp);
+  // La squadra combatte con Zero: AI volutamente leggera, ma visivamente
+  // presente per tutta la missione invece di sparire dopo il briefing.
+  for(let ai=0;ai<arenaAllies.length;ai++){
+   const a=arenaAllies[ai];drawShadow(a.x,a.z,.38,vp,.28);
+   const ap=a.attackT>0?1-a.attackT/.38:0;
+   const am=buildCharacterBuffers(a.pal,a.walk,1,true,"ranger",ap);
+   drawDynamicMesh(am,mul(mat4.translate(a.x,0,a.z),mat4.rotY(a.yaw),mat4.scale(.96,.96,.96)),vp,.95);
+  }
   for(const en of enemies){
    if(en.dead||en.hidden)continue;
    drawShadow(en.x,en.z,.40*en.scale,vp,.35*(en.alpha!==undefined?en.alpha:1));
@@ -1922,33 +2031,42 @@ function frame(now){
   }
  }else if(zone==="colosso"&&colosso){
   drawBuffer(arenaSkyBuf,mat4.identity(),vp);
-  drawTexturedQuad(arenaSkyTex, mul(mat4.translate(ARENA_SKY_PANEL.x,ARENA_SKY_PANEL.y,ARENA_SKY_PANEL.z),mat4.scale(ARENA_SKY_PANEL.w,ARENA_SKY_PANEL.h,1)), vp, 1);
-  drawBuffer(arenaFloorBuf,mat4.identity(),vp);
-  drawBuffer(arenaSeaBuf,mat4.identity(),vp);
-  // Il Raccoglitore gigante, sempre rivolto verso la telecamera (verso il
-  // Colosso), cresce durante la cutscene e resta fisso a scala massima
-  // durante il combattimento.
+  drawTexturedQuad(arenaSkyTex,mul(mat4.translate(ARENA_SKY_PANEL.x,ARENA_SKY_PANEL.y,ARENA_SKY_PANEL.z),mat4.scale(ARENA_SKY_PANEL.w,ARENA_SKY_PANEL.h,1)),vp,1);
+  drawBuffer(arenaFloorBuf,mat4.identity(),vp);drawBuffer(arenaSeaBuf,mat4.identity(),vp);
+  drawBuffer(giantCityBuf,mat4.identity(),vp,.98);
+
   const giantWobble=1+Math.sin(now/260)*.02;
   const finishTilt=colosso.phase==="finishing"?(colosso.finishTilt||0):0;
-  const gm=mul(mat4.translate(ARENA_CX,0,COLOSSO_GIANT_Z),mat4.rotY(Math.PI),mat4.rotX(finishTilt),mat4.scale(colosso.giantScale*giantWobble,colosso.giantScale,colosso.giantScale*giantWobble));
+  const gAtk=colosso.giantAttackT>0?1-colosso.giantAttackT/.58:0;
+  const gLunge=Math.sin(Math.max(0,Math.min(1,gAtk))*Math.PI)*1.2;
+  const gx=colosso.giantX, gz=colosso.giantZ+gLunge;
+  const gyaw=Math.atan2(colosso.robotX-gx,colosso.robotZ-gz);
+  const gm=mul(mat4.translate(gx,0,gz),mat4.rotY(gyaw),mat4.rotX(finishTilt),mat4.scale(colosso.giantScale*giantWobble,colosso.giantScale,colosso.giantScale*giantWobble));
   const giantPal=colosso.phase2?PAL_RACCOGLITORE_OVERLOAD:PAL_RACCOGLITORE;
-  const giantMesh=buildCharacterBuffers(giantPal,now/450,0,true,"raccoglitore",0);
+  const giantMesh=buildCharacterBuffers(giantPal,now/450,gAtk>0?1:.15,true,"raccoglitore",gAtk);
   drawDynamicMesh(giantMesh,gm,vp);
-  if(colosso.phase==="combine"||colosso.phase==="reveal")drawColossoRobot(vp,colosso.phase==="reveal"?1:Math.min(1,colosso.t/8),now);
-  if(colosso.phase==="finishing"){
-   const ep=Math.min(1,(colosso.finishT||0)/2);drawBuffer(burstBuf,mul(mat4.translate(ARENA_CX,COLOSSO_EYE_Y-1.0,COLOSSO_GIANT_Z+2),mat4.scale(1+ep*8,.7+ep*5,1+ep*8)),vp,Math.max(0,1-ep*.55));
-  }
 
+  // Colosso sempre visibile: cutscene + fight 3/4 + finisher.
+  const rp=colosso.phase==="combine"?Math.min(1,colosso.t/8):1;
+  const rYaw=Math.atan2(colosso.giantX-colosso.robotX,colosso.giantZ-colosso.robotZ);
+  const rAtk=colosso.punchT>0?1-colosso.punchT/.48:0;
+  const rGuard=colosso.guardT>0?Math.min(1,colosso.guardT/.58):0;
+  drawColossoRobot(vp,rp,now,{x:colosso.robotX,z:colosso.robotZ,yaw:rYaw,targetX:gx,targetZ:gz,attack:rAtk,guard:rGuard});
+
+  if(colosso.phase==="finishing"){
+   const ep=Math.min(1,(colosso.finishT||0)/2);
+   drawBuffer(burstBuf,mul(mat4.translate(gx,5.0,gz),mat4.scale(1+ep*8,.7+ep*5,1+ep*8)),vp,Math.max(0,1-ep*.55));
+  }
   if(colosso.phase==="fight"||colosso.phase==="finishing"){
-   // effetti: pugno = piccolo scoppio, speciale = fascio di luce dal Colosso al bersaglio
    for(const b of colosso.beamBursts){
     if(b.kind==="punch"){
-     const p=b.t/.4, sc=.4+p*2.2, a=Math.max(0,1-p);
-     drawBuffer(burstBuf, mul(mat4.translate(ARENA_CX+(b.ox||0),COLOSSO_EYE_Y-1.5+(b.oy||0),COLOSSO_GIANT_Z+4),mat4.scale(sc,sc,sc)), vp, a*.9);
+     const p=b.t/.4,sc=.4+p*2.2,a=Math.max(0,1-p);
+     const ix=(colosso.robotX+gx)/2+(b.ox||0)*.3, iz=(colosso.robotZ+gz)/2;
+     drawBuffer(burstBuf,mul(mat4.translate(ix,5.1+(b.oy||0)*.25,iz),mat4.scale(sc,sc,sc)),vp,a*.9);
     }else{
-     const p=b.t/.4, a=Math.max(0,1-p);
-     const beamLen=(COLOSSO_CAM_Z-COLOSSO_GIANT_Z)/2;
-     drawBuffer(burstBuf, mul(mat4.translate(ARENA_CX,COLOSSO_EYE_Y-1.5,(COLOSSO_CAM_Z+COLOSSO_GIANT_Z)/2),mat4.rotX(Math.PI/2),mat4.scale(.5,beamLen,.5)), vp, a*.85);
+     const p=b.t/.4,a=Math.max(0,1-p),dx=gx-colosso.robotX,dz=gz-colosso.robotZ,len=Math.hypot(dx,dz)||1;
+     const mx=(gx+colosso.robotX)/2,mz=(gz+colosso.robotZ)/2,yaw=Math.atan2(dx,dz);
+     drawBuffer(burstBuf,mul(mat4.translate(mx,5.3,mz),mat4.rotY(yaw),mat4.scale(.36,.36,len)),vp,a*.85);
     }
    }
   }
