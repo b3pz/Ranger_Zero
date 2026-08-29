@@ -339,6 +339,23 @@ function drawTexturedMesh(tex,mesh,model,vp,alpha){
  gl.depthMask(true);gl.disable(gl.BLEND);if(cullWas)gl.enable(gl.CULL_FACE);gl.useProgram(prog);
 }
 
+// v24.1.1 — fondale arena sicuro. In v24.1 le quattro pareti-cielo di
+// fallback venivano disegnate PRIMA del panorama e scrivevano nel depth
+// buffer: il 360 risultava nascosto e, nel giant fight, la camera finiva
+// letteralmente dietro la parete posteriore. Ora, quando la texture e'
+// pronta, il panorama viene disegnato come vero background senza depth test;
+// il vecchio cielo a bande compare solo finche' l'immagine non e' caricata.
+function drawArenaBackdrop(vp){
+ if(arenaSkyTex&&arenaSkyTex.ready){
+  const depthWas=gl.isEnabled(gl.DEPTH_TEST);
+  if(depthWas)gl.disable(gl.DEPTH_TEST);
+  drawTexturedMesh(arenaSkyTex,arenaPanoramaMesh,mat4.identity(),vp,1);
+  if(depthWas)gl.enable(gl.DEPTH_TEST);
+ }else{
+  drawBuffer(arenaSkyBuf,mat4.identity(),vp);
+ }
+}
+
 // ============================================================
 // box builder: unit box centered at origin, size 1x1x1, tinted per face
 // ============================================================
@@ -913,16 +930,27 @@ function startColossoSequence(){
  // niente cloni aggiuntivi durante la combinazione.
  colossoTeamPos=arenaAllies.map(a=>({startX:a.x,startZ:a.z,x:a.x,z:a.z,pal:a.pal,name:a.name}));
 }
+function showGiantTutorial(){
+ if(giantTutorialEl)giantTutorialEl.classList.add("show");
+ missionHintEl.classList.remove("show");
+}
+function beginGiantBattle(){
+ if(!colosso||colosso.phase!=="tutorial")return;
+ if(giantTutorialEl)giantTutorialEl.classList.remove("show");
+ colosso.phase="fight";colosso.t=0;colosso.attackCd=4.0;colosso.attackTelegraph=false;
+ missionHintEl.textContent="LEGGI L'ATTACCO // SHIFT AL MOMENTO GIUSTO";
+ missionHintEl.classList.add("show");colosso.messageT=2.5;
+}
 function startColossoFightDirect(){
  clearTransientState();
  zone="colosso";
  player.transformed=true;player.helmet=true;player.hp=player.hpMax;player.energy=0;
- colosso=newColossoState("fight");
+ colosso=newColossoState("tutorial");
  colossoTeamPos=null;
  colossoHpWrapEl.classList.add("show");
- missionHintEl.classList.remove("show");
  playAmbient("colosso");
  saveCheckpoint("colosso");
+ showGiantTutorial();
 }
 function updateColossoThresholds(){
  if(!colosso)return;
@@ -989,12 +1017,14 @@ function updateColossoFinish(dt){
  if(colosso.finishT>2.0)colossoWin();
 }
 function colossoWin(){
+ if(giantTutorialEl)giantTutorialEl.classList.remove("show");
  colosso.phase="won";missionHintEl.textContent="IL RACCOGLITORE E' STATO RESPINTO";sfx.win();
  afterGame(900,()=>{colossoOutcomeEl.querySelector("h1").textContent="VITTORIA";
   colossoOutcomeEl.querySelector("p").textContent="Il Colosso ha respinto Il Raccoglitore nel mare.";
   colossoOutcomeEl.classList.add("show","win");});
 }
 function colossoLose(){
+ if(giantTutorialEl)giantTutorialEl.classList.remove("show");
  colosso.phase="lost";colossoOutcomeEl.querySelector("h1").textContent="IL COLOSSO CROLLA";
  colossoOutcomeEl.querySelector("p").textContent="Riprova dal checkpoint del Colosso.";
  colossoOutcomeEl.classList.remove("win");colossoOutcomeEl.classList.add("show");sfx.lose();
@@ -1019,9 +1049,10 @@ function updateColosso(dt){
   return;
  }
  if(colosso.phase==="reveal"){
-  if(colosso.t>2.7){colosso.phase="fight";colosso.t=0;missionHintEl.classList.remove("show");saveCheckpoint("colosso");}
+  if(colosso.t>2.7){colosso.phase="tutorial";colosso.t=0;saveCheckpoint("colosso");showGiantTutorial();}
   return;
  }
+ if(colosso.phase==="tutorial")return;
  if(colosso.phase==="finishing"){updateColossoFinish(dt);return;}
  if(colosso.phase!=="fight")return;
  colosso.punchT=Math.max(0,colosso.punchT-rawDtGlobal);colosso.punchCd=Math.max(0,(colosso.punchCd||0)-rawDtGlobal);colosso.beamT=Math.max(0,colosso.beamT-rawDtGlobal);
@@ -1054,6 +1085,7 @@ function updateColosso(dt){
   if(colosso.playerHp<=0)colossoLose();
  }
 }
+document.getElementById("giantTutorialBtn").addEventListener("click",beginGiantBattle);
 document.getElementById("colossoOutcomeBtn").addEventListener("click",()=>{
  colossoOutcomeEl.classList.remove("show");
  if(colosso&&colosso.phase==="lost"){restoreCheckpoint("colosso");return;}
@@ -1277,6 +1309,7 @@ const gameOverEl=document.getElementById("gameOver");
 const colossoHpWrapEl=document.getElementById("colossoHpWrap");
 const colossoHpFillEl=document.getElementById("colossoHpFill");
 const colossoOutcomeEl=document.getElementById("colossoOutcome");
+const giantTutorialEl=document.getElementById("giantTutorial");
 let gameStarted=false;
 let gameOverActive=false;
 let paused=false,postBossState=false,currentCheckpoint=null;
@@ -1566,6 +1599,7 @@ window.addEventListener("keydown",e=>{
  if((e.code==="KeyP"||e.code==="Escape")&&gameStarted&&!endingScreenEl.classList.contains("show")){setPaused(!paused);return;}
  if(paused)return;
  if(e.code==="Space"&&dialogueActive){advanceDialogue();return;}
+ if(e.code==="Space"&&zone==="colosso"&&colosso&&colosso.phase==="tutorial"){beginGiantBattle();return;}
  if(e.code==="Space"&&zone==="archivio"&&nearInteractable){doArchiveInteract();return;}
  if(e.code==="Space"&&zone==="torre"&&nearInteractable==="anomaly"){doAnomalyInteract();return;}
  if(gameOverActive)return;
@@ -1966,10 +2000,11 @@ function frame(now){
    // Hero shot gia' raccordato con la camera del combattimento.
    eye=[13.5,11.8,ARENA_CZ+16];target=[0,4.8,ARENA_CZ-2];
   }else{
-   // Camera 3/4 ricalcolata ogni frame sul midpoint dei due giganti.
+   // Camera 3/4 di battaglia ricostruita ogni frame. Non eredita gli shot
+   // della combinazione; inquadra insieme Colosso, Raccoglitore e citta'.
    const mx=(colosso.robotX+colosso.giantX)*.5,mz=(colosso.robotZ+colosso.giantZ)*.5;
-   eye=[mx+13.5+Math.sin(now/90)*sh*.30,11.8+Math.sin(now/75)*sh*.18,mz+18.0];
-   target=[mx,4.6,mz-.8];
+   eye=[mx+12.0+Math.sin(now/90)*sh*.30,10.8+Math.sin(now/75)*sh*.18,mz+15.0];
+   target=[mx,4.4,mz-1.0];
   }
  }else{
  // camera terza persona dietro il personaggio, con collisione contro i
@@ -2048,8 +2083,7 @@ function frame(now){
   const ticModel=mul(mat4.translate(ticX,ticY,ticZ),mat4.rotY(ticFaceYaw));
   drawBuffer(ticBuf,ticModel,vp);
  }else if(zone==="arena"){
-  drawBuffer(arenaSkyBuf,mat4.identity(),vp); // fallback
-  drawTexturedMesh(arenaSkyTex,arenaPanoramaMesh,mat4.identity(),vp,1);
+  drawArenaBackdrop(vp);
   drawBuffer(arenaFloorBuf,mat4.identity(),vp);
   drawBuffer(arenaSeaBuf,mat4.identity(),vp);
   drawBuffer(arenaPropBuf,mat4.identity(),vp);
@@ -2088,8 +2122,7 @@ function frame(now){
    }
   }
  }else if(zone==="colosso"&&colosso){
-  drawBuffer(arenaSkyBuf,mat4.identity(),vp); // fallback
-  drawTexturedMesh(arenaSkyTex,arenaPanoramaMesh,mat4.identity(),vp,1);
+  drawArenaBackdrop(vp);
   drawBuffer(arenaFloorBuf,mat4.identity(),vp);drawBuffer(arenaSeaBuf,mat4.identity(),vp);
   drawBuffer(giantCityBuf,mat4.identity(),vp,.98);
 

@@ -155,7 +155,23 @@
   #hint{bottom:8px;color:#6d7c91;background:rgba(0,0,0,.32);font-size:10px}
   #colossoGuardHelp{position:absolute;right:18px;bottom:18px;display:none;color:#d9f7ff;font-size:11px;
     background:rgba(5,12,18,.72);border:1px solid rgba(80,210,230,.35);padding:8px 11px;letter-spacing:1px}
-  body.started #colossoGuardHelp{display:block}
+  body.started #colossoGuardHelp{display:none}
+
+
+  #giantTutorial{position:absolute;inset:0;z-index:105;display:none;align-items:center;justify-content:center;
+    background:rgba(2,6,12,.72);text-align:center;padding:24px;pointer-events:auto}
+  #giantTutorial.show{display:flex}
+  #giantTutorial .panel{width:min(620px,88vw);background:rgba(5,10,18,.94);border:2px solid rgba(255,210,74,.75);
+    box-shadow:0 0 34px rgba(0,0,0,.65);padding:24px 28px}
+  #giantTutorial h2{margin:0 0 8px;color:#ffe071;font-size:26px;letter-spacing:4px}
+  #giantTutorial .sub{color:#8de8ff;font-size:12px;letter-spacing:2px;margin-bottom:18px}
+  #giantTutorial .controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:0 0 18px}
+  #giantTutorial .key{border:1px solid rgba(125,220,245,.4);background:rgba(10,25,35,.8);padding:12px 8px;color:#dffaff;font-size:11px;line-height:1.5}
+  #giantTutorial .key b{display:block;color:#fff39a;font-size:19px;margin-bottom:3px}
+  #giantTutorial .tip{color:#c7d1e4;font-size:12px;line-height:1.6;margin:0 0 20px}
+  #giantTutorialBtn{background:rgba(255,210,74,.15);border:1px solid rgba(255,210,74,.8);color:#fff2b2;
+    font:700 14px "Rajdhani","Courier New",monospace;letter-spacing:2px;padding:11px 26px;cursor:pointer}
+  #giantTutorialBtn:hover{background:rgba(255,210,74,.28)}
 
 </style>
 </head>
@@ -182,6 +198,21 @@ i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del 
   <div id="colossoHpLabel">IL RACCOGLITORE</div>
   <div id="colossoHpTrack"><div id="colossoHpFill"></div></div>
 </div>
+
+<div id="giantTutorial">
+  <div class="panel">
+    <h2>COLOSSO RANGER</h2>
+    <div class="sub">COMBATTIMENTO GIGANTE // CAMERA 3/4</div>
+    <div class="controls">
+      <div class="key"><b>F</b>PUGNO<br>carica energia</div>
+      <div class="key"><b>SHIFT</b>GUARDIA<br>usa il timing</div>
+      <div class="key"><b>C</b>SPECIALE<br>solo a energia piena</div>
+    </div>
+    <p class="tip">Guarda l'avviso dell'attacco del Raccoglitore. Premi SHIFT nella finestra giusta per una <b>GUARDIA PERFETTA</b>. Lo speciale C si attiva solo quando la barra energia e' piena.</p>
+    <button id="giantTutorialBtn" type="button">SPAZIO / COMBATTI</button>
+  </div>
+</div>
+
 <div id="colossoOutcome">
   <h1>VITTORIA</h1>
   <p>...</p>
@@ -205,7 +236,7 @@ i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del 
 </div>
 <div id="hpBar"><div id="hpLabel">HP</div><div id="hpTrack"><div id="hpFill"></div></div></div>
 <div id="missionHint">MISSIONE</div>
-<div id="hud">RANGER ZERO <span style="color:#7fa8ff">// v24.1 PLAYTEST</span></div>
+<div id="hud">RANGER ZERO <span style="color:#7fa8ff">// v24.1.1 HOTFIX</span></div>
 <div id="tag">LA TORRE — SALA DI COMANDO<br>test movimento + personaggio 3D vero</div>
 <div id="hint">W/S avanti-indietro · A/D ruota · Q/E telecamera · F attacco · SHIFT schivata/guardia · C speciale · P/ESC pausa</div>
 <div id="pauseScreen">
