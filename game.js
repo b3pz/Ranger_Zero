@@ -509,6 +509,7 @@ function partMeshFor(pal){
   upperArm:boxMesh(pal.suit), lowerArm:boxMesh(pal.skin), glove:boxMesh(pal.accent),
   upperLeg:boxMesh(pal.suit), lowerLeg:boxMesh(pal.boot),
   bladeCore:boxMesh([.85,.92,.98]), bladeEdge:boxMesh(pal.accent), bladeHilt:boxMesh([.15,.14,.16]),
+  menaceEye:boxMesh([.95,.15,.08]),
  };
  meshCache[key]=m;
  return m;
@@ -547,9 +548,13 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
   parts.push({mesh:pm.helmetShell, mtx:mul(mat4.translate(0,1.52+bob-hunch*.4,0),mat4.rotX(hunch*.6),mat4.scale(.30,.28,.30))});
   parts.push({mesh:pm.helmetVisor, mtx:mul(mat4.translate(0,1.51+bob-hunch*.4,.145),mat4.rotX(hunch*.6),mat4.scale(.22,.05,.05))});
  }else if(kind==="raccoglitore"){
-  // corna al posto della cresta, elmo piu' squadrato/pesante
+  // corna al posto della cresta, elmo piu' squadrato/pesante, e due occhi
+  // rossi che si vedono attraverso la visiera invece di una fessura piatta
+  // e basta — gli dà un volto minaccioso vero senza dover ridisegnare tutto.
   parts.push({mesh:pm.helmetShell, mtx:mul(mat4.translate(0,1.60+bob,0),mat4.scale(.36,.35,.35))});
   parts.push({mesh:pm.helmetVisor, mtx:mul(mat4.translate(0,1.58+bob,.165),mat4.scale(.27,.13,.05))});
+  parts.push({mesh:pm.menaceEye, mtx:mul(mat4.translate(-.10,1.585+bob,.175),mat4.scale(.045,.04,.02))});
+  parts.push({mesh:pm.menaceEye, mtx:mul(mat4.translate(.10,1.585+bob,.175),mat4.scale(.045,.04,.02))});
   parts.push({mesh:pm.horn, mtx:mul(mat4.translate(-.16,1.86+bob,0),mat4.rotZ(.35),mat4.scale(.06,.20,.06))});
   parts.push({mesh:pm.horn, mtx:mul(mat4.translate(.16,1.86+bob,0),mat4.rotZ(-.35),mat4.scale(.06,.20,.06))});
  }else{
@@ -696,6 +701,14 @@ const arenaSkyBuf=makeBuffer(bakeParts([
  ...buildSkyWall(ARENA_CX+ARENA_W/2+2,ARENA_CZ,ARENA_D+30,Math.PI/2),
  ...buildSkyWall(ARENA_CX,ARENA_CZ+ARENA_D/2+2,ARENA_W+30,0),
 ]));
+// Fondale vero (opzionale): se "arena_sky.png" e' presente nella cartella,
+// un grande pannello con l'immagine sostituisce/copre le bande di colore
+// procedurali sull'orizzonte nord (la direzione verso cui si guarda per la
+// maggior parte del combattimento, ed e' dove emerge Il Raccoglitore).
+// Se il file non c'e', drawTexturedQuad non disegna nulla — restano solo
+// le bande procedurali, nessun errore, nessun buco visivo.
+const arenaSkyTex=loadTexture("arena_sky.png");
+const ARENA_SKY_PANEL={x:ARENA_CX,y:SKY_Y0+SKY_H*.42,z:ARENA_CZ-ARENA_D/2-1.9,w:ARENA_W+28,h:SKY_H*.95};
 
 // ============================================================
 // NEMICI — scagnozzi (deboli, in gruppo) e Il Raccoglitore (piu' forte,
@@ -748,7 +761,7 @@ function colossoPunch(){
  colosso.punchT=.32;
  colosso.giantHp=Math.max(0,colosso.giantHp-18);
  player.energy=Math.min(player.energyMax,player.energy+9);
- colosso.beamBursts.push({t:0,kind:"punch"});
+ colosso.beamBursts.push({t:0,kind:"punch",ox:(Math.random()-.5)*2.2,oy:Math.random()*1.6-.2});
  sfx.giantHit();
  triggerSlowMo(.09,.08);
  if(colosso.giantHp<=0)startColossoFinish();
@@ -847,7 +860,7 @@ function updateColosso(dt){
 document.getElementById("colossoOutcomeBtn").addEventListener("click",()=>{
  colossoOutcomeEl.classList.remove("show");
  if(colosso&&colosso.phase==="lost"){
-  colosso.phase="fight";colosso.giantHp=colosso.giantHpMax*.5;colosso.playerHp=colosso.playerHpMax;colosso.attackCd=2.6;
+  colosso.phase="fight";colosso.giantHp=colosso.giantHpMax;colosso.playerHp=colosso.playerHpMax;colosso.attackCd=2.6;
  }else{
   colosso=null;missionHintEl.classList.remove("show");colossoHpWrapEl.classList.remove("show");
   archivioUnlocked=true;
@@ -964,6 +977,9 @@ const hudEl=document.getElementById("gameHud");
 const energyFillEl=document.getElementById("energyFill");
 const hpFillEl=document.getElementById("hpFill");
 const missionHintEl=document.getElementById("missionHint");
+const hudLocationEl=document.getElementById("hudLocation");
+const ZONE_LABELS={torre:"LA TORRE // SALA DI COMANDO",arena:"COSTA SUD // SPIAGGIA",colosso:"IL COLOSSO // PRIMA LINEA",archivio:"LA TORRE // ARCHIVIO"};
+let lastZoneLabel=null;
 const interactPromptEl=document.getElementById("interactPrompt");
 const dmgVignetteEl=document.getElementById("dmgVignette");
 const gameOverEl=document.getElementById("gameOver");
@@ -1137,7 +1153,7 @@ function startArchiveSequence(){
  archiveState={terminalRead:false,helmetsRead:false,revealing:false};
  enterArchivio();
  setTimeout(()=>{
-  missionHintEl.textContent="ESPLORA L'ARCHIVIO";
+  missionHintEl.textContent="ESPLORA L'ARCHIVIO — CERCA IL TERMINALE E GLI ELMI";
   missionHintEl.classList.add("show");
  },600);
 }
@@ -1310,7 +1326,7 @@ function trySpecial(){
   const f=facingDot(player.x,player.z,player.yaw,en.x,en.z);
   if(f.dist<2.6&&f.dot>.25){
    damageEnemy(en,42);
-   specialBursts.push({x:en.x,y:1.1,z:en.z,t:0});
+   specialBursts.push({x:en.x+(Math.random()-.5)*.5,y:.8+Math.random()*.7,z:en.z+(Math.random()-.5)*.5,t:0});
    hitAny=true;
   }
  }
@@ -1453,6 +1469,7 @@ function frame(now){
  updateTransformation(dt);
  const inputLocked=!!transformState||!gameStarted||dialogueActive||gameOverActive||zone==="colosso"||(colosso&&colosso.phase==="converge")||choiceScreenEl.classList.contains("show")||endingScreenEl.classList.contains("show")||!!emergeCutscene;
  if(gameStarted)energyFillEl.style.width=(74+Math.sin(now/900)*4)+"%";
+ if(zone!==lastZoneLabel){ lastZoneLabel=zone; hudLocationEl.textContent=ZONE_LABELS[zone]||""; }
 
  // rotazione del personaggio (A/D) — indipendente dal movimento, niente
  // piu' ricalcolo dello yaw dal vettore di spostamento: quel ricalcolo
@@ -1650,6 +1667,7 @@ function frame(now){
   drawBuffer(ticBuf,ticModel,vp);
  }else if(zone==="arena"){
   drawBuffer(arenaSkyBuf,mat4.identity(),vp);
+  drawTexturedQuad(arenaSkyTex, mul(mat4.translate(ARENA_SKY_PANEL.x,ARENA_SKY_PANEL.y,ARENA_SKY_PANEL.z),mat4.scale(ARENA_SKY_PANEL.w,ARENA_SKY_PANEL.h,1)), vp, 1);
   drawBuffer(arenaFloorBuf,mat4.identity(),vp);
   drawBuffer(arenaSeaBuf,mat4.identity(),vp);
   drawBuffer(arenaPropBuf,mat4.identity(),vp);
@@ -1678,6 +1696,7 @@ function frame(now){
   }
  }else if(zone==="colosso"&&colosso){
   drawBuffer(arenaSkyBuf,mat4.identity(),vp);
+  drawTexturedQuad(arenaSkyTex, mul(mat4.translate(ARENA_SKY_PANEL.x,ARENA_SKY_PANEL.y,ARENA_SKY_PANEL.z),mat4.scale(ARENA_SKY_PANEL.w,ARENA_SKY_PANEL.h,1)), vp, 1);
   drawBuffer(arenaFloorBuf,mat4.identity(),vp);
   drawBuffer(arenaSeaBuf,mat4.identity(),vp);
   // Il Raccoglitore gigante, sempre rivolto verso la telecamera (verso il
@@ -1696,7 +1715,7 @@ function frame(now){
    for(const b of colosso.beamBursts){
     if(b.kind==="punch"){
      const p=b.t/.4, sc=.4+p*2.2, a=Math.max(0,1-p);
-     drawBuffer(burstBuf, mul(mat4.translate(ARENA_CX,COLOSSO_EYE_Y-1.5,COLOSSO_GIANT_Z+4),mat4.scale(sc,sc,sc)), vp, a*.9);
+     drawBuffer(burstBuf, mul(mat4.translate(ARENA_CX+(b.ox||0),COLOSSO_EYE_Y-1.5+(b.oy||0),COLOSSO_GIANT_Z+4),mat4.scale(sc,sc,sc)), vp, a*.9);
     }else{
      const p=b.t/.4, a=Math.max(0,1-p);
      const beamLen=(COLOSSO_CAM_Z-COLOSSO_GIANT_Z)/2;

@@ -267,6 +267,48 @@ Questa versione (v12) aggiunge, rispetto a quanto descritto sopra:
 - Verificato col test che aveva scoperto il bug: prima 20 pugni sul Colosso registravano
   90 danni su 360 possibili, ora 342 su 360.
 
+## Aggiornamento v20 — feedback da playtest vero
+- **Bug corretto**: `oculo_eye.png` aveva perso la trasparenza da qualche parte lungo il
+  percorso (angoli tornati neri opachi invece che trasparenti) — si vedeva un alone nero
+  intorno all'occhio. Rifatto il processo di trasparenza con soglia basata su
+  luminosità+saturazione (per non toccare l'iride rossa scura, che è scura ma satura).
+- **Punto di impatto dei pugni sul Colosso randomizzato**: prima ogni pugno mostrava lo
+  scoppio sempre nello stesso punto fisso (vicino alla cintura, dava l'idea sbagliata) —
+  ora l'offset (`b.ox`, `b.oy` su `colosso.beamBursts`) è casuale ad ogni colpo, sparso sul
+  torso. Stessa cosa per l'attacco speciale in scala normale (`specialBursts`).
+- **Il Raccoglitore ha un volto vero**: due occhi rossi (`menaceEye`) visibili attraverso
+  la visiera invece di una fessura piatta e basta.
+- **Sconfitta sul Colosso ora costa davvero**: prima, perdendo, si ripartiva con il gigante
+  già al 50% di vita (troppo comodo). Ora riparte a vita piena — la sconfitta è una vera
+  battuta d'arresto, non un continue gratis.
+- **Archivio più chiaro**: il testo guida ora dice esplicitamente "CERCA IL TERMINALE E GLI
+  ELMI" invece del generico "ESPLORA L'ARCHIVIO".
+
+## Sul ritmo generale (osservazione dell'utente: "mi sembra tutto un po' veloce")
+Osservazione corretta e già nota — resta il limite più vero di questa versione. La
+struttura narrativa regge (l'ho verificato a fondo nell'audit precedente), ma i singoli
+segmenti sono brevi: il combattimento in spiaggia dura pochi minuti, l'Archivio si esplora
+in meno di un minuto. Non è stato ancora risolto in questa sessione — le strade possibili
+sono: più scagnozzi/ondate prima de Il Raccoglitore, più tappe nell'Archivio, o accettare
+che il capitolo resti breve per design (coerente con "20-30 minuti a capitolo" della
+pre-produzione originale) e concentrare gli sforzi altrove.
+
+## Aggiornamento v21 — etichetta posizione HUD corretta + gancio per fondali immagine
+- **Bug corretto**: l'etichetta di posizione nell'HUD (sotto "RANGER ZERO") era scritta a
+  fuoco fisso nell'HTML — diceva sempre "LA TORRE // SALA DI COMANDO" anche in spiaggia o
+  al game over. Ora ha un id dedicato (`#hudLocation`) e si aggiorna ogni frame in base alla
+  zona reale (`ZONE_LABELS`, controllato solo quando la zona cambia per non toccare il DOM
+  inutilmente). Verificato anche nella schermata di game over.
+- **Gancio pronto per un fondale immagine in spiaggia**: `arena_sky.png`, se presente nella
+  cartella, sostituisce/copre le bande di colore procedurali sulla parete nord (la
+  direzione principale di vista durante il combattimento, dove emerge Il Raccoglitore).
+  Stesso meccanismo usato per `oculo_eye.png` — se il file non c'e', non si disegna niente,
+  nessun errore, nessun buco visivo. Vedi `ARENA_SKY_PANEL` in game.js per posizione/
+  dimensioni del pannello (larghezza ARENA_W+28, altezza quasi tutto SKY_H).
+  **Nota per chi riprende**: se si vuole aggiungere anche un fondale per la Torre o il
+  Colosso, replicare lo stesso pattern (`loadTexture` + `drawTexturedQuad` posizionato su
+  una parete) invece di inventare un sistema nuovo.
+
 ## Cosa manca ancora
 1. Musica/ambiente di sottofondo (solo SFX puntuali per ora).
 2. Bilanciamento vero del combattimento (numeri di danno/HP scelti a naso).
