@@ -1288,9 +1288,24 @@ const introLines=[
  {speaker:"OCULO",text:"Squadra, in posizione. Zero — trasformati, e vai."},
 ];
 function startIntro(){
+ // Ogni nuova partita deve mostrare per intero il rituale tokusatsu:
+ // briefing -> allarme -> trasformazione -> trasferimento. Nessun checkpoint
+ // o stato precedente puo' lasciare Zero gia' trasformato.
+ player.transformed=false;player.helmet=false;transformState=null;clearKeys();
+ missionHintEl.classList.remove("show");playAmbient("torre");
  playDialogue(introLines,()=>{
-  missionHintEl.textContent="ALLARME — TRASFORMAZIONE IN CORSO";missionHintEl.classList.add("show");sfx.alarm();startTransformation();
-  afterGame(2300,()=>{missionHintEl.textContent="TRASFERIMENTO IN CORSO";afterGame(700,()=>enterArena());});
+  clearKeys();missionHintEl.textContent="ALLARME — UNITÀ ZERO, PREPARATI";missionHintEl.classList.add("show");sfx.alarm();
+  afterGame(450,()=>{
+   missionHintEl.textContent="ZERO — TRASFORMAZIONE!";
+   startTransformation();
+   afterGame(1250,()=>{
+    // Aspettiamo che la trasformazione sia realmente terminata prima di
+    // lasciare la Torre: niente salto diretto al Ranger gia' pronto.
+    if(!player.transformed){player.transformed=true;player.helmet=true;transformState=null;}
+    missionHintEl.textContent="TRASFERIMENTO IN CORSO";
+    afterGame(700,()=>enterArena());
+   });
+  });
  });
 }
 const postBossLines=[
@@ -1409,7 +1424,10 @@ const edgeKeys=new Set(["Space","KeyF","KeyC","ShiftLeft","ShiftRight","KeyP","E
 window.addEventListener("keydown",e=>{
  if(e.repeat&&edgeKeys.has(e.code))return;
  keys[e.code]=true;
- if(e.code==="Space"&&!gameStarted){readCheckpoint()?continueGame():beginNewGame();return;}
+ // SPAZIO conserva il comportamento storico del gioco: avvia SEMPRE una
+ // nuova sessione completa. CONTINUA e' volutamente solo il pulsante menu,
+ // cosi' un vecchio checkpoint non puo' saltare intro e trasformazione.
+ if(e.code==="Space"&&!gameStarted){beginNewGame();return;}
  if((e.code==="KeyP"||e.code==="Escape")&&gameStarted&&!endingScreenEl.classList.contains("show")){setPaused(!paused);return;}
  if(paused)return;
  if(e.code==="Space"&&dialogueActive){advanceDialogue();return;}

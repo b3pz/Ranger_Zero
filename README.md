@@ -1,3 +1,16 @@
+# RANGER ZERO v23.0.1 — INTRO / TRANSFORM HOTFIX
+
+Hotfix cumulativo basato su v23. Corregge una regressione introdotta dal sistema checkpoint: un checkpoint esistente poteva fare in modo che SPAZIO dal titolo eseguisse CONTINUA e saltasse briefing, allarme e trasformazione.
+
+## Fix
+- SPAZIO dal titolo avvia sempre **NUOVA PARTITA**.
+- **CONTINUA** resta disponibile solo dal pulsante dedicato.
+- Nuova partita forza Zero in stato civile prima dell'intro.
+- Sequenza iniziale resa esplicita: dialoghi -> allarme -> trasformazione -> trasferimento -> spiaggia.
+- La trasformazione resta visibile prima del teleport e non puo' essere saltata da uno stato precedente.
+
+---
+
 # RANGER ZERO — v23 TOKUSATSU PAYOFF + SAFETY
 
 Secondo episodio dell'antologia horror/meta **LIMEN**. Build cumulativa basata su **v22 (Archivio + capsule + HP bar)**.

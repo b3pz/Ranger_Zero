@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RANGER ZERO — vertical slice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;padding:0;background:#000;overflow:hidden;height:100%;font-family:"Rajdhani","Courier New",Courier,monospace}
+  #c{display:block;width:100vw;height:100vh}
+  #hud{position:absolute;left:12px;top:12px;color:#ffb43a;font-weight:700;font-size:13px;letter-spacing:1px;
+       background:rgba(4,6,10,.75);border:1px solid rgba(255,180,58,.5);padding:8px 12px;text-shadow:1px 1px #000}
+  #hint{position:absolute;left:12px;bottom:12px;color:#8fa0c0;font-size:11px;background:rgba(4,6,10,.75);
+        border:1px solid rgba(140,160,200,.4);padding:6px 10px}
+  #tag{position:absolute;right:12px;top:12px;color:#5a6a8a;font-size:11px;text-align:right}
+  #flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .08s linear}
+  #specialFlash{position:absolute;inset:0;background:radial-gradient(circle,#fff6cc 0%,#ffb84a 55%,transparent 80%);
+    opacity:0;pointer-events:none;transition:opacity .11s ease-out;mix-blend-mode:screen}
+  #teleportFlash{position:absolute;inset:0;background:radial-gradient(circle,#eafcff 0%,#25c9d6 45%,transparent 78%);
+    opacity:0;pointer-events:none;transition:opacity .26s ease-out;mix-blend-mode:screen}
+
+  #fileWarning{position:absolute;left:50%;bottom:60px;transform:translateX(-50%);max-width:min(90vw,560px);
+    background:rgba(10,4,4,.94);border:1px solid rgba(255,110,80,.6);color:#ffcaa8;font-size:12px;
+    line-height:1.5;padding:12px 16px;opacity:0;pointer-events:none;transition:opacity .3s ease;z-index:80}
+  #fileWarning.show{opacity:1}
+  #fileWarning b{color:#ffe27a}
+
+  #dmgVignette{position:absolute;inset:0;pointer-events:none;opacity:0;
+    background:radial-gradient(ellipse at center,transparent 40%,rgba(180,20,10,.65) 100%);
+    transition:opacity .1s ease}
+
+  #gameOver{position:absolute;inset:0;background:rgba(4,0,0,.88);display:none;align-items:center;
+    justify-content:center;flex-direction:column;z-index:90}
+  #gameOver.show{display:flex}
+  #gameOver h1{color:#ff4a3a;font-size:52px;letter-spacing:6px;margin:0 0 14px;text-shadow:3px 3px #000}
+  #gameOver p{color:#ffb49a;font-size:14px;margin:0 0 26px}
+  #gameOver button{background:rgba(255,90,60,.15);border:1px solid rgba(255,120,90,.7);color:#ffdcc8;
+    font:700 15px "Rajdhani","Courier New",monospace;letter-spacing:1px;padding:10px 24px;cursor:pointer}
+  #gameOver button:hover{background:rgba(255,90,60,.3)}
+
+  #dialogueBox{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);width:min(82vw,900px);
+    aspect-ratio:2172/724;display:none;cursor:pointer;z-index:60;
+    background:url('dialogue_frame.png') center/100% 100% no-repeat}
+  #dialogueBox.show{display:block}
+  #dialogueName{position:absolute;left:5.5%;top:12%;width:17%;height:16%;display:flex;align-items:center;
+    justify-content:center;color:#7fc4ff;font-weight:700;font-size:13px;letter-spacing:1px;text-align:center}
+  #dialogueName.oculo{color:#ff8a6b}
+  #dialogueText{position:absolute;left:24%;top:30%;width:70%;height:56%;overflow:hidden;
+    color:#e8eefc;font-size:15px;line-height:1.5;display:flex;align-items:center}
+  #dialoguePrompt{position:absolute;right:8%;bottom:15%;color:#5a6a8a;font-size:10px;animation:blink 1.4s infinite}
+
+  #colossoHpWrap{position:absolute;left:50%;top:16px;transform:translateX(-50%);width:min(60vw,560px);
+    display:none;flex-direction:column;align-items:center;gap:4px}
+  #colossoHpWrap.show{display:flex}
+  #colossoHpLabel{color:#ffb49a;font-size:11px;font-weight:700;letter-spacing:2px}
+  #colossoHpTrack{width:100%;height:14px;background:rgba(4,4,6,.85);border:1px solid rgba(255,120,80,.5)}
+  #colossoHpFill{height:100%;width:100%;background:linear-gradient(90deg,#8a1a10,#ff5a3c);transition:width .15s ease}
+
+  #colossoOutcome{position:absolute;inset:0;background:rgba(2,4,10,.9);display:none;align-items:center;
+    justify-content:center;flex-direction:column;z-index:95}
+  #colossoOutcome.show{display:flex}
+  #colossoOutcome h1{color:#ff4a3a;font-size:48px;letter-spacing:6px;margin:0 0 14px;text-shadow:3px 3px #000}
+  #colossoOutcome.win h1{color:#ffd24a}
+  #colossoOutcome p{color:#cdd8f0;font-size:14px;margin:0 0 26px}
+  #colossoOutcome button{background:rgba(255,210,74,.15);border:1px solid rgba(255,210,74,.7);color:#fff2c8;
+    font:700 15px "Rajdhani","Courier New",monospace;letter-spacing:1px;padding:10px 24px;cursor:pointer}
+  #colossoOutcome button:hover{background:rgba(255,210,74,.3)}
+
+  #choiceScreen{position:absolute;inset:0;background:rgba(2,2,4,.86);display:none;align-items:center;
+    justify-content:center;flex-direction:column;z-index:96;text-align:center;padding:0 20px;
+    background-image:radial-gradient(rgba(2,2,4,.55),rgba(2,2,4,.94)),url('oculo_eye.png');
+    background-size:cover,42vh;background-position:center,center 18%;background-repeat:no-repeat}
+  #choiceScreen.show{display:flex}
+  #choiceScreen h2{color:#ff8a6b;font-size:20px;letter-spacing:3px;margin:38vh 0 24px;text-shadow:2px 2px #000}
+  #choiceRow{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
+  .choiceBtn{background:rgba(20,20,28,.9);border:1px solid rgba(140,180,255,.4);color:#dfe8ff;
+    font:700 14px "Rajdhani","Courier New",monospace;letter-spacing:.5px;padding:16px 20px;cursor:pointer;
+    max-width:230px;text-align:left;line-height:1.5}
+  .choiceBtn:hover{background:rgba(50,60,90,.9);border-color:#7fc4ff}
+  .choiceBtn .lbl{display:block;color:#7fc4ff;font-size:11px;letter-spacing:1px;margin-bottom:6px}
+
+  #endingScreen{position:absolute;inset:0;background:#000;display:none;align-items:center;
+    justify-content:center;flex-direction:column;z-index:99;text-align:center}
+  #endingScreen.show{display:flex}
+  #endingScreen h1{font-size:40px;letter-spacing:5px;margin:0 0 16px;text-shadow:3px 3px #000}
+  #endingScreen p{color:#aab4cc;font-size:13px;max-width:520px;line-height:1.6;margin:0 0 10px}
+  #endingScreen .code{color:#4a5a7a;font-size:11px;margin-top:22px;letter-spacing:1px}
+  #endingScreen.good h1{color:#7fe0a0}
+  #endingScreen.normal h1{color:#e0c060}
+  #endingScreen.evil h1{color:#ff5a5a}
+  #cliffFlash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:100}
+  #cliffEye{position:absolute;left:50%;top:50%;width:70vh;max-width:90vw;transform:translate(-50%,-50%) scale(.85);
+    opacity:0;pointer-events:none;filter:drop-shadow(0 0 60px rgba(37,201,214,.7));
+    transition:opacity 1.6s ease,transform 3s ease;z-index:101}
+  #cliffEye.show{opacity:1;transform:translate(-50%,-50%) scale(1.05)}
+  #interactPrompt{position:absolute;left:50%;bottom:22%;transform:translateX(-50%);color:#dfe8ff;
+    font-size:12px;font-weight:700;letter-spacing:1px;background:rgba(6,6,10,.85);
+    border:1px solid rgba(140,180,255,.5);padding:8px 16px;opacity:0;transition:opacity .2s ease;
+    pointer-events:none}
+  #interactPrompt.show{opacity:1;animation:blink 1.6s infinite}
+
+  #titleScreen{position:absolute;inset:0;background:#000 url('title_cover.png') center center/cover no-repeat;
+    display:flex;align-items:flex-end;cursor:pointer;z-index:50}
+  #titleScreen .prompt{width:100%;text-align:center;padding-bottom:9vh;color:#ffe27a;font-weight:700;
+    font-size:20px;letter-spacing:3px;text-shadow:2px 2px 6px #000;animation:blink 1.4s infinite}
+  #titleScreen .titleLogo{position:absolute;left:5%;top:10%;color:#ff5a3c;font-size:44px;font-weight:900;
+    letter-spacing:2px;text-shadow:3px 3px 0 #000,0 0 22px rgba(255,90,60,.6)}
+  #titleScreen .titleSub{position:absolute;left:5%;top:19%;color:#bcd3ff;font-size:13px;letter-spacing:1px;max-width:34%}
+  @keyframes blink{0%,55%{opacity:1}56%,100%{opacity:.15}}
+
+  #gameHud{position:absolute;left:14px;top:14px;width:min(38vw,430px);aspect-ratio:1080/360;
+    background:url('hud_frame.png') center/100% 100% no-repeat;display:none}
+  #energyTrack{position:absolute;left:7%;top:35.5%;width:26.5%;height:26%;display:flex;align-items:center;padding:0 4%}
+  #energyFill{height:58%;width:80%;background:linear-gradient(90deg,#25c9d6,#7ff3ff);box-shadow:0 0 10px #25c9d6;border-radius:1px}
+  #hudText{position:absolute;left:39%;top:0;width:56%;height:100%;display:flex;flex-direction:column;
+    justify-content:center;color:#ffe9b0;font-size:12px;font-weight:700;letter-spacing:1px;text-shadow:1px 1px #000}
+  #hudText .small{color:#8fb8d8;font-size:10px;font-weight:400;margin-top:4px}
+  body.started #hud{display:none}
+  body.started #tag{display:none}
+  body.dialogue-active #hint{display:none}
+
+  #hpBar{position:absolute;left:14px;top:calc(14px + min(38vw,430px) * 360 / 1080 + 8px);width:min(38vw,430px);
+    display:none;align-items:center;gap:8px}
+  body.started #hpBar{display:flex}
+  #hpLabel{color:#ff9a6b;font-size:10px;font-weight:700;letter-spacing:1px;width:26px}
+  #hpTrack{flex:1;height:12px;background:rgba(4,4,6,.85);border:1px solid rgba(255,120,80,.5);border-radius:2px;overflow:hidden}
+  #hpFill{height:100%;width:100%;background:linear-gradient(90deg,#c0281c,#ff7a3c);transition:width .15s ease}
+
+  #missionHint{position:absolute;left:50%;top:16px;transform:translateX(-50%);color:#ffd27a;font-size:12px;
+    font-weight:700;letter-spacing:1px;background:rgba(6,4,2,.8);border:1px solid rgba(255,190,100,.5);
+    padding:7px 16px;opacity:0;transition:opacity .3s ease;pointer-events:none}
+  #missionHint.show{opacity:1}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="flash"></div>
+<div id="specialFlash"></div>
+<div id="teleportFlash"></div>
+<div id="fileWarning"><b>Le texture 3D non si caricano.</b> Stai aprendo il file direttamente (doppio click):
+i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del gioco e lancia
+<b>python3 -m http.server 8000</b>, poi vai su <b>http://localhost:8000</b> nel browser.</div>
+<div id="dmgVignette"></div>
+<div id="gameOver">
+  <h1>SESSIONE INTERROTTA</h1>
+  <p>Ranger Zero e' caduto in combattimento.</p>
+  <button id="gameOverBtn" type="button">&gt; RIPRENDI</button>
+</div>
+<div id="dialogueBox">
+  <div id="dialogueName">OCULO</div>
+  <div id="dialogueText">...</div>
+  <div id="dialoguePrompt">CLICCA O SPAZIO PER CONTINUARE</div>
+</div>
+<div id="colossoHpWrap">
+  <div id="colossoHpLabel">IL RACCOGLITORE</div>
+  <div id="colossoHpTrack"><div id="colossoHpFill"></div></div>
+</div>
+<div id="colossoOutcome">
+  <h1>VITTORIA</h1>
+  <p>...</p>
+  <button id="colossoOutcomeBtn" type="button">&gt; CONTINUA</button>
+</div>
+<div id="choiceScreen">
+  <h2>OCULO SI RIVOLGE A TE.</h2>
+  <div id="choiceRow"></div>
+</div>
+<div id="endingScreen">
+  <h1>...</h1>
+  <p>...</p>
+  <div class="code">LMN_02 // SESSIONE REGISTRATA</div>
+</div>
+<div id="cliffFlash"></div>
+<img id="cliffEye" src="oculo_eye.png">
+<div id="interactPrompt">SPAZIO — LEGGI</div>
+<div id="gameHud">
+  <div id="energyTrack"><div id="energyFill"></div></div>
+  <div id="hudText">RANGER ZERO<div id="hudLocation" class="small">LA TORRE // SALA DI COMANDO</div></div>
+</div>
+<div id="hpBar"><div id="hpLabel">HP</div><div id="hpTrack"><div id="hpFill"></div></div></div>
+<div id="missionHint">MISSIONE</div>
+<div id="hud">RANGER ZERO <span style="color:#7fa8ff">// vertical slice</span></div>
+<div id="tag">LA TORRE — SALA DI COMANDO<br>test movimento + personaggio 3D vero</div>
+<div id="hint">W/S avanti-indietro · A/D ruota · Q/E telecamera · T trasformazione · M missione · F attacco · SHIFT schivata · C speciale</div>
+<div id="titleScreen">
+  <div class="titleLogo">RANGER ZERO</div>
+  <div class="titleSub">Non sei il primo. Non sarai l'ultimo.</div>
+  <div class="prompt">PREMI SPAZIO O CLICCA PER INIZIARE</div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
