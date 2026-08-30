@@ -1063,6 +1063,13 @@ function partProgress(p,a,b){return Math.max(0,Math.min(1,(p-a)/(b-a)));}
 function easeOut3(t){return 1-Math.pow(1-t,3);}
 function drawColossoRobot(vp,p,now,opts){
  opts=opts||{};
+ // Il Colosso deve leggere come il piu' grande dei due giganti (e' l'eroe
+ // combinato da 5 Ranger, non deve sembrare piu' piccolo del nemico) —
+ // scala uniforme applicata qui invece di dover ritoccare ogni singola
+ // parte del corpo. COLOSSO_SCALE porta l'altezza costruita (~8.7 unita'
+ // fino alla cresta dorata) a superare quella de Il Raccoglitore gigante
+ // (~13.6 unita' a scala massima 7.15 sul rig base).
+ const COLOSSO_SCALE=1.62;
  const wx=opts.x===undefined?-5.2:opts.x, wz=opts.z===undefined?ARENA_CZ+1.0:opts.z;
  const yaw=opts.yaw===undefined?Math.PI:opts.yaw;
  const attack=Math.max(0,Math.min(1,opts.attack||0));
@@ -1070,7 +1077,7 @@ function drawColossoRobot(vp,p,now,opts){
  const lunge=Math.sin(attack*Math.PI)*1.25;
  const gx=opts.targetX===undefined?5.0:opts.targetX, gz=opts.targetZ===undefined?ARENA_CZ-5.0:opts.targetZ;
  const dirX=gx-wx,dirZ=gz-wz,dl=Math.hypot(dirX,dirZ)||1;
- const base=mul(mat4.translate(wx+dirX/dl*lunge,0,wz+dirZ/dl*lunge),mat4.rotY(yaw),mat4.rotZ(guard*.035*Math.sin(now/90)));
+ const base=mul(mat4.translate(wx+dirX/dl*lunge,0,wz+dirZ/dl*lunge),mat4.rotY(yaw),mat4.rotZ(guard*.035*Math.sin(now/90)),mat4.scale(COLOSSO_SCALE,COLOSSO_SCALE,COLOSSO_SCALE));
  const drawPart=(buf,fx,fy,fz,sx,sy,sz,stage,fromX,fromY,fromZ,rz=0)=>{
   const q=easeOut3(partProgress(p,stage,Math.min(1,stage+.24)));
   if(q<=0)return;
@@ -1179,7 +1186,7 @@ function colossoPunch(){
  colosso.punchT=.48;colosso.punchCd=.86;
  colosso.giantHp=Math.max(0,colosso.giantHp-10);
  player.energy=Math.min(player.energyMax,player.energy+5);
- colosso.beamBursts.push({t:0,kind:"punch",ox:(Math.random()-.5)*2.2,oy:Math.random()*1.6-.2});
+ colosso.beamBursts.push({t:0,kind:"punch",ox:(Math.random()-.5)*3.4,oy:(Math.random()-.5)*7.5});
  sfx.giantHit(); triggerSlowMo(.09,.08); updateColossoThresholds();
 }
 function colossoSpecial(){
@@ -1278,7 +1285,8 @@ function updateColosso(dt){
   const guarded=colosso.guardT>0;
   const dmg=guarded?(colosso.perfectGuard?0:Math.ceil(baseDmg*.30)):baseDmg;
   colosso.giantAttackT=colosso.attackKind==="slam"?.72:.58;
-  if(colosso.attackKind==="beam")colosso.beamBursts.push({t:0,kind:"enemyBeam"});
+  if(colosso.attackKind==="beam")colosso.beamBursts.push({t:0,kind:"enemyBeam",oy:(Math.random()-.5)*3});
+  else colosso.beamBursts.push({t:0,kind:"enemyHit",ox:(Math.random()-.5)*3.4,oy:(Math.random()-.5)*7.5});
   colosso.shakeT=guarded?.18:.44;colosso.playerHp=Math.max(0,colosso.playerHp-dmg);
   if(guarded){missionHintEl.textContent=colosso.perfectGuard?"GUARDIA PERFETTA":"GUARDIA";missionHintEl.classList.add("show");colosso.messageT=.55;sfx.dodge();}
   else sfx.hitPlayer();
@@ -2478,11 +2486,15 @@ function frame(now){
     if(b.kind==="punch"){
      const p=b.t/.4,sc=.4+p*2.2,a=Math.max(0,1-p);
      const ix=(colosso.robotX+gx)/2+(b.ox||0)*.3, iz=(colosso.robotZ+gz)/2;
-     drawBuffer(burstBuf,mul(mat4.translate(ix,5.1+(b.oy||0)*.25,iz),mat4.scale(sc,sc,sc)),vp,a*.9);
+     drawBuffer(burstBuf,mul(mat4.translate(ix,7.0+(b.oy||0),iz),mat4.scale(sc,sc,sc)),vp,a*.9);
+    }else if(b.kind==="enemyHit"){
+     const p=b.t/.4,sc=.4+p*2.2,a=Math.max(0,1-p);
+     const ix=colosso.robotX+(b.ox||0)*.3, iz=colosso.robotZ;
+     drawBuffer(burstBuf,mul(mat4.translate(ix,7.0+(b.oy||0),iz),mat4.scale(sc,sc,sc)),vp,a*.9);
     }else if(b.kind==="enemyBeam"){
      const p=b.t/.4,a=Math.max(0,1-p),dx=colosso.robotX-gx,dz=colosso.robotZ-gz,len=Math.hypot(dx,dz)||1;
      const mx=(gx+colosso.robotX)/2,mz=(gz+colosso.robotZ)/2,yaw=Math.atan2(dx,dz);
-     drawBuffer(burstBuf,mul(mat4.translate(mx,5.8,mz),mat4.rotY(yaw),mat4.scale(.48,.48,len)),vp,a*.72);
+     drawBuffer(burstBuf,mul(mat4.translate(mx,5.8+(b.oy||0),mz),mat4.rotY(yaw),mat4.scale(.48,.48,len)),vp,a*.72);
     }else{
      const p=b.t/.4,a=Math.max(0,1-p),dx=gx-colosso.robotX,dz=gz-colosso.robotZ,len=Math.hypot(dx,dz)||1;
      const mx=(gx+colosso.robotX)/2,mz=(gz+colosso.robotZ)/2,yaw=Math.atan2(dx,dz);

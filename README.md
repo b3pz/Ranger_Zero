@@ -1,3 +1,33 @@
+# RANGER ZERO v29 — SCALA COLOSSO + IMPATTI SPARSI
+
+## Cosa ho cambiato (feedback: "Colosso più piccolo del Raccoglitore" + "hitbox sempre a basso ventre")
+- **Confermato nel codice, non solo impressione**: il Colosso (`drawColossoRobot`) e'
+  costruito con parti fino a ~8.7 unita' di altezza (cresta dorata), Il Raccoglitore
+  gigante arriva a ~13.6 (rig base ~1.9 × `giantScale` 7.15) — nessuno scaling applicato al
+  Colosso prima d'ora.
+- **Corretto**: aggiunta `COLOSSO_SCALE=1.62` dentro `drawColossoRobot`, applicata alla
+  matrice `base` (quindi a tutte le parti insieme, non serviva toccarle una per una). Il
+  Colosso ora dovrebbe leggere come il più grande dei due — verificare di persona in gioco,
+  non sono riuscito a fare un confronto laterale preciso per limiti di tempo/angolazione
+  nello screenshot che ho controllato.
+- **Impatti dei pugni**: prima l'altezza base era fissa (Y=5.1) con una variazione minima
+  (`oy` compresso a ×.25 su un range già stretto) — il colpo sembrava sempre nello stesso
+  punto basso. Ora la base è più alta (Y=7.0, centro busto) e il range di variazione è
+  molto più ampio (`oy` fino a ±3.75 unità, `ox` fino a ±1.7) — verificato numericamente in
+  test: su 6 pugni consecutivi le altezze d'impatto sono andate da -3.36 a +2.74, quindi
+  ora si spargono davvero sul busto invece di clusterizzare in un punto.
+- **Bonus**: gli attacchi del gigante contro il Colosso (pugno/colpo dall'alto) prima non
+  avevano NESSUN effetto d'impatto visivo (solo il raggio ce l'aveva) — aggiunto un nuovo
+  tipo di scoppio (`enemyHit`) con la stessa randomizzazione, cosi' anche i colpi subiti dal
+  Colosso si vedono e variano.
+
+## Cosa NON ho verificato
+- Il confronto di altezza esatto tra Colosso e Raccoglitore andrebbe controllato di persona
+  fianco a fianco alla stessa distanza dalla camera — il mio test ha usato un'angolazione
+  3/4 che rende difficile giudicare con certezza chi sia più alto.
+
+---
+
 # RANGER ZERO v28 — REDESIGN TUTA (meno robot, più sentai)
 
 Base cumulativa: v27 LUCE DI RIEMPIMENTO (di seguito), a sua volta su v26 dell'utente.
