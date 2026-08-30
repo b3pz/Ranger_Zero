@@ -646,21 +646,21 @@ function makePalette(suit,accent,skin,hair){
 // Civili: outfit diversi e leggibili. Le armature usano invece una sottotuta
 // scura + placche colorate, cosi' non sembrano piu' mute da sommozzatore.
 const PAL_CIVILE=makePalette([.18,.19,.22],[.58,.30,.11],[.85,.63,.48],[.12,.09,.07]);
-// v35: colori classici da sentai — Arco rosso (capo squadra), Meridiana blu
-// vero (prima era un azzurro ghiaccio, meno leggibile come "blu" puro),
-// Jun giallo, Vale rosa. Zero resta apposta FUORI da questa palette
-// classica: e' il sesto Ranger, quello speciale che c'e' in ogni serie
-// toku, non il quinto/sesto membro qualunque — il suo rosso ruggine
-// desaturato lo tiene visivamente separato dal gruppo "canonico".
-const PAL_ZERO   =makePalette([.58,.30,.11],[.50,.40,.18],[.85,.63,.48],[.12,.09,.07]);
-// Zero e' il sesto Ranger, non un sesto/quinto qualunque della squadra
-// classica — il modulo dorsale (vedi buildBodyParts) e' il suo pezzo
-// distintivo, quello che nessun altro porta.
+// v36: formazione tokusatsu classica da CINQUE membri + sesto Ranger.
+// Arco rosso, Meridiana blu, Jun giallo, Vale rosa, DON nero. Zero e' il
+// SESTO RANGER VERDE: distinto dalla squadra base ma finalmente leggibile
+// con il colore speciale classico del toku. Il vecchio modulo dorsale NON
+// e' piu' attaccato al corpo di Zero: appartiene al COLOSSO combinato.
+const PAL_ZERO   =makePalette([.07,.48,.22],[.82,.68,.20],[.85,.63,.48],[.12,.09,.07]);
 PAL_ZERO.isZero=true;
 const PAL_ARCO   =makePalette([.80,.09,.07],[.90,.72,.18],[.78,.55,.40],[.13,.08,.05]);
 const PAL_MERIDIANA=makePalette([.10,.30,.78],[.85,.88,.92],[.78,.58,.46],[.08,.07,.08]);
 const PAL_RANGER3=makePalette([.92,.78,.08],[.30,.24,.10],[.76,.54,.40],[.10,.07,.05]);
 const PAL_RANGER4=makePalette([.92,.35,.62],[.98,.90,.94],[.84,.62,.47],[.30,.10,.16]);
+// DON: quinto Ranger nero e richiamo discreto al capitolo precedente.
+// Pelle e capelli restano leggibili anche in civile; la tuta usa nero/gunmetal
+// con trim argento per non confondersi con le zone d'ombra.
+const PAL_DON=makePalette([.055,.060,.072],[.72,.74,.78],[.42,.285,.205],[.035,.028,.025]);
 // Forma civile: prima la maglia era un grigio/blu generico uguale per
 // tutti, ora il colore della maglia riprende quello della tuta da Ranger
 // (un'idea da tokusatsu vero: l'abbigliamento civile "tradisce" un po' chi
@@ -669,6 +669,7 @@ const PAL_ARCO_CIV=makePalette([.55,.09,.08],[.90,.72,.18],[.78,.55,.40],[.13,.0
 const PAL_MERIDIANA_CIV=makePalette([.10,.24,.55],[.85,.88,.92],[.78,.58,.46],[.08,.07,.08]);
 const PAL_JUN_CIV=makePalette([.62,.52,.10],[.30,.24,.10],[.76,.54,.40],[.10,.07,.05]);
 const PAL_VALE_CIV=makePalette([.62,.26,.42],[.98,.90,.94],[.84,.62,.47],[.30,.10,.16]);
+const PAL_DON_CIV=makePalette([.105,.11,.13],[.60,.62,.66],[.42,.285,.205],[.035,.028,.025]);
 // Meridiana e Vale sono donne: coda di cavallo per distinguerle anche di
 // spalle (vedi buildBodyParts, ramo civile). Arco e Jun restano senza.
 PAL_MERIDIANA.female=true; PAL_MERIDIANA_CIV.female=true;
@@ -727,19 +728,14 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
   // il disegno sopra, uguale per tutti come nel riferimento.
   parts.push({mesh:pm.chestDiamond,mtx:mul(mat4.translate(0,1.12+bob,.148),mat4.rotZ(Math.PI/4),mat4.scale(.225,.225,.05))});
   parts.push({mesh:pm.buckle,mtx:mul(mat4.translate(0,.77+bob,.17),mat4.scale(.12,.085,.035))});
-  if(pal.isZero){
-   // Il modulo dorsale: quello che rende Zero il sesto Ranger e non un
-   // membro qualunque della squadra classica — nessun altro lo porta.
-   // Nucleo centrale + due ali/pinne angolate + due propulsori piccoli con
-   // un bagliore caldo, tutto ancorato al centro della schiena.
-   parts.push({mesh:pm.backCore, mtx:mul(mat4.translate(0,1.22+bob,-.175),mat4.scale(.20,.28,.09))});
-   parts.push({mesh:pm.backWing, mtx:mul(mat4.translate(.16,1.30+bob,-.19),mat4.rotZ(-.5),mat4.rotY(.15),mat4.scale(.26,.045,.15))});
-   parts.push({mesh:pm.backWing, mtx:mul(mat4.translate(-.16,1.30+bob,-.19),mat4.rotZ(.5),mat4.rotY(-.15),mat4.scale(.26,.045,.15))});
-   parts.push({mesh:pm.backThruster, mtx:mul(mat4.translate(.075,1.02+bob,-.20),mat4.scale(.075,.11,.075))});
-   parts.push({mesh:pm.backThruster, mtx:mul(mat4.translate(-.075,1.02+bob,-.20),mat4.scale(.075,.11,.075))});
-   parts.push({mesh:pm.backGlow, mtx:mul(mat4.translate(.075,.965+bob,-.20),mat4.scale(.05,.025,.05))});
-   parts.push({mesh:pm.backGlow, mtx:mul(mat4.translate(-.075,.965+bob,-.20),mat4.scale(.05,.025,.05))});
-  }
+  // v36: schiena CHIUSA e leggibile per tutti i Ranger. Prima il busto
+  // era quasi tutto sottotuta scura sul retro e, visto da dietro, sembrava
+  // una sagoma aperta/monca. Un pannello sottilissimo del colore della tuta
+  // completa visivamente la schiena senza trasformarla in corazza robotica.
+  parts.push({mesh:pm.torso,mtx:mul(mat4.translate(0,1.12+bob,-.154),mat4.scale(.38,.46,.035))});
+  parts.push({mesh:pm.chestDiamond,mtx:mul(mat4.translate(0,1.16+bob,-.178),mat4.rotZ(Math.PI/4),mat4.scale(.135,.135,.025))});
+  // Nessun modulo mecha sulla schiena del Ranger Zero: il suo modulo speciale
+  // viene richiamato solo nella sequenza del COLOSSO ed entra nel robot.
  }
  if(kind==="raccoglitore"){
   // spallacci asimmetrici: uno più grande dell'altro, come pezzi di
@@ -837,17 +833,13 @@ function buildCharacterBuffers(pal,walkPhase,speedFactor,helmet,kind,attackPhase
  return bakeParts(buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weaponOut));
 }
 
-// squadra: 4 Ranger fermi con casco completo, colori da bibbia personaggi,
-// disposti a semicerchio davanti a Oculo
-const arcoBuf=makeBuffer(buildCharacterBuffers(PAL_ARCO,0,0,true));
-const meridianaBuf=makeBuffer(buildCharacterBuffers(PAL_MERIDIANA,0,0,true));
-const ranger3Buf=makeBuffer(buildCharacterBuffers(PAL_RANGER3,0,0,true));
-const ranger4Buf=makeBuffer(buildCharacterBuffers(PAL_RANGER4,0,0,true));
+// Squadra base da CINQUE Ranger. Zero e' il sesto membro speciale.
 const teamMembers=[
  {name:"ARCO",pal:PAL_ARCO,civPal:PAL_ARCO_CIV,x:-3.9,z:-4.2,yaw:.25,targetX:-3.9,targetZ:-4.2,walk:0,routeIndex:0,waitT:0},
  {name:"MERIDIANA",pal:PAL_MERIDIANA,civPal:PAL_MERIDIANA_CIV,x:-4.6,z:-1.5,yaw:.65,targetX:-4.6,targetZ:-1.5,walk:1,routeIndex:0,waitT:0},
  {name:"JUN",pal:PAL_RANGER3,civPal:PAL_JUN_CIV,x:3.7,z:-1.4,yaw:-.55,targetX:3.7,targetZ:-1.4,walk:2,routeIndex:0,waitT:0},
  {name:"VALE",pal:PAL_RANGER4,civPal:PAL_VALE_CIV,x:3.8,z:-4.7,yaw:-.25,targetX:3.8,targetZ:-4.7,walk:3,routeIndex:0,waitT:0},
+ {name:"DON",pal:PAL_DON,civPal:PAL_DON_CIV,x:.15,z:-5.45,yaw:Math.PI,targetX:.15,targetZ:-5.45,walk:4,routeIndex:0,waitT:0},
 ];
 // Waypoint manuali e sicuri: nessuno attraversa monitor, Oculo o il pannello
 // anomalo. L'illusione e' quella di una sala viva, non di NPC che vagano.
@@ -857,12 +849,14 @@ const TEAM_ROUTES={
   MERIDIANA:[[-4.5,.7],[-4.2,3.5],[-3.4,2.1]],
   JUN:[[3.9,-1.0],[4.7,1.6],[3.4,3.0]],
   VALE:[[3.8,-5.1],[2.5,-5.8],[4.5,-3.5]],
+  DON:[[.15,-5.35],[1.35,-5.85],[-1.05,-5.70]],
  },
  post:{
   ARCO:[[-3.8,-5.5],[-2.6,-4.8],[-3.3,-5.9]],
   MERIDIANA:[[-4.1,.8],[-3.1,-.1],[-4.4,2.4]],
   JUN:[[3.9,-.7],[4.7,2.1],[3.2,3.1]],
   VALE:[[3.9,-5.2],[2.7,-5.8],[4.5,-3.7]],
+  DON:[[.15,-5.55],[-1.3,-5.8],[1.25,-5.75]],
  }
 };
 let teamMode="civil"; // civil | ranger
@@ -877,12 +871,12 @@ function activateTeamRoutes(mode){
 }
 function resetTeamIntro(){
  teamMode="civil";teamRouteMode=null;introFreeRoam=false;introAlertStarted=false;introTalked=new Set();postBossTalked=new Set();postBossElapsed=0;
- const p=[[-3.9,-4.2],[-4.6,-1.5],[3.7,-1.4],[3.8,-4.7]];
+ const p=[[-3.9,-4.2],[-4.6,-1.5],[3.7,-1.4],[3.8,-4.7],[.15,-5.45]];
  teamMembers.forEach((m,i)=>{m.x=p[i][0];m.z=p[i][1];m.targetX=m.x;m.targetZ=m.z;m.routeIndex=0;m.waitT=0;m.walk=i;m.yaw=i<2?.3:-.3;});
 }
 function setupPostBossTeam(){
  teamMode="civil";postBossElapsed=0;postBossTalked=new Set();
- const starts=[[-2.0,-5.1],[-.8,-4.8],[1.2,-4.7],[2.7,-5.0]];
+ const starts=[[-2.6,-5.1],[-1.2,-4.8],[1.2,-4.7],[2.7,-5.0],[.10,-5.55]];
  teamMembers.forEach((m,i)=>{m.x=starts[i][0];m.z=starts[i][1];m.walk=i;m.routeIndex=0;m.waitT=.2+i*.16;});
  activateTeamRoutes("post");
 }
@@ -915,6 +909,7 @@ const DIALOGUE_FOCUS_POS={
  MERIDIANA:{x:teamMembers[1].x,y:1.5,z:teamMembers[1].z},
  JUN:{x:teamMembers[2].x,y:1.5,z:teamMembers[2].z},
  VALE:{x:teamMembers[3].x,y:1.5,z:teamMembers[3].z},
+ DON:{x:teamMembers[4].x,y:1.5,z:teamMembers[4].z},
  TIC:{x:-5.6,y:2.3,z:-2.6},
 };
 
@@ -1111,9 +1106,10 @@ let colossoTeamPos=null;
 
 // Box colorati riutilizzati dalla cutscene di combinazione.
 const COLOSSO_BOX={
- zero:makeBuffer(boxMesh(PAL_ZERO.suit)), bronze:makeBuffer(boxMesh(PAL_ZERO.accent)),
+ zero:makeBuffer(boxMesh(PAL_ZERO.suit)), zeroAccent:makeBuffer(boxMesh(PAL_ZERO.accent)),
  red:makeBuffer(boxMesh(PAL_ARCO.suit)), blue:makeBuffer(boxMesh(PAL_MERIDIANA.suit)),
- violet:makeBuffer(boxMesh(PAL_RANGER3.suit)), green:makeBuffer(boxMesh(PAL_RANGER4.suit)),
+ yellow:makeBuffer(boxMesh(PAL_RANGER3.suit)), pink:makeBuffer(boxMesh(PAL_RANGER4.suit)),
+ black:makeBuffer(boxMesh([.07,.075,.09])), silver:makeBuffer(boxMesh([.56,.58,.62])),
  dark:makeBuffer(boxMesh([.08,.09,.12])), cyan:makeBuffer(boxMesh([.22,.92,1.0])),
  gold:makeBuffer(boxMesh([.86,.65,.18]))
 };
@@ -1145,31 +1141,39 @@ function drawColossoRobot(vp,p,now,opts){
   if(guard>0&&(buf===COLOSSO_BOX.red||buf===COLOSSO_BOX.blue)){z+=guard*.9;y+=guard*.25;}
   drawBuffer(buf,mul(base,mat4.translate(x,y,z),mat4.rotZ(rz*(1-q)),mat4.scale(sx,sy,sz)),vp);
  };
- drawPart(COLOSSO_BOX.violet,-.92,2.0,0,1.25,3.6,1.35,.00,-8,-1,3,.5);
- drawPart(COLOSSO_BOX.green,.92,2.0,0,1.25,3.6,1.35,.05,8,-1,3,-.5);
- drawPart(COLOSSO_BOX.dark,-.92,.35,.28,1.45,.65,1.9,.04,-8,-2,5,.3);
- drawPart(COLOSSO_BOX.dark,.92,.35,.28,1.45,.65,1.9,.09,8,-2,5,-.3);
- drawPart(COLOSSO_BOX.zero,0,5.0,0,3.25,3.0,1.75,.20,0,-5,8,0);
+ // Sei moduli: i CINQUE Ranger base formano arti/struttura, mentre il
+ // modulo speciale VERDE di Zero diventa il nucleo/dorso del COLOSSO.
+ drawPart(COLOSSO_BOX.yellow,-.92,2.0,0,1.25,3.6,1.35,.00,-8,-1,3,.5);
+ drawPart(COLOSSO_BOX.pink,.92,2.0,0,1.25,3.6,1.35,.05,8,-1,3,-.5);
+ drawPart(COLOSSO_BOX.black,-.92,.35,.28,1.45,.65,1.9,.04,-8,-2,5,.3);
+ drawPart(COLOSSO_BOX.black,.92,.35,.28,1.45,.65,1.9,.09,8,-2,5,-.3);
+ drawPart(COLOSSO_BOX.silver,0,5.0,0,3.25,3.0,1.75,.20,0,-5,8,0);
  drawPart(COLOSSO_BOX.red,-2.25,5.0,0,1.25,3.1,1.25,.37,-10,7,2,.7);
  drawPart(COLOSSO_BOX.blue,2.25,5.0,0,1.25,3.1,1.25,.43,10,7,2,-.7);
  drawPart(COLOSSO_BOX.dark,-2.25,3.15,.15,1.05,1.15,1.15,.41,-11,5,4,.4);
  drawPart(COLOSSO_BOX.dark,2.25,3.15,.15,1.05,1.15,1.15,.47,11,5,4,-.4);
- drawPart(COLOSSO_BOX.bronze,0,7.35,0,1.65,1.45,1.55,.60,0,14,2,0);
+ drawPart(COLOSSO_BOX.silver,0,7.35,0,1.65,1.45,1.55,.60,0,14,2,0);
  drawPart(COLOSSO_BOX.cyan,0,7.45,.79,1.20,.43,.08,.68,0,14,2,0);
  drawPart(COLOSSO_BOX.gold,0,8.35,-.05,.24,.65,1.35,.74,0,15,0,0);
- // Placche cromatiche della squadra sul COLOSSO: qui e' chiarissimo che
- // sono i cinque moduli Ranger a formare l'armatura del robot.
+ // MODULO ZERO: e' qui, sul robot combinato, NON sulla schiena del Ranger.
+ // Corpo dorsale + due pinne e nucleo verde anteriore rendono chiaro che il
+ // sesto Ranger completa il Colosso dall'esterno.
+ drawPart(COLOSSO_BOX.zero,0,5.25,-1.30,1.55,2.05,.45,.52,0,10,-5,0);
+ drawPart(COLOSSO_BOX.zeroAccent,-1.35,5.85,-1.24,.95,.18,.42,.58,-7,11,-4,.55);
+ drawPart(COLOSSO_BOX.zeroAccent,1.35,5.85,-1.24,.95,.18,.42,.58,7,11,-4,-.55);
  const armorQ=partProgress(p,.55,1);
  if(armorQ>0){
   drawBuffer(COLOSSO_BOX.red,mul(base,mat4.translate(-1.55,5.65,.92),mat4.scale(.62,.38,.10)),vp,armorQ);
   drawBuffer(COLOSSO_BOX.blue,mul(base,mat4.translate(1.55,5.65,.92),mat4.scale(.62,.38,.10)),vp,armorQ);
-  drawBuffer(COLOSSO_BOX.violet,mul(base,mat4.translate(-.88,2.35,.76),mat4.scale(.40,.95,.08)),vp,armorQ);
-  drawBuffer(COLOSSO_BOX.green,mul(base,mat4.translate(.88,2.35,.76),mat4.scale(.40,.95,.08)),vp,armorQ);
+  drawBuffer(COLOSSO_BOX.yellow,mul(base,mat4.translate(-.88,2.35,.76),mat4.scale(.40,.95,.08)),vp,armorQ);
+  drawBuffer(COLOSSO_BOX.pink,mul(base,mat4.translate(.88,2.35,.76),mat4.scale(.40,.95,.08)),vp,armorQ);
+  drawBuffer(COLOSSO_BOX.black,mul(base,mat4.translate(0,3.52,.82),mat4.scale(.62,.32,.10)),vp,armorQ);
+  drawBuffer(COLOSSO_BOX.zero,mul(base,mat4.translate(0,5.28,1.00),mat4.scale(.55,.68,.11)),vp,armorQ);
  }
  const q=partProgress(p,.78,1);
  if(q>0){
   const pulse=.88+Math.sin(now/110)*.12;
-  drawBuffer(COLOSSO_BOX.gold,mul(base,mat4.translate(0,5.35,.93),mat4.scale(1.0,.48,.09)),vp,q);
+  drawBuffer(COLOSSO_BOX.zeroAccent,mul(base,mat4.translate(0,5.35,.93),mat4.scale(1.0,.48,.09)),vp,q);
   drawBuffer(COLOSSO_BOX.cyan,mul(base,mat4.translate(0,5.35,1.04),mat4.scale(.25*pulse,.25*pulse,.05)),vp,q);
  }
 }
@@ -1190,7 +1194,7 @@ function startColossoSequence(){
  sfx.teleport();
  // Non si fondono i corpi: i Ranger prendono posizione, fanno la posa toku
  // e CHIAMANO i moduli. La cinematic successiva mostra il vero assemblaggio.
- const pose=[[-3.9,ARENA_CZ+3.3],[-1.3,ARENA_CZ+2.2],[1.3,ARENA_CZ+2.2],[3.9,ARENA_CZ+3.3]];
+ const pose=[[-4.6,ARENA_CZ+3.5],[-2.25,ARENA_CZ+2.15],[0,ARENA_CZ+1.55],[2.25,ARENA_CZ+2.15],[4.6,ARENA_CZ+3.5]];
  colossoTeamPos=arenaAllies.map((a,i)=>({startX:a.x,startZ:a.z,x:a.x,z:a.z,targetX:pose[i][0],targetZ:pose[i][1],pal:a.pal,name:a.name,yaw:Math.PI}));
  player.x=ARENA_CX;player.z=ARENA_CZ+5.0;player.yaw=Math.PI;
 }
@@ -1389,6 +1393,7 @@ function initArenaAllies(){
   {name:"MERIDIANA",pal:PAL_MERIDIANA,x:ARENA_CX+5.5,z:ARENA_CZ+6.0,yaw:Math.PI,cd:.7,attackT:0,walk:1},
   {name:"JUN",pal:PAL_RANGER3,x:ARENA_CX-7.0,z:ARENA_CZ+3.0,yaw:Math.PI,cd:1.0,attackT:0,walk:2},
   {name:"VALE",pal:PAL_RANGER4,x:ARENA_CX+7.0,z:ARENA_CZ+3.0,yaw:Math.PI,cd:1.3,attackT:0,walk:3},
+  {name:"DON",pal:PAL_DON,x:ARENA_CX,z:ARENA_CZ+7.4,yaw:Math.PI,cd:.9,attackT:0,walk:4},
  ];
 }
 function addWave(stage){
@@ -1430,13 +1435,13 @@ function updateArenaAllies(dt){
   const t=mooks.length?mooks[(i+arenaWave)%mooks.length]:racc;
   if(!t){
    // Durante il reveal non restano congelati: si dispongono ai lati e guardano il mare.
-   const tx=ARENA_CX+(i-1.5)*2.2,tz=ARENA_CZ-1.0;const dx=tx-a.x,dz=tz-a.z,dist=Math.hypot(dx,dz)||.001;
+   const center=(arenaAllies.length-1)/2;const tx=ARENA_CX+(i-center)*1.9,tz=ARENA_CZ-1.0;const dx=tx-a.x,dz=tz-a.z,dist=Math.hypot(dx,dz)||.001;
    a.yaw=Math.atan2(ARENA_CX-a.x,RACC_SHORE_Z-a.z);
    if(dist>.35){a.x+=dx/dist*.8*dt;a.z+=dz/dist*.8*dt;a.walk+=dt*5;}
    continue;
   }
   // Contro Il Raccoglitore si aprono sui fianchi: battaglia di squadra vera.
-  const flank=t.type==="raccoglitore"?(i-1.5)*.85:0;
+  const center=(arenaAllies.length-1)/2;const flank=t.type==="raccoglitore"?(i-center)*.75:0;
   const tx=t.x+flank,tz=t.z+(t.type==="raccoglitore"?1.25:0);
   const dx=tx-a.x,dz=tz-a.z,dist=Math.hypot(dx,dz)||.001;a.yaw=Math.atan2(t.x-a.x,t.z-a.z);
   const want=t.type==="raccoglitore"?2.05:1.65;
@@ -1523,7 +1528,7 @@ const archivioTerminalBuf=makeBuffer(bakeParts([
 ]));
 const ARCH_OCULO_POS={x:ARCHIVIO_CX,y:2.75,z:ARCHIVIO_CZ-ARCHIVIO_D/2+.20};
 const archivioOculoFrameBuf=makeBuffer(bakeParts([
- {mesh:boxMesh([.11,.12,.16]),mtx:mul(mat4.translate(ARCH_OCULO_POS.x,ARCH_OCULO_POS.y,ARCH_OCULO_POS.z-.05),mat4.scale(3.0,1.8,.13))},
+ {mesh:boxMesh([.11,.12,.16]),mtx:mul(mat4.translate(ARCH_OCULO_POS.x,ARCH_OCULO_POS.y,ARCH_OCULO_POS.z-.05),mat4.scale(4.35,2.35,.16))},
 ]));
 
 const PAL_OLDRANGER_A=makePalette([.34,.16,.14],[.42,.36,.20]);
@@ -1534,6 +1539,29 @@ const capsuleRangerPals=[PAL_OLDRANGER_A,PAL_ARCO,PAL_OLDRANGER_B,PAL_MERIDIANA,
 const CAPSULE_POS=[];
 for(const z of [-5.6,-7.5,-9.4,-11.25]){CAPSULE_POS.push({x:ARCHIVIO_CX-3.35,z},{x:ARCHIVIO_CX+3.35,z});}
 const ZERO_CAPSULE_POS={x:ARCHIVIO_CX,z:ARCHIVIO_CZ-ARCHIVIO_D/2+1.15};
+// v36 — impianto di estrazione leggibile: ogni capsula ha una colonna/tubo
+// che sale al soffitto; i condotti convergono in due dorsali e poi nel nodo
+// centrale davanti al maxi-monitor di Oculo. I piccoli pannelli a barre sono
+// grafici ambientali: fanno capire l'assorbimento senza lore dump.
+const archiveSystemParts=[];
+for(let i=0;i<CAPSULE_POS.length;i++){
+ const cp=CAPSULE_POS[i], side=cp.x<ARCHIVIO_CX?-1:1;
+ archiveSystemParts.push({mesh:boxMesh([.10,.22,.25]),mtx:mul(mat4.translate(cp.x,3.55,cp.z-.10),mat4.scale(.18,2.15,.18))});
+ archiveSystemParts.push({mesh:boxMesh([.12,.42,.45]),mtx:mul(mat4.translate((cp.x+ARCHIVIO_CX+side*1.15)/2,4.45,cp.z-.10),mat4.scale(Math.abs(cp.x-(ARCHIVIO_CX+side*1.15)),.15,.15))});
+ // monitor laterale + tre barre di output/decadimento
+ const mx=cp.x-side*.82, mz=cp.z+.05;
+ archiveSystemParts.push({mesh:boxMesh([.08,.09,.11]),mtx:mul(mat4.translate(mx,1.75,mz),mat4.scale(.52,.52,.10))});
+ const levels=[.34+.06*(i%3),.22+.05*((i+1)%3),.12+.035*((i+2)%3)];
+ for(let b=0;b<3;b++) archiveSystemParts.push({mesh:boxMesh(b===0?[.18,.82,.80]:b===1?[.82,.55,.14]:[.74,.18,.12]),mtx:mul(mat4.translate(mx-.15+levels[b]/2,1.92-b*.17,mz+.065),mat4.scale(levels[b],.055,.035))});
+}
+// dorsali longitudinali e nodo di estrazione sul fondo
+archiveSystemParts.push({mesh:boxMesh([.10,.38,.42]),mtx:mul(mat4.translate(ARCHIVIO_CX-1.15,4.45,-7.8),mat4.scale(.20,.20,9.2))});
+archiveSystemParts.push({mesh:boxMesh([.10,.38,.42]),mtx:mul(mat4.translate(ARCHIVIO_CX+1.15,4.45,-7.8),mat4.scale(.20,.20,9.2))});
+archiveSystemParts.push({mesh:boxMesh([.08,.09,.12]),mtx:mul(mat4.translate(ARCHIVIO_CX,1.45,ARCHIVIO_CZ-10.9),mat4.scale(2.25,2.80,1.05))});
+archiveSystemParts.push({mesh:boxMesh([.18,.78,.76]),mtx:mul(mat4.translate(ARCHIVIO_CX,1.75,ARCHIVIO_CZ-9.82),mat4.scale(1.35,.16,.05))});
+archiveSystemParts.push({mesh:boxMesh([.82,.50,.12]),mtx:mul(mat4.translate(ARCHIVIO_CX,1.35,ARCHIVIO_CZ-9.82),mat4.scale(.82,.12,.05))});
+archiveSystemParts.push({mesh:boxMesh([.70,.12,.10]),mtx:mul(mat4.translate(ARCHIVIO_CX,1.00,ARCHIVIO_CZ-9.82),mat4.scale(.48,.10,.05))});
+const archivioSystemBuf=makeBuffer(bakeParts(archiveSystemParts));
 const capsuleFrameParts=[];
 for(const p of CAPSULE_POS){
  capsuleFrameParts.push({mesh:boxMesh([.14,.16,.19]),mtx:mul(mat4.translate(p.x,1.18,p.z),mat4.scale(1.05,2.36,.16))});
@@ -1632,7 +1660,7 @@ function clearTransientState(){
 function readCheckpoint(){try{return JSON.parse(localStorage.getItem(CHECKPOINT_KEY)||"null");}catch(e){return null;}}
 function refreshContinueButton(){if(!continueBtnEl)return;const cp=readCheckpoint();continueBtnEl.disabled=!cp;continueBtnEl.style.opacity=cp?1:.38;}
 function saveCheckpoint(id){
- currentCheckpoint=id;try{localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({id,ts:Date.now(),version:26.1,transformed:!!player.transformed,morphUnlocked:!!morphUnlocked}));}catch(e){}refreshContinueButton();
+ currentCheckpoint=id;try{localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({id,ts:Date.now(),version:36,transformed:!!player.transformed,morphUnlocked:!!morphUnlocked}));}catch(e){}refreshContinueButton();
 }
 function clearCheckpoint(){try{localStorage.removeItem(CHECKPOINT_KEY);}catch(e){}currentCheckpoint=null;refreshContinueButton();}
 function showRuntimeError(title,msg){
@@ -1781,6 +1809,11 @@ const introTalkLines={
   {speaker:"ZERO",text:"Sempre?"},
   {speaker:"VALE",text:"Soprattutto quando non capisci ancora perche' esiste."},
  ],
+ DON:[
+  {speaker:"DON",text:"DON. Quinto Ranger. Prima di questa squadra facevo manutenzione: server, porte, impianti. Preferivo quando i problemi avevano una presa da staccare."},
+  {speaker:"ZERO",text:"Prima di questa squadra?"},
+  {speaker:"DON",text:"Storia lunga. Se una porta dice che non devi aprirla, di solito e' proprio quella che nasconde qualcosa."},
+ ],
 };
 const introAlertLines=[
  {speaker:"TIC",text:"ALLARME! Firma ostile sulla costa sud. Multipli bersagli in avvicinamento."},
@@ -1791,11 +1824,11 @@ function startIntro(){
  player.transformed=false;player.helmet=false;transformState=null;morphUnlocked=false;clearKeys();resetTeamIntro();
  missionHintEl.classList.remove("show");playAmbient("torre");
  playDialogue(introBriefLines,()=>{
-  introFreeRoam=true;activateTeamRoutes("intro");missionHintEl.textContent="CONOSCI LA SQUADRA // PARLA CON ARCO, MERIDIANA, JUN E VALE";missionHintEl.classList.add("show");
+  introFreeRoam=true;activateTeamRoutes("intro");missionHintEl.textContent="CONOSCI LA SQUADRA // PARLA CON ARCO, MERIDIANA, JUN, VALE E DON";missionHintEl.classList.add("show");
  });
 }
 function maybeTriggerIntroAlert(){
- if(introAlertStarted||introTalked.size<4)return;introAlertStarted=true;introFreeRoam=false;nearInteractable=null;interactPromptEl.classList.remove("show");
+ if(introAlertStarted||introTalked.size<5)return;introAlertStarted=true;introFreeRoam=false;nearInteractable=null;interactPromptEl.classList.remove("show");
  afterGame(500,()=>playDialogue(introAlertLines,()=>{
   clearKeys();teamMode="civil";missionHintEl.textContent="ALLARME — UNITÀ ZERO, PREPARATI";missionHintEl.classList.add("show");sfx.alarm();
   afterGame(450,()=>{missionHintEl.textContent="ZERO — TRASFORMAZIONE!";startTransformation();
@@ -1812,6 +1845,7 @@ const postBossLines=[
  {speaker:"TIC",text:"SIGNATURE MATCH: RANGER CORE. Corrispondenza confermata."},
  {speaker:"VALE",text:"Meridiana, abbiamo appena combattuto. Un residuo puo' falsare una scansione."},
  {speaker:"MERIDIANA",text:"Un residuo non restituisce una firma completa."},
+ {speaker:"DON",text:"E non restituisce un'autorizzazione della Torre. Quel segnale e' firmato da un sistema interno."},
  {speaker:"OCULO",text:"Diagnostica chiusa. Ignorate il dato e tornate alle postazioni."},
 ];
 const postBossTalkLines={
@@ -1831,12 +1865,16 @@ const postBossTalkLines={
   {speaker:"VALE",text:"Abbiamo appena salvato migliaia di persone seguendo gli ordini di Oculo."},
   {speaker:"VALE",text:"Non trasformare un errore diagnostico in una ragione per distruggere la squadra."},
  ],
+ DON:[
+  {speaker:"DON",text:"Ho ricontrollato il log. Il Raccoglitore non ha copiato la firma durante lo scontro: era gia' autorizzato prima di emergere."},
+  {speaker:"DON",text:"Non so ancora chi l'ha attivato. Ma non e' arrivato da fuori della Torre."},
+ ],
 };
 function doTowerNpcInteract(id){
  const name=id.replace("npc:","");
  if(introFreeRoam){
   const lines=introTalkLines[name];if(!lines)return;
-  playDialogue(lines,()=>{introTalked.add(name);missionHintEl.textContent=`CONOSCI LA SQUADRA // ${introTalked.size}/4`;missionHintEl.classList.add("show");maybeTriggerIntroAlert();});
+  playDialogue(lines,()=>{introTalked.add(name);missionHintEl.textContent=`CONOSCI LA SQUADRA // ${introTalked.size}/5`;missionHintEl.classList.add("show");maybeTriggerIntroAlert();});
   return;
  }
  if(postBossState){
@@ -1858,6 +1896,7 @@ const terminalLines=[
  {speaker:"REGISTRO",text:"UNITA' VISIBILI IN STASI: 08. ARCHIVIO COMPLETO: ACCESSO LIMITATO."},
  {speaker:"REGISTRO",text:"OUTPUT ENERGETICO MEDIO: 17%. DECADIMENTO: IRREVERSIBILE."},
  {speaker:"REGISTRO",text:"PROTOCOLLO DI CONTINUITA': SOSTITUZIONE AUTORIZZATA."},
+ {speaker:"REGISTRO",text:"COLLECTOR UNIT // OWNER: SUPERVISOR NODE // FUNCTION: FIELD RECOVERY + CORE EXTRACTION."},
  {speaker:"REGISTRO",text:"SQUADRA_07 // STASI. SQUADRA_08 // STASI. SQUADRA_09 // RECORD PARZIALE."},
  {speaker:"REGISTRO",text:"SESSION_01 // TYPE: STUDIO // STATUS: CLOSED"},
  {speaker:"REGISTRO",text:"ERRORE — DATA TYPE MISMATCH. BLOCCO LMN_01 NON COMPATIBILE."},
@@ -1878,7 +1917,7 @@ function getCapsuleLines(){
   {speaker:"TIC",text:"Coscienza residua rilevata. Segni vitali deboli, ma presenti."},
   {speaker:"MERIDIANA",text:"Li tengono qui e continuano a prelevare energia."},
   {speaker:"VECCHIO RANGER",text:"Come vi chiamano?"},
-  {speaker:"MERIDIANA",text:"Arco. Meridiana. Jun. Vale... e Zero."},
+  {speaker:"MERIDIANA",text:"Arco. Meridiana. Jun. Vale. Don... e Zero."},
   {speaker:"VECCHIO RANGER",text:"Zero... conosco quella designazione."},
   {speaker:"MERIDIANA",text:"Da dove?"},
   {speaker:"VECCHIO RANGER",text:"Non pensavo l'avrebbero usata di nuovo. Cercate il posto che hanno lasciato vuoto."},
@@ -1887,7 +1926,7 @@ function getCapsuleLines(){
 function getZeroCapsuleLines(){
  const link=player.transformed?"ACTIVE":"SUSPENDED";
  return [
-  {speaker:"FRAME ZERO",text:`FRAME: ZERO // STATUS: VACANT // RESERVATION: ACTIVE // LINK: ${link}`},
+  {speaker:"FRAME ZERO",text:`SIXTH FRAME // UNIT: ZERO // COLOR: GREEN // STATUS: VACANT // RESERVATION: ACTIVE // LINK: ${link}`},
   {speaker:"ZERO",text:"Riservata a chi?"},
   {speaker:"TIC",text:"La capsula non contiene un nome. Contiene il tuo identificativo."},
   {speaker:"MERIDIANA",text:"Non ti hanno assegnato solo una tuta. Ti hanno gia' assegnato un posto."},
@@ -1895,13 +1934,17 @@ function getZeroCapsuleLines(){
 }
 const oculoRevealLines=[
  {speaker:"MERIDIANA",text:"Quante volte hanno riutilizzato questi ruoli?"},
- {speaker:"REGISTRO",text:"ARCO // CONTINUITA'. MERIDIANA // CONTINUITA'. JUN // CONTINUITA'. VALE // CONTINUITA'."},
+ {speaker:"REGISTRO",text:"ARCO // CONTINUITA'. MERIDIANA // CONTINUITA'. JUN // CONTINUITA'. VALE // CONTINUITA'. DON // CONTINUITA'."},
  {speaker:"TIC",text:"Io... conosco questa stanza. Ho aperto queste capsule. Ma la mia memoria dice che e' la prima volta."},
  {speaker:"OCULO",text:"TIC. Interrompi la diagnostica."},
  {speaker:"MERIDIANA",text:"No. Questa volta restiamo."},
  {speaker:"OCULO",text:"Le designazioni esistono perche' la missione deve continuare. Gli individui sono temporanei."},
+ {speaker:"MERIDIANA",text:"Il Raccoglitore era tuo."},
+ {speaker:"OCULO",text:"Il Raccoglitore e' una procedura della Torre: misura, recupera e trasferisce cio' che una squadra non puo' piu' sostenere."},
+ {speaker:"DON",text:"Quindi ci hai mandato contro una tua macchina."},
+ {speaker:"OCULO",text:"Vi ho sottoposti a una procedura necessaria. La parola 'nemico' era piu' semplice da accettare."},
  {speaker:"ZERO",text:"E Zero?"},
- {speaker:"OCULO",text:"Zero e' una funzione speciale. Il resto non e' necessario per completare questa sessione."},
+ {speaker:"OCULO",text:"Zero e' il Sixth Frame: un'unita' ausiliaria speciale. Il verde non appartiene alla formazione standard."},
  {speaker:"OCULO",text:"Tu, invece, hai gia' capito piu' di quanto abbia capito lui."},
  {speaker:"ZERO",text:"Lui chi?"},
  {speaker:"OCULO",text:"Non parlavo con te."},
@@ -2651,8 +2694,8 @@ function frame(now){
    }
   }
  }else if(zone==="archivio"){
-  drawBuffer(archivioFloorBuf,mat4.identity(),vp);drawBuffer(archivioWallBuf,mat4.identity(),vp);drawBuffer(archivioHelmetBuf,mat4.identity(),vp);drawBuffer(archivioTerminalBuf,mat4.identity(),vp);drawBuffer(archivioOculoFrameBuf,mat4.identity(),vp);
-  if(archiveState.revealing)drawTexturedQuad(oculoTex,mul(mat4.translate(ARCH_OCULO_POS.x,ARCH_OCULO_POS.y,ARCH_OCULO_POS.z+.02),mat4.scale(2.55,1.45,1)),vp,.92);
+  drawBuffer(archivioFloorBuf,mat4.identity(),vp);drawBuffer(archivioWallBuf,mat4.identity(),vp);drawBuffer(archivioHelmetBuf,mat4.identity(),vp);drawBuffer(archivioTerminalBuf,mat4.identity(),vp);drawBuffer(archivioSystemBuf,mat4.identity(),vp);drawBuffer(archivioOculoFrameBuf,mat4.identity(),vp);
+  if(archiveState.revealing)drawTexturedQuad(oculoTex,mul(mat4.translate(ARCH_OCULO_POS.x,ARCH_OCULO_POS.y,ARCH_OCULO_POS.z+.02),mat4.scale(3.75,2.05,1)),vp,.92);
   // Solo Meridiana e TIC entrano nell'Archivio. Gli altri membri non vengono
   // neppure renderizzati in questa zona, quindi non possono seguirti per bug.
   drawShadow(archiveCompanion.meriX,archiveCompanion.meriZ,.38,vp,.28);

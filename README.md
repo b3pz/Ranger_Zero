@@ -1,3 +1,113 @@
+# RANGER ZERO v36 — TEAM / DON / COLLECTOR LORE / ARCHIVE SYSTEM
+
+Build cumulativa basata direttamente su **Ranger Zero v35**.
+
+## 1. Zero è ora il sesto Ranger VERDE
+- `PAL_ZERO` passa dal rosso ruggine al verde smeraldo/scuro con accenti oro.
+- Zero resta il membro speciale della formazione: la squadra standard è ora composta da cinque Ranger, Zero è il **Sixth Frame**.
+- La capsula speciale dell'Archivio lo identifica come `SIXTH FRAME // UNIT: ZERO // COLOR: GREEN`.
+
+## 2. Il modulo non è più attaccato alla schiena di Zero
+Il vecchio modulo dorsale della v35 era visivamente letto come uno zaino/mecha agganciato al Ranger. È stato rimosso completamente dal corpo di Zero.
+
+Il modulo verde di Zero compare ora **solo sul Colosso combinato**:
+- nucleo verde;
+- modulo dorsale;
+- due pinne/elementi oro;
+- piastra verde anteriore.
+
+La logica è quindi: **Ranger pulito → richiamo moduli → assemblaggio → modulo Zero sul Colosso**.
+
+## 3. Retro dei Ranger chiuso e leggibile
+Da dietro i Ranger sembravano sagome aperte perché il torso mostrava quasi soltanto la sottotuta scura. Tutti i Ranger hanno ora:
+- pannello posteriore sottile del colore della tuta;
+- elemento bianco posteriore coordinato con il motivo frontale;
+- nessuna appendice mecha sui corpi normali.
+
+È un fix visivo, non una corazza aggiuntiva: il target resta tuta tokusatsu, non robot umanoide.
+
+## 4. DON — quinto Ranger nero
+Aggiunto il quinto membro della squadra base:
+- **DON**;
+- Ranger nero/gunmetal con trim argento;
+- forma civile dedicata;
+- pelle e capelli differenziati;
+- waypoint nella Torre;
+- combattimento in spiaggia;
+- posa Colosso;
+- dialoghi iniziali e post-boss.
+
+Il collegamento a IT SHIFT è volutamente leggibile ma non spiegato apertamente. DON dice di aver lavorato prima con `server, porte, impianti` e chiude il discorso con `storia lunga`.
+
+La squadra è quindi:
+1. Arco — rosso
+2. Meridiana — blu
+3. Jun — giallo
+4. Vale — rosa
+5. DON — nero
+6. Zero — verde, sesto Ranger speciale
+
+L'introduzione richiede ora di parlare con **5/5** membri prima dell'allarme.
+
+## 5. Colosso aggiornato a sei moduli
+La combinazione usa ora tutti i cinque Ranger base più il modulo speciale di Zero.
+
+Distribuzione visiva:
+- rosso / blu: parte superiore e braccia;
+- giallo / rosa: gambe;
+- nero DON: struttura centrale/inferiore;
+- verde Zero: nucleo e modulo dorsale speciale.
+
+Non è ancora il ridisegno definitivo del Colosso come mecha complesso, ma corregge la logica dei moduli e prepara il successivo model pass.
+
+## 6. Il Raccoglitore ha finalmente una provenienza chiara
+La v35 lasciava un'ambiguità poco utile: non si capiva se fosse un mostro di un nemico esterno oppure qualcosa legato a Oculo.
+
+La v36 stabilisce la verità narrativa:
+
+**Il Raccoglitore è una procedura/unità della Torre controllata dal nodo di supervisione di Oculo.**
+
+Durante il rientro:
+- Meridiana rileva la firma Ranger;
+- DON rileva anche una **autorizzazione interna della Torre**;
+- Oculo chiude immediatamente la diagnostica.
+
+Nell'Archivio il registro rivela:
+`COLLECTOR UNIT // OWNER: SUPERVISOR NODE // FUNCTION: FIELD RECOVERY + CORE EXTRACTION`
+
+Nel climax Oculo ammette che il Raccoglitore serve a:
+- misurare la squadra;
+- recuperare unità;
+- trasferire energia/core;
+- alimentare la continuità del ciclo.
+
+Oculo lo aveva presentato come `nemico` perché era la definizione più semplice da far accettare ai Ranger.
+
+## 7. Archivio più leggibile come impianto di assorbimento
+Senza rifare la mappa da zero sono stati aggiunti elementi funzionali:
+- tubi verticali per ogni capsula;
+- condotti che convergono verso il soffitto;
+- due dorsali energetiche longitudinali;
+- monitor laterali su ogni capsula;
+- barre colorate che simulano output / decadimento / drenaggio;
+- nodo di estrazione sul fondo;
+- maxi-monitor di Oculo più grande rispetto alla v35.
+
+Lo scopo è far leggere visivamente la stanza come **impianto clandestino di estrazione Ranger**, non come corridoio vuoto con teche.
+
+## 8. Dialoghi / continuità aggiornati
+- DON è incluso nella lista dei membri e nei log di continuità.
+- Il Frame Zero viene definito `Sixth Frame`.
+- La relazione Oculo ↔ Raccoglitore viene chiarita nel finale.
+- Il richiamo a IT SHIFT tramite DON resta sottile e non viene spiegato come crossover diretto.
+
+## Controlli tecnici
+- `game.js` passa `node --check`.
+- Nessun asset della v35 è stato rimosso.
+- Menu, touch, panorama, combat, Archivio, finali e safety della v35 restano presenti.
+
+---
+
 # RANGER ZERO v35 — bug visiera, colori classici, sesto Ranger
 
 ## Bug corretto (confermato in foto dall'utente)
