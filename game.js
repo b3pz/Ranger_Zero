@@ -1117,17 +1117,16 @@ function partProgress(p,a,b){return Math.max(0,Math.min(1,(p-a)/(b-a)));}
 function easeOut3(t){return 1-Math.pow(1-t,3);}
 function drawColossoRobot(vp,p,now,opts){
  opts=opts||{};
- // Il Colosso deve leggere come il piu' grande dei due giganti (e' l'eroe
- // combinato da 5 Ranger, non deve sembrare piu' piccolo del nemico) —
- // scala uniforme applicata qui invece di dover ritoccare ogni singola
- // parte del corpo. COLOSSO_SCALE porta l'altezza costruita (~8.7 unita'
- // fino alla cresta dorata) a superare quella de Il Raccoglitore gigante
- // (~13.6 unita' a scala massima 7.15 sul rig base).
+ // v37 — lettura "combinato" definitiva: PETTO ROSSO, GAMBA GIALLA + BLU,
+ // BRACCIA NERE, TESTA ROSA, ALI VERDI del sesto Ranger. Nessuna cresta.
  const COLOSSO_SCALE=1.62;
  const wx=opts.x===undefined?-5.2:opts.x, wz=opts.z===undefined?ARENA_CZ+1.0:opts.z;
  const yaw=opts.yaw===undefined?Math.PI:opts.yaw;
  const attack=Math.max(0,Math.min(1,opts.attack||0));
  const guard=Math.max(0,Math.min(1,opts.guard||0));
+ const victory=Math.max(0,Math.min(1,opts.victory||0));
+ const swordDrop=Math.max(0,Math.min(1,opts.swordDrop||0));
+ const slash=Math.max(0,Math.min(1,opts.slash||0));
  const lunge=Math.sin(attack*Math.PI)*1.25;
  const gx=opts.targetX===undefined?5.0:opts.targetX, gz=opts.targetZ===undefined?ARENA_CZ-5.0:opts.targetZ;
  const dirX=gx-wx,dirZ=gz-wz,dl=Math.hypot(dirX,dirZ)||1;
@@ -1135,53 +1134,127 @@ function drawColossoRobot(vp,p,now,opts){
  const drawPart=(buf,fx,fy,fz,sx,sy,sz,stage,fromX,fromY,fromZ,rz=0)=>{
   const q=easeOut3(partProgress(p,stage,Math.min(1,stage+.24)));
   if(q<=0)return;
-  let x=fromX+(fx-fromX)*q, y=fromY+(fy-fromY)*q, z=fromZ+(fz-fromZ)*q;
-  // Il braccio blu e' quello che legge meglio come pugno nella camera 3/4.
-  if(buf===COLOSSO_BOX.blue){z+=attack*1.8;y-=attack*.15;}
-  if(guard>0&&(buf===COLOSSO_BOX.red||buf===COLOSSO_BOX.blue)){z+=guard*.9;y+=guard*.25;}
+  const x=fromX+(fx-fromX)*q, y=fromY+(fy-fromY)*q, z=fromZ+(fz-fromZ)*q;
   drawBuffer(buf,mul(base,mat4.translate(x,y,z),mat4.rotZ(rz*(1-q)),mat4.scale(sx,sy,sz)),vp);
  };
- // Sei moduli: i CINQUE Ranger base formano arti/struttura, mentre il
- // modulo speciale VERDE di Zero diventa il nucleo/dorso del COLOSSO.
+ // GAMBE — Gatto Giallo / Cane Blu.
  drawPart(COLOSSO_BOX.yellow,-.92,2.0,0,1.25,3.6,1.35,.00,-8,-1,3,.5);
- drawPart(COLOSSO_BOX.pink,.92,2.0,0,1.25,3.6,1.35,.05,8,-1,3,-.5);
- drawPart(COLOSSO_BOX.black,-.92,.35,.28,1.45,.65,1.9,.04,-8,-2,5,.3);
- drawPart(COLOSSO_BOX.black,.92,.35,.28,1.45,.65,1.9,.09,8,-2,5,-.3);
- drawPart(COLOSSO_BOX.silver,0,5.0,0,3.25,3.0,1.75,.20,0,-5,8,0);
- drawPart(COLOSSO_BOX.red,-2.25,5.0,0,1.25,3.1,1.25,.37,-10,7,2,.7);
- drawPart(COLOSSO_BOX.blue,2.25,5.0,0,1.25,3.1,1.25,.43,10,7,2,-.7);
+ drawPart(COLOSSO_BOX.blue, .92,2.0,0,1.25,3.6,1.35,.05, 8,-1,3,-.5);
+ drawPart(COLOSSO_BOX.dark,-.92,.35,.28,1.45,.65,1.9,.04,-8,-2,5,.3);
+ drawPart(COLOSSO_BOX.dark, .92,.35,.28,1.45,.65,1.9,.09, 8,-2,5,-.3);
+ // PETTO — Dragone Rosso.
+ drawPart(COLOSSO_BOX.red,0,5.0,0,3.25,3.0,1.75,.20,0,-5,8,0);
+ // BRACCIA — Gorilla Nero. Il destro viene animato per spada/posa vittoria.
+ drawPart(COLOSSO_BOX.black,-2.25,5.0,0,1.25,3.1,1.25,.37,-10,7,2,.7);
  drawPart(COLOSSO_BOX.dark,-2.25,3.15,.15,1.05,1.15,1.15,.41,-11,5,4,.4);
- drawPart(COLOSSO_BOX.dark,2.25,3.15,.15,1.05,1.15,1.15,.47,11,5,4,-.4);
- drawPart(COLOSSO_BOX.silver,0,7.35,0,1.65,1.45,1.55,.60,0,14,2,0);
+ const armQ=easeOut3(partProgress(p,.43,.67));
+ if(armQ>0){
+  let ux=2.25,uy=5.0,uz=0,ur=0, lx=2.25,ly=3.15,lz=.15,lr=0;
+  const lift=Math.max(victory, swordDrop>.82?Math.min(1,(swordDrop-.82)/.18):0);
+  if(lift>0){ux=2.10;uy=5.0+1.05*lift;ur=-.42*lift;lx=2.65;ly=3.15+3.55*lift;lr=-.18*lift;}
+  if(slash>0){ux=2.10-1.1*slash;uy=6.0-.65*slash;ur=-.42-1.0*slash;lx=2.65-2.0*slash;ly=6.7-1.25*slash;lr=-.18-1.2*slash;}
+  drawBuffer(COLOSSO_BOX.black,mul(base,mat4.translate(ux,uy,uz),mat4.rotZ(ur),mat4.scale(1.25,3.1,1.25)),vp,armQ);
+  drawBuffer(COLOSSO_BOX.dark,mul(base,mat4.translate(lx,ly,lz),mat4.rotZ(lr),mat4.scale(1.05,1.15,1.15)),vp,armQ);
+ }
+ // TESTA — Uccello Rosa, sagoma pulita SENZA cresta.
+ drawPart(COLOSSO_BOX.pink,0,7.35,0,1.65,1.45,1.55,.60,0,14,2,0);
  drawPart(COLOSSO_BOX.cyan,0,7.45,.79,1.20,.43,.08,.68,0,14,2,0);
- drawPart(COLOSSO_BOX.gold,0,8.35,-.05,.24,.65,1.35,.74,0,15,0,0);
- // MODULO ZERO: e' qui, sul robot combinato, NON sulla schiena del Ranger.
- // Corpo dorsale + due pinne e nucleo verde anteriore rendono chiaro che il
- // sesto Ranger completa il Colosso dall'esterno.
+ // ALI / MODULO ZERO — Drago Verde, sesto Ranger.
  drawPart(COLOSSO_BOX.zero,0,5.25,-1.30,1.55,2.05,.45,.52,0,10,-5,0);
- drawPart(COLOSSO_BOX.zeroAccent,-1.35,5.85,-1.24,.95,.18,.42,.58,-7,11,-4,.55);
- drawPart(COLOSSO_BOX.zeroAccent,1.35,5.85,-1.24,.95,.18,.42,.58,7,11,-4,-.55);
+ drawPart(COLOSSO_BOX.zero,-1.75,6.05,-1.30,1.55,.18,.62,.58,-8,11,-4,.62);
+ drawPart(COLOSSO_BOX.zero, 1.75,6.05,-1.30,1.55,.18,.62,.58, 8,11,-4,-.62);
+ drawPart(COLOSSO_BOX.zeroAccent,-2.75,6.25,-1.28,.80,.09,.34,.66,-9,12,-4,.82);
+ drawPart(COLOSSO_BOX.zeroAccent, 2.75,6.25,-1.28,.80,.09,.34,.66, 9,12,-4,-.82);
+ // Placche finali che rendono immediatamente leggibile quale modulo forma cosa.
  const armorQ=partProgress(p,.55,1);
  if(armorQ>0){
-  drawBuffer(COLOSSO_BOX.red,mul(base,mat4.translate(-1.55,5.65,.92),mat4.scale(.62,.38,.10)),vp,armorQ);
-  drawBuffer(COLOSSO_BOX.blue,mul(base,mat4.translate(1.55,5.65,.92),mat4.scale(.62,.38,.10)),vp,armorQ);
+  drawBuffer(COLOSSO_BOX.red,mul(base,mat4.translate(0,5.55,.96),mat4.scale(2.25,.86,.11)),vp,armorQ);
   drawBuffer(COLOSSO_BOX.yellow,mul(base,mat4.translate(-.88,2.35,.76),mat4.scale(.40,.95,.08)),vp,armorQ);
-  drawBuffer(COLOSSO_BOX.pink,mul(base,mat4.translate(.88,2.35,.76),mat4.scale(.40,.95,.08)),vp,armorQ);
-  drawBuffer(COLOSSO_BOX.black,mul(base,mat4.translate(0,3.52,.82),mat4.scale(.62,.32,.10)),vp,armorQ);
-  drawBuffer(COLOSSO_BOX.zero,mul(base,mat4.translate(0,5.28,1.00),mat4.scale(.55,.68,.11)),vp,armorQ);
+  drawBuffer(COLOSSO_BOX.blue,mul(base,mat4.translate(.88,2.35,.76),mat4.scale(.40,.95,.08)),vp,armorQ);
+  drawBuffer(COLOSSO_BOX.black,mul(base,mat4.translate(-2.24,5.10,.76),mat4.scale(.34,.92,.08)),vp,armorQ);
+  drawBuffer(COLOSSO_BOX.black,mul(base,mat4.translate( 2.24,5.10,.76),mat4.scale(.34,.92,.08)),vp,armorQ);
+  drawBuffer(COLOSSO_BOX.pink,mul(base,mat4.translate(0,7.40,.83),mat4.scale(.74,.36,.08)),vp,armorQ);
  }
  const q=partProgress(p,.78,1);
  if(q>0){
   const pulse=.88+Math.sin(now/110)*.12;
-  drawBuffer(COLOSSO_BOX.zeroAccent,mul(base,mat4.translate(0,5.35,.93),mat4.scale(1.0,.48,.09)),vp,q);
+  drawBuffer(COLOSSO_BOX.zero,mul(base,mat4.translate(0,5.30,1.01),mat4.scale(.58,.70,.11)),vp,q);
   drawBuffer(COLOSSO_BOX.cyan,mul(base,mat4.translate(0,5.35,1.04),mat4.scale(.25*pulse,.25*pulse,.05)),vp,q);
+ }
+ // SPADA DEL COLOSSO — compare SOLO nell'attacco speciale finale e resta
+ // nella posa di vittoria. Durante l'evocazione scende davvero dall'alto.
+ if(swordDrop>0||victory>0){
+  let sx=2.88, sy=7.35, sz=.15, sr=-.04;
+  if(swordDrop>0&&swordDrop<1){sy=14.0-(14.0-7.35)*easeOut3(swordDrop);}
+  if(slash>0){sx=2.88-2.35*slash;sy=7.35-.95*slash;sr=-1.55*slash;}
+  if(victory>0){sx=3.05;sy=9.10;sr=-.05;}
+  const sm=mul(base,mat4.translate(sx,sy,sz),mat4.rotZ(sr));
+  drawBuffer(COLOSSO_BOX.gold,mul(sm,mat4.translate(0,-1.15,0),mat4.scale(.18,.42,.18)),vp);
+  drawBuffer(COLOSSO_BOX.dark,mul(sm,mat4.translate(0,-.78,0),mat4.scale(.55,.09,.18)),vp);
+  drawBuffer(COLOSSO_BOX.silver,mul(sm,mat4.translate(0,.85,0),mat4.scale(.22,2.15,.10)),vp);
+  drawBuffer(COLOSSO_BOX.cyan,mul(sm,mat4.translate(0,.85,.11),mat4.scale(.065,1.88,.035)),vp,.92);
+  drawBuffer(COLOSSO_BOX.gold,mul(sm,mat4.translate(0,3.08,0),mat4.rotZ(Math.PI/4),mat4.scale(.20,.20,.10)),vp);
+ }
+}
+
+// v37 — i moduli non sono piu' soltanto "blocchi che compaiono" durante
+// l'assemblaggio: vengono chiamati UNO ALLA VOLTA davanti alla squadra.
+const MODULE_CALLS=[
+ {speaker:"ARCO",line:"DRAGONE ROSSO, VIENI A ME!",kind:"redDragon",x:-5.5},
+ {speaker:"JUN",line:"GATTO GIALLO, TI EVOCO!",kind:"yellowCat",x:-3.3},
+ {speaker:"MERIDIANA",line:"CANE BLU, RISPONDI ALLA CHIAMATA!",kind:"blueDog",x:-1.1},
+ {speaker:"DON",line:"GORILLA NERO, ENTRA IN AZIONE!",kind:"blackGorilla",x:1.1},
+ {speaker:"VALE",line:"UCCELLO ROSA, SPIEGATI NEL CIELO!",kind:"pinkBird",x:3.3},
+ {speaker:"ZERO",line:"DRAGO VERDE... MODULO ZERO, ATTIVATI!",kind:"greenDragon",x:5.5},
+];
+const MODULE_SEG=1.12;
+function drawAnimalModule(vp,def,q,now){
+ if(q<=0)return;
+ q=easeOut3(Math.min(1,q));
+ const flying=def.kind==="pinkBird"||def.kind==="greenDragon";
+ const z0=ARENA_CZ-13.0, z1=ARENA_CZ-3.8;
+ const z=z0+(z1-z0)*q, y=(flying?(3.1-(3.1-.75)*q):.30)+Math.sin(now/180+def.x)*.05;
+ const base=mul(mat4.translate(def.x,y,z),mat4.rotY(Math.PI));
+ const P=(buf,x,y,z,sx,sy,sz,rz=0)=>drawBuffer(buf,mul(base,mat4.translate(x,y,z),mat4.rotZ(rz),mat4.scale(sx,sy,sz)),vp,q);
+ if(def.kind==="redDragon"){
+  P(COLOSSO_BOX.red,0,.55,0,1.25,.36,.58);P(COLOSSO_BOX.red,0,.60,.78,.52,.42,.50);
+  P(COLOSSO_BOX.gold,-.28,1.00,.84,.08,.34,.08,-.35);P(COLOSSO_BOX.gold,.28,1.00,.84,.08,.34,.08,.35);
+  P(COLOSSO_BOX.dark,0,.54,-.88,.22,.18,.80);
+ }else if(def.kind==="yellowCat"){
+  P(COLOSSO_BOX.yellow,0,.55,0,1.05,.34,.52);P(COLOSSO_BOX.yellow,0,.62,.68,.52,.40,.46);
+  P(COLOSSO_BOX.gold,-.23,1.00,.73,.10,.28,.08,-.45);P(COLOSSO_BOX.gold,.23,1.00,.73,.10,.28,.08,.45);
+  for(const x of [-.68,.68])for(const z2 of [-.30,.35])P(COLOSSO_BOX.silver,x,.08,z2,.15,.45,.16);
+  P(COLOSSO_BOX.yellow,0,.78,-.78,.08,.08,.70,.45);
+ }else if(def.kind==="blueDog"){
+  P(COLOSSO_BOX.blue,0,.55,0,1.10,.36,.55);P(COLOSSO_BOX.blue,0,.64,.70,.56,.42,.48);P(COLOSSO_BOX.silver,0,.54,1.08,.32,.20,.30);
+  P(COLOSSO_BOX.dark,-.32,.96,.70,.10,.30,.08,-.25);P(COLOSSO_BOX.dark,.32,.96,.70,.10,.30,.08,.25);
+  for(const x of [-.68,.68])for(const z2 of [-.28,.34])P(COLOSSO_BOX.silver,x,.08,z2,.15,.45,.16);
+ }else if(def.kind==="blackGorilla"){
+  P(COLOSSO_BOX.black,0,.92,0,.90,.82,.58);P(COLOSSO_BOX.silver,0,1.62,.30,.50,.42,.44);
+  P(COLOSSO_BOX.black,-1.05,.70,.05,.42,.85,.42,.20);P(COLOSSO_BOX.black,1.05,.70,.05,.42,.85,.42,-.20);
+  P(COLOSSO_BOX.dark,-1.12,.08,.10,.50,.25,.50);P(COLOSSO_BOX.dark,1.12,.08,.10,.50,.25,.50);
+ }else if(def.kind==="pinkBird"){
+  P(COLOSSO_BOX.pink,0,.72,0,.62,.34,.55);P(COLOSSO_BOX.pink,0,.75,.62,.40,.34,.42);P(COLOSSO_BOX.gold,0,.72,1.02,.18,.10,.42);
+  P(COLOSSO_BOX.pink,-1.05,.80,0,.95,.08,.45,.20);P(COLOSSO_BOX.pink,1.05,.80,0,.95,.08,.45,-.20);
+ }else{
+  P(COLOSSO_BOX.zero,0,.68,0,.90,.34,.62);P(COLOSSO_BOX.zero,0,.72,.70,.48,.38,.45);
+  P(COLOSSO_BOX.zero,-1.10,.82,-.10,1.05,.10,.50,.35);P(COLOSSO_BOX.zero,1.10,.82,-.10,1.05,.10,.50,-.35);
+  P(COLOSSO_BOX.gold,-.24,1.05,.76,.08,.34,.08,-.35);P(COLOSSO_BOX.gold,.24,1.05,.76,.08,.34,.08,.35);
+ }
+}
+function drawSummonedModules(vp,now){
+ if(!colosso||colosso.phase!=="summon")return;
+ for(let i=0;i<MODULE_CALLS.length;i++){
+  const q=Math.max(0,Math.min(1,(colosso.t-i*MODULE_SEG)/.72));
+  if(q>0)drawAnimalModule(vp,MODULE_CALLS[i],q,now);
  }
 }
 function newColossoState(phase){
  return {phase:phase||"fight",t:0,giantHp:520,giantHpMax:520,playerHp:100,playerHpMax:100,
   giantScale:7.15,attackCd:2.9,punchT:0,punchCd:0,beamT:0,shakeT:0,beamBursts:[],guardT:0,guardCd:0,
   perfectGuard:false,attackTelegraph:false,attackKind:"punch",phase2:false,finisherReady:false,messageT:0,
-  robotX:-5.0,robotZ:ARENA_CZ+2.0,giantX:5.0,giantZ:ARENA_CZ-5.0,giantAttackT:0};
+  robotX:-5.0,robotZ:ARENA_CZ+2.0,giantX:5.0,giantZ:ARENA_CZ-5.0,giantAttackT:0,
+  lastSummonIndex:-1,finishHitTriggered:false};
 }
 function startColossoSequence(){
  if(colosso)return;
@@ -1276,29 +1349,42 @@ function colossoGuard(){
 }
 function startColossoFinish(){
  if(!colosso||colosso.phase==="finishing"||colosso.phase==="won")return;
- colosso.phase="finishing";colosso.finishT=0;colosso.finishZoom=0;colosso.finishTilt=0;colosso.finishBoomT=0;colosso.finishBoomNext=.15;
- missionHintEl.textContent="COLPO FINALE // IMPATTO";missionHintEl.classList.add("show");
- triggerSlowMo(2.2,.22);sfx.alarm();
+ colosso.phase="finishing";colosso.finishT=0;colosso.finishZoom=0;colosso.finishTilt=0;colosso.finishBoomT=0;colosso.finishBoomNext=.15;colosso.finishHitTriggered=false;
+ missionHintEl.textContent="ATTACCO SPECIALE // ENERGIA AL MASSIMO";missionHintEl.classList.add("show");
+ triggerSlowMo(4.2,.28);sfx.alarm();
 }
 function updateColossoFinish(dt){
- colosso.finishT+=dt;const p=Math.min(1,colosso.finishT/2.0);colosso.finishZoom=p;colosso.finishTilt=p*p*1.1;
- // Piu' di un'esplosione: raffica di scoppi sparsi sul gigante mentre cade,
- // invece di un'unica bolla che si gonfia — molto piu' cinematografico.
+ colosso.finishT+=dt;
+ const t=colosso.finishT;
+ // 0–.65: chiamata; .65–1.55: fulmini + spada dal cielo; 1.55–2.35:
+ // fendente; 2.35–3.75: il Raccoglitore viene scagliato ALL'INDIETRO.
+ if(t<.65)missionHintEl.textContent="ATTACCO SPECIALE!";
+ else if(t<1.55)missionHintEl.textContent="COLPO FINALE // SPADA DEL COLOSSO!";
+ else if(t<2.35)missionHintEl.textContent="COLPO FINALE // ORA!";
+ else missionHintEl.textContent="IMPATTO!";
+ colosso.finishZoom=Math.min(1,t/3.8);
+ // Fulmini / scariche lungo il tragitto della spada prima dell'aggancio.
  colosso.finishBoomT=(colosso.finishBoomT||0)+dt;
- if(colosso.finishBoomT>=(colosso.finishBoomNext||.15)&&colosso.finishT<1.9){
-  colosso.finishBoomT=0;colosso.finishBoomNext=.12+Math.random()*.16;
-  colosso.beamBursts.push({t:0,kind:"punch",ox:(Math.random()-.5)*3.4,oy:(Math.random()-.5)*7.5});
+ if(t>.55&&t<1.65&&colosso.finishBoomT>=(colosso.finishBoomNext||.12)){
+  colosso.finishBoomT=0;colosso.finishBoomNext=.07+Math.random()*.09;
+  colosso.beamBursts.push({t:0,kind:"swordLightning",ox:(Math.random()-.5)*1.1,oy:Math.random()*5.5});
  }
- if(colosso.finishT>2.0)colossoWin();
+ if(t>1.95&&!colosso.finishHitTriggered){
+  colosso.finishHitTriggered=true;colosso.shakeT=.65;specialFlashEl.style.opacity=1;setTimeout(()=>specialFlashEl.style.opacity=0,180);sfx.giantHit();triggerSlowMo(.55,.08);
+  for(let i=0;i<7;i++)colosso.beamBursts.push({t:-i*.035,kind:"punch",ox:(Math.random()-.5)*4.2,oy:(Math.random()-.5)*8.5});
+ }
+ if(t>4.0)colossoWin();
 }
 function colossoWin(){
  if(giantTutorialEl)giantTutorialEl.classList.remove("show");
- colosso.phase="won";colosso.winT=0;missionHintEl.textContent="IL RACCOGLITORE E' STATO RESPINTO";sfx.win();
- // Il Colosso si gira verso la telecamera invece di restare voltato verso
- // il nemico a terra — la posa "vittoria" che si vede negli episodi veri.
- afterGame(1900,()=>{
-  colossoOutcomeEl.querySelector("p").textContent="Il Colosso ha respinto Il Raccoglitore nel mare.";
+ colosso.phase="won";colosso.winT=0;missionHintEl.textContent="VITTORIA";missionHintEl.classList.add("show");sfx.win();
+ // Il payoff resta in scena: il Colosso si gira verso camera e alza la
+ // spada. Solo dopo compare il logo, SENZA pulsante CONTINUA; il rientro
+ // alla Torre avviene automaticamente.
+ afterGame(1600,()=>{
+  colossoOutcomeEl.querySelector("p").textContent="";
   colossoOutcomeEl.classList.add("show","win");
+  afterGame(3200,()=>doColossoOutcomeContinue());
  });
 }
 function colossoLose(){
@@ -1313,19 +1399,29 @@ function updateColosso(dt){
   const moveP=Math.min(1,colosso.t/1.75),ease=1-Math.pow(1-moveP,3);
   for(const tp of colossoTeamPos){tp.x=tp.startX+(tp.targetX-tp.startX)*ease;tp.z=tp.startZ+(tp.targetZ-tp.startZ)*ease;tp.yaw=Math.PI;}
   if(colosso.t<1.7)missionHintEl.textContent="ARCO // NON BASTA. SQUADRA — FORMAZIONE COLOSSO!";
-  else if(colosso.t<2.65)missionHintEl.textContent="ARCO // CHIAMIAMO I MODULI!";
-  else missionHintEl.textContent="SQUADRA // MODULI, RISPONDETE! COLOSSO — COMBINAZIONE!";
-  if(colosso.t>3.55){
+  else missionHintEl.textContent="ARCO // CHIAMIAMO I MODULI!";
+  if(colosso.t>3.0){colosso.phase="summon";colosso.t=0;colosso.lastSummonIndex=-1;missionHintEl.textContent="MODULI // CHIAMATA INDIVIDUALE";}
+  return;
+ }
+ if(colosso.phase==="summon"){
+  const idx=Math.min(MODULE_CALLS.length-1,Math.floor(colosso.t/MODULE_SEG));
+  if(idx!==colosso.lastSummonIndex){
+   colosso.lastSummonIndex=idx;const c=MODULE_CALLS[idx];missionHintEl.textContent=c.speaker+" // "+c.line;missionHintEl.classList.add("show");sfx.teleport();
+   specialFlashEl.style.opacity=.22;setTimeout(()=>specialFlashEl.style.opacity=0,100);
+  }
+  if(colosso.t>MODULE_CALLS.length*MODULE_SEG+.55){
    colosso.phase="combine";colosso.t=0;colossoTeamPos=null;zone="colosso";colosso.giantScale=2.2;
    flashEl.style.opacity=1;setTimeout(()=>flashEl.style.opacity=0,220);sfx.transform();playAmbient("colosso");
-   missionHintEl.textContent="COMBINAZIONE COLOSSO // MODULI IN AGGANCIO";
-  }return;
+   missionHintEl.textContent="COLOSSO // MODULI IN AGGANCIO";
+  }
+  return;
  }
  if(colosso.phase==="combine"){
   const p=Math.min(1,colosso.t/8.0);colosso.giantScale=2.2+p*4.95;
-  if(colosso.t>2.0&&colosso.t<4.2)missionHintEl.textContent="GAMBE // NUCLEO // BRACCIA";
-  else if(colosso.t>=4.2&&colosso.t<6.5)missionHintEl.textContent="TESTA // SISTEMI ONLINE";
-  else if(colosso.t>=6.5)missionHintEl.textContent="COLOSSO RANGER // COMBINAZIONE COMPLETA";
+  if(colosso.t>1.0&&colosso.t<3.0)missionHintEl.textContent="GATTO GIALLO + CANE BLU // GAMBE";
+  else if(colosso.t>=3.0&&colosso.t<4.7)missionHintEl.textContent="DRAGONE ROSSO // PETTO — GORILLA NERO // BRACCIA";
+  else if(colosso.t>=4.7&&colosso.t<6.3)missionHintEl.textContent="UCCELLO ROSA // TESTA";
+  else if(colosso.t>=6.3)missionHintEl.textContent="DRAGO VERDE // ALI — COLOSSO COMPLETO";
   if(colosso.t>8.0){colosso.phase="reveal";colosso.t=0;sfx.win();}
   return;
  }
@@ -1344,7 +1440,7 @@ function updateColosso(dt){
  colosso.robotX=-5.0+Math.sin(colosso.t*.55)*.65;
  colosso.giantX=5.0+Math.sin(colosso.t*.43+1.6)*.72;
  if(colosso.messageT>0){colosso.messageT-=rawDtGlobal;if(colosso.messageT<=0&&!colosso.finisherReady&&!colosso.attackTelegraph)missionHintEl.classList.remove("show");}
- for(let i=colosso.beamBursts.length-1;i>=0;i--){colosso.beamBursts[i].t+=dt;if(colosso.beamBursts[i].t>.55)colosso.beamBursts.splice(i,1);}
+ for(let i=colosso.beamBursts.length-1;i>=0;i--){colosso.beamBursts[i].t+=dt;if(colosso.beamBursts[i].t>.70)colosso.beamBursts.splice(i,1);}
  if(colosso.finisherReady)return;
  colosso.attackCd-=rawDtGlobal;
  if(colosso.attackCd<=.72&&!colosso.attackTelegraph){
@@ -2080,7 +2176,7 @@ window.addEventListener("keydown",e=>{
  if(paused)return;
  if(e.code==="Space"&&dialogueActive){advanceDialogue();return;}
  if(e.code==="Space"&&zone==="colosso"&&colosso&&colosso.phase==="tutorial"){beginGiantBattle();return;}
- if(e.code==="Space"&&colossoOutcomeEl.classList.contains("show")){doColossoOutcomeContinue();return;}
+ if(e.code==="Space"&&colossoOutcomeEl.classList.contains("show")){if(colosso&&colosso.phase==="lost")doColossoOutcomeContinue();return;}
  if(e.code==="Space"&&zone==="archivio"&&nearInteractable){doArchiveInteract();return;}
  if(e.code==="Space"&&zone==="torre"&&nearInteractable&&nearInteractable.startsWith("npc:")){doTowerNpcInteract(nearInteractable);return;}
  if(e.code==="Space"&&zone==="torre"&&nearInteractable==="anomaly"){doAnomalyInteract();return;}
@@ -2502,9 +2598,24 @@ function frame(now){
   // cosi' e' inequivocabile che il mostro sale dall'acqua e NON dalla sabbia.
   eye=[racc.x+7.0-pushIn,2.3,RACC_SHORE_Z+5.0];
   target=[racc.x,emergeCutscene.phase==="buildup"?.15:1.5,racc.z];
+ }else if(colosso&&(colosso.phase==="pose"||colosso.phase==="summon")){
+  // Camera FRONTALE da vera chiamata toku: mai piu' i Ranger ripresi di
+  // schiena mentre evocano i moduli. Durante ogni chiamata c'e' solo un
+  // leggero pan orizzontale, mantenendo tutta la formazione leggibile.
+  let fx=0;
+  if(colosso.phase==="summon"){
+   const idx=Math.min(MODULE_CALLS.length-1,Math.floor(colosso.t/MODULE_SEG));fx=(MODULE_CALLS[idx]?.x||0)*.20;
+  }
+  eye=[fx,3.25,ARENA_CZ-10.2];target=[fx*.55,1.45,ARENA_CZ+2.1];
  }else if(zone==="colosso"){
   const sh=colosso&&colosso.shakeT>0?colosso.shakeT:0;
-  if(colosso&&colosso.phase==="combine"){
+  if(colosso&&colosso.phase==="finishing"){
+   const t=colosso.finishT||0;
+   if(t<1.55){eye=[colosso.robotX+7.5,11.8,colosso.robotZ+12.0];target=[colosso.robotX+1.7,7.8,colosso.robotZ];}
+   else{const mx=(colosso.robotX+colosso.giantX)*.5,mz=(colosso.robotZ+colosso.giantZ)*.5;eye=[mx+13.5,10.7,mz+16.5];target=[mx,4.8,mz-1.5];}
+  }else if(colosso&&colosso.phase==="won"){
+   eye=[colosso.robotX+.8,10.2,colosso.robotZ+15.5];target=[colosso.robotX,5.6,colosso.robotZ];
+  }else if(colosso&&colosso.phase==="combine"){
    // Regia BLINDATA: quattro shot fissi, nessuna orbita/camera libera che
    // possa finire dentro la mesh e sembrare bloccata.
    const t=colosso.t;
@@ -2623,6 +2734,7 @@ function frame(now){
     drawEnemyHpBar(en.x,barY,en.z,en.hp/en.hpMax,barYaw,vp);
    }
   }
+  if(colosso&&colosso.phase==="summon")drawSummonedModules(vp,now);
   if(colossoTeamPos){
    for(let pi=0;pi<colossoTeamPos.length;pi++){
     const tp=colossoTeamPos[pi];
@@ -2638,12 +2750,15 @@ function frame(now){
   drawBuffer(giantStageBuf,mat4.identity(),vp);drawBuffer(giantCityBuf,mat4.identity(),vp,.98);
 
   const giantWobble=1+Math.sin(now/260)*.02;
-  const finishTilt=(colosso.phase==="finishing"||colosso.phase==="won")?(colosso.finishTilt||0):0;
   const gAtk=colosso.giantAttackT>0?1-colosso.giantAttackT/.58:0;
   const gLunge=Math.sin(Math.max(0,Math.min(1,gAtk))*Math.PI)*1.2;
-  const gx=colosso.giantX, gz=colosso.giantZ+gLunge;
+  // Il Raccoglitore NON cade piu' in avanti sul Colosso. Dopo il fendente
+  // viene spinto verso il mare (-Z), poi crolla all'indietro lontano dal robot.
+  const fallP=colosso.phase==="finishing"?Math.max(0,Math.min(1,((colosso.finishT||0)-2.20)/1.35)):(colosso.phase==="won"?1:0);
+  const gx=colosso.giantX, gz=colosso.giantZ+gLunge-fallP*7.2;
+  const gy=-fallP*2.4;
   const gyaw=Math.atan2(colosso.robotX-gx,colosso.robotZ-gz);
-  const gm=mul(mat4.translate(gx,0,gz),mat4.rotY(gyaw),mat4.rotX(finishTilt),mat4.scale(colosso.giantScale*giantWobble,colosso.giantScale,colosso.giantScale*giantWobble));
+  const gm=mul(mat4.translate(gx,gy,gz),mat4.rotY(gyaw),mat4.rotX(-fallP*1.02),mat4.scale(colosso.giantScale*giantWobble,colosso.giantScale,colosso.giantScale*giantWobble));
   const giantPal=colosso.phase2?PAL_RACCOGLITORE_OVERLOAD:PAL_RACCOGLITORE;
   const giantMesh=buildCharacterBuffers(giantPal,now/450,gAtk>0?1:.15,true,"raccoglitore",gAtk);
   drawDynamicMesh(giantMesh,gm,vp);
@@ -2662,7 +2777,11 @@ function frame(now){
   }
   const rAtk=colosso.punchT>0?1-colosso.punchT/.48:0;
   const rGuard=colosso.guardT>0?Math.min(1,colosso.guardT/.58):0;
-  drawColossoRobot(vp,rp,now,{x:colosso.robotX,z:colosso.robotZ,yaw:rYaw,targetX:gx,targetZ:gz,attack:rAtk,guard:rGuard});
+  const fT=colosso.finishT||0;
+  const swordDrop=colosso.phase==="finishing"?Math.max(0,Math.min(1,(fT-.62)/.88)):(colosso.phase==="won"?1:0);
+  const slash=colosso.phase==="finishing"?Math.max(0,Math.min(1,(fT-1.55)/.78)):0;
+  const victory=colosso.phase==="won"?Math.min(1,(colosso.winT||0)/1.15):0;
+  drawColossoRobot(vp,rp,now,{x:colosso.robotX,z:colosso.robotZ,yaw:rYaw,targetX:gx,targetZ:gz,attack:rAtk,guard:rGuard,swordDrop,slash,victory});
 
   if(colosso.phase==="finishing"){
    const ep=Math.min(1,(colosso.finishT||0)/2);
@@ -2670,7 +2789,10 @@ function frame(now){
   }
   if(colosso.phase==="fight"||colosso.phase==="finishing"){
    for(const b of colosso.beamBursts){
-    if(b.kind==="punch"){
+    if(b.kind==="swordLightning"){
+     const p=Math.max(0,b.t/.32),a=Math.max(0,1-p),sx=colosso.robotX+2.8+(b.ox||0),sy=9.0+(b.oy||0),sz=colosso.robotZ+.2;
+     drawBuffer(burstBuf,mul(mat4.translate(sx,sy,sz),mat4.scale(.18+p*.35,.35+p*.8,.18+p*.35)),vp,a*.95);
+    }else if(b.kind==="punch"){
      const p=b.t/.4,sc=.4+p*2.2,a=Math.max(0,1-p);
      const ix=(colosso.robotX+gx)/2+(b.ox||0)*.3, iz=(colosso.robotZ+gz)/2;
      drawBuffer(burstBuf,mul(mat4.translate(ix,7.0+(b.oy||0),iz),mat4.scale(sc,sc,sc)),vp,a*.9);

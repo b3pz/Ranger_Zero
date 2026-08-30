@@ -1,3 +1,15 @@
+# RANGER ZERO v37 — MODULE SUMMON / FINAL ATTACK / VICTORY POSE
+
+## v37 — modifiche principali
+
+- Chiamata moduli in camera frontale: Rosso/Dragone, Giallo/Gatto, Blu/Cane, Nero/Gorilla, Rosa/Uccello, Verde/Drago.
+- Ogni modulo entra realmente in scena prima dell'assemblaggio.
+- Colosso ridisegnato: petto rosso, braccia nere, gamba gialla + blu, testa rosa, ali verdi, nessuna cresta.
+- Attacco finale rifatto: ATTACCO SPECIALE → fulmini → SPADA DEL COLOSSO dall'alto → fendente → Raccoglitore scagliato all'indietro verso il mare.
+- Il Raccoglitore non cade piu' in avanti sul robot.
+- Posa finale: Colosso si gira verso camera e alza la spada.
+- VITTORIA senza pulsante CONTINUA; il rientro alla Torre avviene automaticamente dopo il payoff.
+
 # RANGER ZERO v36 — TEAM / DON / COLLECTOR LORE / ARCHIVE SYSTEM
 
 Build cumulativa basata direttamente su **Ranger Zero v35**.
