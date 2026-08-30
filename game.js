@@ -1491,8 +1491,7 @@ function startColossoSequence(){
  clearKeys();
  colosso=newColossoState("pose");
  colosso.giantScale=1.55;
- missionHintEl.textContent="ARCO // NON BASTA. SQUADRA — FORMAZIONE COLOSSO!";
- missionHintEl.classList.add("show");
+ showStoryCue("ARCO","Non basta. Squadra — Formazione Colosso!",{duration:1650});
  colossoHpWrapEl.classList.add("show");
  sfx.teleport();
  // Non si fondono i corpi: i Ranger prendono posizione, fanno la posa toku
@@ -1633,15 +1632,14 @@ function updateColosso(dt){
  if(colosso.phase==="pose"){
   const moveP=Math.min(1,colosso.t/1.75),ease=1-Math.pow(1-moveP,3);
   for(const tp of colossoTeamPos){tp.x=tp.startX+(tp.targetX-tp.startX)*ease;tp.z=tp.startZ+(tp.targetZ-tp.startZ)*ease;tp.yaw=Math.PI;}
-  if(colosso.t<1.7)missionHintEl.textContent="ARCO // NON BASTA. SQUADRA — FORMAZIONE COLOSSO!";
-  else missionHintEl.textContent="ARCO // CHIAMIAMO I MODULI!";
-  if(colosso.t>3.0){colosso.phase="summon";colosso.t=0;colosso.lastSummonIndex=-1;missionHintEl.textContent="MODULI // CHIAMATA INDIVIDUALE";}
+  if(colosso.t>1.7&&!colosso.poseCue2){colosso.poseCue2=true;showStoryCue("ARCO","Chiamiamo i moduli!",{duration:1300});}
+  if(colosso.t>3.0){colosso.phase="summon";colosso.t=0;colosso.lastSummonIndex=-1;showStoryCue("SCENA","CHIAMATA MODULI",{portrait:false,duration:1200});}
   return;
  }
  if(colosso.phase==="summon"){
   const idx=Math.min(MODULE_CALLS.length-1,Math.floor(colosso.t/MODULE_SEG));
   if(idx!==colosso.lastSummonIndex){
-   colosso.lastSummonIndex=idx;const c=MODULE_CALLS[idx];missionHintEl.textContent=c.speaker+" // "+c.line;missionHintEl.classList.add("show");sfx.teleport();
+   colosso.lastSummonIndex=idx;const c=MODULE_CALLS[idx];showStoryCue(c.speaker,c.line,{duration:1250});sfx.teleport();
    specialFlashEl.style.opacity=.22;setTimeout(()=>specialFlashEl.style.opacity=0,100);
   }
   if(colosso.t>MODULE_CALLS.length*MODULE_SEG+.55){
@@ -1793,35 +1791,35 @@ function maybeAdvanceArenaWave(){
  if(arenaWaveTransition||emergeCutscene)return;
  if(arenaWave===1&&aliveMooks().length===0){
   arenaWaveTransition=true;arenaWave=2;
-  missionHintEl.textContent="ARCO // NON E' FINITA. SECONDA ONDATA!";missionHintEl.classList.add("show");
+  showStoryCue("ARCO","Non e' finita. Seconda ondata!",{duration:1350});
   afterGame(1150,()=>{
    addWave(2);arenaWaveTransition=false;missionHintEl.textContent="SECONDA ONDATA // TENETE LA LINEA";
    afterGame(1500,()=>{if(zone==="arena"&&arenaWave===2)spawnSupportDrop("energy");});
   });
  }else if(arenaWave===2&&aliveMooks().length===0){
   arenaWaveTransition=true;arenaWave=3;
-  missionHintEl.textContent="MERIDIANA // NE ARRIVANO ALTRI. FORMAZIONE!";missionHintEl.classList.add("show");
+  showStoryCue("MERIDIANA","Ne arrivano altri. Formazione!",{duration:1400});
   afterGame(1200,()=>{
    addWave(3);arenaWaveTransition=false;missionHintEl.textContent="TERZA ONDATA // UNITA' GUARDIA RILEVATA";
    if(player.hp<65)afterGame(900,()=>{if(zone==="arena"&&arenaWave===3)spawnSupportDrop("hp");});
   });
  }else if(arenaWave===3&&aliveMooks().length===0){
   arenaWaveTransition=true;arenaWave=4;wave4Batch2Pending=true;
-  missionHintEl.textContent="JUN // QUESTA E' L'ULTIMA... VERO?!";missionHintEl.classList.add("show");
+  showStoryCue("JUN","Questa e' l'ultima... vero?!",{duration:1450});
   afterGame(1150,()=>{
    addWave(4,1);arenaWaveTransition=false;missionHintEl.textContent="ULTIMA LINEA // NON CEDETE";
    afterGame(1600,()=>{if(zone==="arena"&&arenaWave===4)spawnSupportDrop("power");});
   });
   afterGame(3900,()=>{
    if(zone==="arena"&&arenaWave===4){
-    addWave(4,2);wave4Batch2Pending=false;missionHintEl.textContent="DON // SECONDO GRUPPO, A DESTRA!";missionHintEl.classList.add("show");
+    addWave(4,2);wave4Batch2Pending=false;showStoryCue("DON","Secondo gruppo, a destra!",{duration:1350});
     afterGame(1300,()=>{if(zone==="arena"&&arenaWave===4)spawnSupportDrop(chooseDirectorSupport());});
    }
   });
  }else if(arenaWave===4&&aliveMooks().length===0&&!wave4Batch2Pending){
   arenaWave=5;
-  missionHintEl.textContent="...SILENZIO";missionHintEl.classList.add("show");
-  afterGame(1800,()=>{missionHintEl.textContent="...SILENZIO";maybeEmergeRaccoglitore();});
+  showStoryCue("SCENA","...SILENZIO",{portrait:false,duration:1500});
+  afterGame(1800,()=>{maybeEmergeRaccoglitore();});
  }
 }
 function updateArenaAllies(dt){
@@ -1867,19 +1865,19 @@ function maybeEmergeRaccoglitore(){
  if(arenaWave<5||!racc||racc.emerging||racc.emerged||emergeCutscene)return;
  racc.emerging=true;racc.emergeT=0;racc.state="emerging";
  emergeCutscene={t:0,phase:"buildup",racc};
- missionHintEl.textContent="QUALCOSA SI MUOVE NELL'ACQUA...";missionHintEl.classList.add("show");
+ showStoryCue("SCENA","Qualcosa si muove nell'acqua...",{portrait:false,duration:1700});
 }
 function updateEmergeCutscene(dt){
  if(!emergeCutscene)return;
  emergeCutscene.t+=dt;const racc=emergeCutscene.racc;
  if(emergeCutscene.phase==="buildup"&&emergeCutscene.t>2.0){
-  emergeCutscene.phase="rising";emergeCutscene.t=0;racc.hidden=false;sfx.alarm();triggerSlowMo(.6,.3);missionHintEl.textContent="IL RACCOGLITORE";
+  emergeCutscene.phase="rising";emergeCutscene.t=0;racc.hidden=false;sfx.alarm();triggerSlowMo(.6,.3);showStoryCue("SCENA","IL RACCOGLITORE",{portrait:false,duration:1600});
  }else if(emergeCutscene.phase==="rising"&&racc.emerged){
   emergeCutscene.phase="advance";emergeCutscene.t=0;
  }else if(emergeCutscene.phase==="advance"&&racc.state!=="approach"){
   emergeCutscene.phase="hold";emergeCutscene.t=0;
  }else if(emergeCutscene.phase==="hold"&&emergeCutscene.t>1.0){
-  emergeCutscene=null;missionHintEl.classList.remove("show");
+  emergeCutscene=null;missionHintEl.classList.remove("show");hideStoryCue();
  }
 }
 
@@ -2250,6 +2248,13 @@ const dialogueTextEl=document.getElementById("dialogueText");
 let dialogueQueue=[], dialogueIndex=0, dialogueActive=false, dialogueOnEnd=null, dialogueFocus=null;
 const dialoguePortraitCanvas=document.getElementById("dialoguePortrait");
 const dialoguePortraitCtx=dialoguePortraitCanvas?dialoguePortraitCanvas.getContext("2d"):null;
+const storyCueBoxEl=document.getElementById("storyCueBox");
+const storyCueNameEl=document.getElementById("storyCueName");
+const storyCueTextEl=document.getElementById("storyCueText");
+const storyCuePortraitCanvas=document.getElementById("storyCuePortrait");
+const storyCuePortraitCtx=storyCuePortraitCanvas?storyCuePortraitCanvas.getContext("2d"):null;
+let storyCueToken=0;
+function hideStoryCue(){storyCueBoxEl?.classList.remove("show","no-portrait");}
 function rgb01(arr){return `rgb(${Math.round(Math.max(0,Math.min(1,arr[0]))*255)},${Math.round(Math.max(0,Math.min(1,arr[1]))*255)},${Math.round(Math.max(0,Math.min(1,arr[2]))*255)})`;}
 function getSpeakerPortraitData(name){
  if(name==="OCULO")return {kind:"oculo"};
@@ -2265,9 +2270,9 @@ function getSpeakerPortraitData(name){
  if(name==="VALE")return {kind:zone==="arena"||zone==="colosso"?"ranger":"civil",pal:zone==="arena"||zone==="colosso"?PAL_RANGER4:PAL_VALE_CIV,female:true,helmet:zone==="arena"||zone==="colosso"};
  return {kind:"civil",pal:PAL_CIVILE,female:false,helmet:false};
 }
-function drawDialoguePortrait(name){
- if(!dialoguePortraitCtx)return;
- const ctx=dialoguePortraitCtx,w=ctx.canvas.width,h=ctx.canvas.height;
+function drawPortraitOnContext(ctx,name){
+ if(!ctx)return;
+ const w=ctx.canvas.width,h=ctx.canvas.height;
  ctx.clearRect(0,0,w,h);
  const bg=ctx.createLinearGradient(0,0,0,h); bg.addColorStop(0,'#08111b'); bg.addColorStop(1,'#02060d'); ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
  ctx.strokeStyle='rgba(127,196,255,.35)'; ctx.strokeRect(1.5,1.5,w-3,h-3);
@@ -2309,7 +2314,24 @@ function drawDialoguePortrait(name){
   ctx.fillStyle='#111417'; ctx.fillRect(38,34,4,4); ctx.fillRect(54,34,4,4);
  }
 }
+function drawDialoguePortrait(name){drawPortraitOnContext(dialoguePortraitCtx,name);} 
+function drawStoryCuePortrait(name){drawPortraitOnContext(storyCuePortraitCtx,name);} 
+function showStoryCue(speaker,text,opts){
+ opts=opts||{};
+ if(!storyCueBoxEl||dialogueActive)return;
+ const portrait=opts.portrait!==false;
+ const token=++storyCueToken;
+ storyCueNameEl.textContent=speaker||"";
+ storyCueTextEl.textContent=text||"";
+ storyCueNameEl.className=speaker==="OCULO"?"oculo":"";
+ storyCueBoxEl.classList.toggle("no-portrait",!portrait);
+ if(portrait)drawStoryCuePortrait(speaker||"ZERO");
+ else if(storyCuePortraitCtx)storyCuePortraitCtx.clearRect(0,0,storyCuePortraitCtx.canvas.width,storyCuePortraitCtx.canvas.height);
+ storyCueBoxEl.classList.add("show");
+ afterGame(opts.duration||1400,()=>{if(token===storyCueToken)hideStoryCue();});
+}
 function playDialogue(lines,onEnd){
+ hideStoryCue();storyCueToken++;
  clearKeys();dialogueQueue=lines; dialogueIndex=0; dialogueActive=true; dialogueOnEnd=onEnd||null;
  dialogueBoxEl.classList.add("show");
  document.body.classList.add("dialogue-active");

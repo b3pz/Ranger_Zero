@@ -987,3 +987,9 @@ Resta disponibile `R` nelle zone sicure per trasformare/rilasciare l'armatura. I
 - Ripristino checkpoint Archivio in forma civile: OK.
 
 Il playtest browser resta necessario per valutare soprattutto coreografia, silhouette delle tute e resa grafica della nuova citta'/Archivio.
+
+
+# v56.1 — Story box dialogue fix
+- Le battute brevi di regia e personaggi (es. JUN, DON, SILENZIO, IL RACCOGLITORE, chiamata moduli) non usano piu' testo sciolto in alto: compaiono in un balloon compatto basato sul dialogue_frame.
+- Il box compatto puo' mostrare portrait per i personaggi o una versione senza portrait per la regia/scena.
+- Gli obiettivi e i tutorial rapidi restano nel missionHint HUD.

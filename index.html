@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>RANGER ZERO — v56 MOBILE COMPLETE</title>
+<title>RANGER ZERO — v56.1 STORYBOX DIALOGUE</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -56,6 +56,21 @@
   #dialogueText{position:absolute;left:24%;top:30%;width:70%;height:56%;overflow:hidden;
     color:#e8eefc;font-size:15px;line-height:1.5;display:flex;align-items:center}
   #dialoguePrompt{position:absolute;right:8%;bottom:15%;color:#5a6a8a;font-size:10px;animation:blink 1.4s infinite}
+
+
+  #storyCueBox{position:absolute;left:50%;top:max(70px,calc(env(safe-area-inset-top) + 56px));transform:translateX(-50%);width:min(68vw,760px);
+    aspect-ratio:2172/724;display:none;pointer-events:none;z-index:61;opacity:.98;
+    background:url('dialogue_frame.png') center/100% 100% no-repeat;filter:drop-shadow(0 8px 16px rgba(0,0,0,.35))}
+  #storyCueBox.show{display:block}
+  #storyCueName{position:absolute;left:5.5%;top:12%;width:17%;height:16%;display:flex;align-items:center;
+    justify-content:center;color:#7fc4ff;font-weight:700;font-size:11px;letter-spacing:1px;text-align:center}
+  #storyCueName.oculo{color:#ff8a6b}
+  #storyCuePortraitWrap{position:absolute;left:6.2%;top:31%;width:13.5%;height:48%;display:flex;align-items:center;justify-content:center;background:rgba(6,12,20,.58);border:1px solid rgba(115,180,230,.32);box-shadow:inset 0 0 18px rgba(0,0,0,.35)}
+  #storyCuePortrait{width:100%;height:100%;image-rendering:pixelated}
+  #storyCueText{position:absolute;left:24%;top:30%;width:70%;height:56%;overflow:hidden;color:#e8eefc;font-size:13px;line-height:1.42;display:flex;align-items:center}
+  #storyCueBox.no-portrait #storyCuePortraitWrap{display:none}
+  #storyCueBox.no-portrait #storyCueName{left:6.5%;width:18%}
+  #storyCueBox.no-portrait #storyCueText{left:9%;width:82%}
 
   #colossoHpWrap{position:absolute;left:50%;top:16px;transform:translateX(-50%);width:min(60vw,560px);
     display:none;flex-direction:column;align-items:center;gap:4px}
@@ -220,6 +235,9 @@
     body.touch-device #dialogueName{font-size:10px}
     body.touch-device #dialogueText{font-size:12px;line-height:1.28}
     body.touch-device #dialoguePrompt{font-size:8px}
+    body.touch-device #storyCueBox{width:min(92vw,640px);top:max(78px,calc(env(safe-area-inset-top) + 58px));height:clamp(104px,18vh,126px);aspect-ratio:auto}
+    body.touch-device #storyCueName{font-size:9px}
+    body.touch-device #storyCueText{font-size:11px;line-height:1.24}
     body.touch-device #titleScreen .titleLogo{left:4%;top:4%;width:44%}
     body.touch-device #titleMenu{left:4%;bottom:max(5vh,calc(env(safe-area-inset-bottom) + 12px));width:min(58vw,330px)}
     body.touch-device .titleBtn{min-width:0;padding:12px 16px;font-size:13px}
@@ -243,6 +261,7 @@
     body.touch-device #missionHint{top:70px;max-width:78vw}
     body.touch-device #interactPrompt{bottom:19%;max-width:70vw}
     body.touch-device #dialogueBox{height:150px}
+    body.touch-device #storyCueBox{height:110px}
     body.touch-device #endingScreen{padding:24px 16px}
     body.touch-device #endingScreen h1{font-size:28px;letter-spacing:3px}
   }
@@ -285,6 +304,11 @@ i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del 
   <div id="dialoguePortraitWrap"><canvas id="dialoguePortrait" width="96" height="96"></canvas></div>
   <div id="dialogueText">...</div>
   <div id="dialoguePrompt">CLICCA O SPAZIO PER CONTINUARE</div>
+</div>
+<div id="storyCueBox" class="no-portrait">
+  <div id="storyCueName">SCENA</div>
+  <div id="storyCuePortraitWrap"><canvas id="storyCuePortrait" width="96" height="96"></canvas></div>
+  <div id="storyCueText">...</div>
 </div>
 <div id="colossoHpWrap">
   <div id="colossoHpLabel">IL RACCOGLITORE</div>
