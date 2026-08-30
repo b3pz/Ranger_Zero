@@ -1,3 +1,5 @@
+RANGER ZERO v38 LAST FIX
+
 # RANGER ZERO v37 — MODULE SUMMON / FINAL ATTACK / VICTORY POSE
 
 ## v37 — modifiche principali

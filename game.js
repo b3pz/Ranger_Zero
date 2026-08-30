@@ -221,7 +221,8 @@ const uMVP=gl.getUniformLocation(prog,"uMVP");
 const uModel=gl.getUniformLocation(prog,"uModel");
 const uAlphaMain=gl.getUniformLocation(prog,"uAlphaMain");
 gl.enable(gl.DEPTH_TEST);
-gl.enable(gl.CULL_FACE);
+// v38: niente back-face culling sui personaggi/box low-poly; evita che schiene e capelli sembrino bucati
+gl.disable(gl.CULL_FACE);
 
 // ------------------------------------------------------------
 // secondo programma: quad con texture (per Oculo, che va mostrato come una
@@ -322,7 +323,8 @@ function drawTexturedQuad(tex,model,vp,alpha){
  gl.depthMask(false);
  gl.drawArrays(gl.TRIANGLES,0,6);
  gl.depthMask(true);gl.disable(gl.BLEND);
- if(cullWas)gl.enable(gl.CULL_FACE);
+ if(cullWas)// v38: niente back-face culling sui personaggi/box low-poly; evita che schiene e capelli sembrino bucati
+gl.disable(gl.CULL_FACE);
  gl.useProgram(prog);
 }
 
@@ -344,7 +346,8 @@ function drawTexturedMesh(tex,mesh,model,vp,alpha){
  gl.uniform1f(texUAlpha,alpha===undefined?1:alpha);gl.uniformMatrix4fv(texUMVP,false,mat4.multiply(vp,model));
  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
  gl.drawArrays(gl.TRIANGLES,0,mesh.count);
- gl.depthMask(true);gl.disable(gl.BLEND);if(cullWas)gl.enable(gl.CULL_FACE);gl.useProgram(prog);
+ gl.depthMask(true);gl.disable(gl.BLEND);if(cullWas)// v38: niente back-face culling sui personaggi/box low-poly; evita che schiene e capelli sembrino bucati
+gl.disable(gl.CULL_FACE);gl.useProgram(prog);
 }
 
 // v24.1.1 — fondale arena sicuro. In v24.1 le quattro pareti-cielo di
@@ -656,7 +659,7 @@ PAL_ZERO.isZero=true;
 const PAL_ARCO   =makePalette([.80,.09,.07],[.90,.72,.18],[.78,.55,.40],[.13,.08,.05]);
 const PAL_MERIDIANA=makePalette([.10,.30,.78],[.85,.88,.92],[.78,.58,.46],[.08,.07,.08]);
 const PAL_RANGER3=makePalette([.92,.78,.08],[.30,.24,.10],[.76,.54,.40],[.10,.07,.05]);
-const PAL_RANGER4=makePalette([.92,.35,.62],[.98,.90,.94],[.84,.62,.47],[.30,.10,.16]);
+const PAL_RANGER4=makePalette([.92,.35,.62],[.98,.90,.94],[.84,.62,.47],[.88,.74,.28]);
 // DON: quinto Ranger nero e richiamo discreto al capitolo precedente.
 // Pelle e capelli restano leggibili anche in civile; la tuta usa nero/gunmetal
 // con trim argento per non confondersi con le zone d'ombra.
@@ -668,7 +671,7 @@ const PAL_DON=makePalette([.055,.060,.072],[.72,.74,.78],[.42,.285,.205],[.035,.
 const PAL_ARCO_CIV=makePalette([.55,.09,.08],[.90,.72,.18],[.78,.55,.40],[.13,.08,.05]);
 const PAL_MERIDIANA_CIV=makePalette([.10,.24,.55],[.85,.88,.92],[.78,.58,.46],[.08,.07,.08]);
 const PAL_JUN_CIV=makePalette([.62,.52,.10],[.30,.24,.10],[.76,.54,.40],[.10,.07,.05]);
-const PAL_VALE_CIV=makePalette([.62,.26,.42],[.98,.90,.94],[.84,.62,.47],[.30,.10,.16]);
+const PAL_VALE_CIV=makePalette([.62,.26,.42],[.98,.90,.94],[.84,.62,.47],[.88,.74,.28]);
 const PAL_DON_CIV=makePalette([.105,.11,.13],[.60,.62,.66],[.42,.285,.205],[.035,.028,.025]);
 // Meridiana e Vale sono donne: coda di cavallo per distinguerle anche di
 // spalle (vedi buildBodyParts, ramo civile). Arco e Jun restano senza.
@@ -733,7 +736,8 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
   // una sagoma aperta/monca. Un pannello sottilissimo del colore della tuta
   // completa visivamente la schiena senza trasformarla in corazza robotica.
   parts.push({mesh:pm.torso,mtx:mul(mat4.translate(0,1.12+bob,-.154),mat4.scale(.38,.46,.035))});
-  parts.push({mesh:pm.chestDiamond,mtx:mul(mat4.translate(0,1.16+bob,-.178),mat4.rotZ(Math.PI/4),mat4.scale(.135,.135,.025))});
+  parts.push({mesh:pm.chestDiamond,mtx:mul(mat4.translate(-.11,1.20+bob,-.178),mat4.rotZ(Math.PI/4),mat4.scale(.115,.115,.025))});
+  parts.push({mesh:pm.chestDiamond,mtx:mul(mat4.translate(.11,1.20+bob,-.178),mat4.rotZ(Math.PI/4),mat4.scale(.115,.115,.025))});
   // Nessun modulo mecha sulla schiena del Ranger Zero: il suo modulo speciale
   // viene richiamato solo nella sequenza del COLOSSO ed entra nel robot.
  }
@@ -1482,23 +1486,23 @@ let arenaWave=0,arenaWaveTransition=false;
 let arenaAllies=[];
 const RACC_SEA_Z=ARENA_CZ-ARENA_D/2+2.8;
 const RACC_SHORE_Z=SEA_EDGE_Z+.85;
-function makeMook(x,z,cd){return {type:"scagnozzo",pal:PAL_SCAGNOZZO,x,z,yaw:0,hp:30,hpMax:30,state:"idle",cd:cd||0,scale:1,alpha:1,dead:false,walkPhaseE:0,hitFlash:0,attackFlashT:0};}
+function makeMook(x,z,cd){return {type:"scagnozzo",pal:PAL_SCAGNOZZO,x,z,yaw:0,hp:36,hpMax:36,state:"idle",cd:cd||0,scale:1,alpha:1,dead:false,walkPhaseE:0,hitFlash:0,attackFlashT:0};}
 function initArenaAllies(){
  arenaAllies=[
-  {name:"ARCO",pal:PAL_ARCO,x:ARENA_CX-5.5,z:ARENA_CZ+6.5,yaw:Math.PI,cd:.2,attackT:0,walk:0},
-  {name:"MERIDIANA",pal:PAL_MERIDIANA,x:ARENA_CX+5.5,z:ARENA_CZ+6.0,yaw:Math.PI,cd:.7,attackT:0,walk:1},
-  {name:"JUN",pal:PAL_RANGER3,x:ARENA_CX-7.0,z:ARENA_CZ+3.0,yaw:Math.PI,cd:1.0,attackT:0,walk:2},
-  {name:"VALE",pal:PAL_RANGER4,x:ARENA_CX+7.0,z:ARENA_CZ+3.0,yaw:Math.PI,cd:1.3,attackT:0,walk:3},
-  {name:"DON",pal:PAL_DON,x:ARENA_CX,z:ARENA_CZ+7.4,yaw:Math.PI,cd:.9,attackT:0,walk:4},
+  {name:"ARCO",pal:PAL_ARCO,x:ARENA_CX-5.5,z:ARENA_CZ+6.5,yaw:Math.PI,cd:.2,attackT:0,hurtT:0,walk:0},
+  {name:"MERIDIANA",pal:PAL_MERIDIANA,x:ARENA_CX+5.5,z:ARENA_CZ+6.0,yaw:Math.PI,cd:.7,attackT:0,hurtT:0,walk:1},
+  {name:"JUN",pal:PAL_RANGER3,x:ARENA_CX-7.0,z:ARENA_CZ+3.0,yaw:Math.PI,cd:1.0,attackT:0,hurtT:0,walk:2},
+  {name:"VALE",pal:PAL_RANGER4,x:ARENA_CX+7.0,z:ARENA_CZ+3.0,yaw:Math.PI,cd:1.3,attackT:0,hurtT:0,walk:3},
+  {name:"DON",pal:PAL_DON,x:ARENA_CX,z:ARENA_CZ+7.4,yaw:Math.PI,cd:.9,attackT:0,hurtT:0,walk:4},
  ];
 }
 function addWave(stage){
  if(stage===1){
-  enemies.push(makeMook(ARENA_CX-4.5,ARENA_CZ-3,.2),makeMook(ARENA_CX+4.0,ARENA_CZ-3,.7),makeMook(ARENA_CX,ARENA_CZ-7,1.1));
+  enemies.push(makeMook(ARENA_CX-4.5,ARENA_CZ-3,.2),makeMook(ARENA_CX+4.0,ARENA_CZ-3,.7),makeMook(ARENA_CX,ARENA_CZ-7,1.1),makeMook(ARENA_CX+1.5,ARENA_CZ-5.5,1.35));
  }else{
   // seconda ondata: arriva dai lati e piu' vicino alla battigia, cosi' e'
   // visivamente distinta dalla prima e non sembra lo stesso fight ripetuto.
-  enemies.push(makeMook(ARENA_CX-9,ARENA_CZ-5,.2),makeMook(ARENA_CX+9,ARENA_CZ-5,.5),makeMook(ARENA_CX-3,ARENA_CZ-9,.9),makeMook(ARENA_CX+3,ARENA_CZ-9,1.2));
+  enemies.push(makeMook(ARENA_CX-9,ARENA_CZ-5,.2),makeMook(ARENA_CX+9,ARENA_CZ-5,.5),makeMook(ARENA_CX-3,ARENA_CZ-9,.9),makeMook(ARENA_CX+3,ARENA_CZ-9,1.2),makeMook(ARENA_CX,ARENA_CZ-11,1.45));
  }
 }
 function spawnWave(){
@@ -1516,8 +1520,8 @@ function maybeAdvanceArenaWave(){
   afterGame(1050,()=>{addWave(2);arenaWaveTransition=false;missionHintEl.textContent="SECONDA ONDATA // TENETE LA LINEA";});
  }else if(arenaWave===2&&aliveMooks().length===0){
   arenaWave=3;
-  const heal=Math.min(25,player.hpMax-player.hp);player.hp+=heal;
-  missionHintEl.textContent=heal>0?"TIC // CARICA D'EMERGENZA +"+heal+" HP":"...SILENZIO";missionHintEl.classList.add("show");
+  const heal=Math.min(12,player.hpMax-player.hp);player.hp+=heal;
+  missionHintEl.textContent=heal>0?"TIC // TI PASSO UNA CARICA D'EMERGENZA +"+heal+" HP":"...SILENZIO";missionHintEl.classList.add("show");
   if(heal>0){specialFlashEl.style.opacity=.35;afterGame(220,()=>specialFlashEl.style.opacity=0);sfx.dodge();}
   afterGame(850,()=>{missionHintEl.textContent="...SILENZIO";maybeEmergeRaccoglitore();});
  }
@@ -1526,7 +1530,7 @@ function updateArenaAllies(dt){
  if(zone!=="arena"||colossoTeamPos)return;
  const racc=enemies.find(e=>e.type==="raccoglitore"&&!e.dead&&!e.hidden&&e.emerged&&e.state!=="retreat"&&e.state!=="submerged"&&e.state!=="emerging");
  for(let i=0;i<arenaAllies.length;i++){
-  const a=arenaAllies[i];a.cd-=rawDtGlobal;a.attackT=Math.max(0,a.attackT-rawDtGlobal);
+  const a=arenaAllies[i];a.cd-=rawDtGlobal;a.attackT=Math.max(0,a.attackT-rawDtGlobal);a.hurtT=Math.max(0,(a.hurtT||0)-rawDtGlobal);
   const mooks=aliveMooks();
   const t=mooks.length?mooks[(i+arenaWave)%mooks.length]:racc;
   if(!t){
@@ -1541,10 +1545,10 @@ function updateArenaAllies(dt){
   const tx=t.x+flank,tz=t.z+(t.type==="raccoglitore"?1.25:0);
   const dx=tx-a.x,dz=tz-a.z,dist=Math.hypot(dx,dz)||.001;a.yaw=Math.atan2(t.x-a.x,t.z-a.z);
   const want=t.type==="raccoglitore"?2.05:1.65;
-  if(dist>want){const sp=(t.type==="raccoglitore"?1.05:.95)*dt;a.x+=dx/dist*sp;a.z+=dz/dist*sp;a.walk+=dt*6;}
-  else if(a.cd<=0){a.cd=(t.type==="raccoglitore"?1.15:1.0)+i*.10;a.attackT=.38;
+  if(dist>want){const sp=(t.type==="raccoglitore"?1.10:1.02)*dt;a.x+=dx/dist*sp;a.z+=dz/dist*sp;a.walk+=dt*6.2;}
+  else if(a.cd<=0){a.cd=(t.type==="raccoglitore"?.95:.82)+i*.08;a.attackT=.38;
    // Aiutano davvero ma NON possono dare il colpo finale.
-   const allyDmg=t.type==="raccoglitore"?1:2;t.hp=Math.max(1,t.hp-allyDmg);t.hitFlash=.08;
+   const allyDmg=t.type==="raccoglitore"?2:4;t.hp=Math.max(1,t.hp-allyDmg);t.hitFlash=.08;
   }
  }
 }
@@ -1589,7 +1593,12 @@ for(let z=ARCHIVIO_CZ+10;z>ARCHIVIO_CZ-12;z-=2.2){
 const archivioFloorBuf=makeBuffer(bakeParts(archivioFloorParts));
 const archivioWallCol=[.12,.125,.15], capsuleWallCol=[.065,.085,.105];
 const archivioWallParts=[
- {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX,2.5,ARCHIVIO_CZ+ARCHIVIO_D/2),mat4.scale(ARCHIVIO_W,5.0,.35))},
+ {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX-3.4,2.5,ARCHIVIO_CZ+ARCHIVIO_D/2),mat4.scale(4.2,5.0,.35))},
+ {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX+3.4,2.5,ARCHIVIO_CZ+ARCHIVIO_D/2),mat4.scale(4.2,5.0,.35))},
+ {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX,4.55,ARCHIVIO_CZ+ARCHIVIO_D/2),mat4.scale(2.3,.9,.35))},
+ {mesh:boxMesh([.18,.22,.27]),mtx:mul(mat4.translate(ARCHIVIO_CX-1.18,2.1,ARCHIVIO_CZ+ARCHIVIO_D/2-.02),mat4.scale(.12,3.0,.12))},
+ {mesh:boxMesh([.18,.22,.27]),mtx:mul(mat4.translate(ARCHIVIO_CX+1.18,2.1,ARCHIVIO_CZ+ARCHIVIO_D/2-.02),mat4.scale(.12,3.0,.12))},
+ {mesh:boxMesh([.12,.42,.45]),mtx:mul(mat4.translate(ARCHIVIO_CX,3.55,ARCHIVIO_CZ+ARCHIVIO_D/2-.02),mat4.scale(2.45,.14,.12))},
  {mesh:boxMesh(capsuleWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX,2.8,ARCHIVIO_CZ-ARCHIVIO_D/2),mat4.scale(ARCHIVIO_W,5.6,.35))},
  {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2,2.5,ARCHIVIO_CZ),mat4.scale(.35,5.0,ARCHIVIO_D))},
  {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX+ARCHIVIO_W/2,2.5,ARCHIVIO_CZ),mat4.scale(.35,5.0,ARCHIVIO_D))},
@@ -1622,7 +1631,7 @@ const archivioTerminalBuf=makeBuffer(bakeParts([
  {mesh:boxMesh([.16,.17,.20]),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2+1.0,.62,ARCHIVIO_CZ+ARCHIVIO_D/2-2.8),mat4.scale(.85,1.25,.72))},
  {mesh:boxMesh([.40,.68,.34]),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2+1.0,1.35,ARCHIVIO_CZ+ARCHIVIO_D/2-2.8),mat4.rotX(-.28),mat4.scale(.66,.48,.04))},
 ]));
-const ARCH_OCULO_POS={x:ARCHIVIO_CX,y:2.75,z:ARCHIVIO_CZ-ARCHIVIO_D/2+.20};
+const ARCH_OCULO_POS={x:ARCHIVIO_CX,y:2.95,z:ARCHIVIO_CZ-ARCHIVIO_D/2+.20};
 const archivioOculoFrameBuf=makeBuffer(bakeParts([
  {mesh:boxMesh([.11,.12,.16]),mtx:mul(mat4.translate(ARCH_OCULO_POS.x,ARCH_OCULO_POS.y,ARCH_OCULO_POS.z-.05),mat4.scale(4.35,2.35,.16))},
 ]));
@@ -1833,6 +1842,65 @@ const dialogueBoxEl=document.getElementById("dialogueBox");
 const dialogueNameEl=document.getElementById("dialogueName");
 const dialogueTextEl=document.getElementById("dialogueText");
 let dialogueQueue=[], dialogueIndex=0, dialogueActive=false, dialogueOnEnd=null, dialogueFocus=null;
+const dialoguePortraitCanvas=document.getElementById("dialoguePortrait");
+const dialoguePortraitCtx=dialoguePortraitCanvas?dialoguePortraitCanvas.getContext("2d"):null;
+function rgb01(arr){return `rgb(${Math.round(Math.max(0,Math.min(1,arr[0]))*255)},${Math.round(Math.max(0,Math.min(1,arr[1]))*255)},${Math.round(Math.max(0,Math.min(1,arr[2]))*255)})`;}
+function getSpeakerPortraitData(name){
+ if(name==="OCULO")return {kind:"oculo"};
+ if(name==="TIC")return {kind:"tic"};
+ if(name==="REGISTRO"||name==="FRAME ZERO")return {kind:"terminal",accent:[.18,.80,.90]};
+ if(name==="VECCHIO RANGER")return {kind:"ranger",pal:PAL_OLDRANGER_A,female:false,helmet:true};
+ if(name==="ZERO")return player.transformed?{kind:"ranger",pal:PAL_ZERO,female:false,helmet:true}:{kind:"civil",pal:PAL_CIVILE,female:false,helmet:false};
+ const tm=teamMemberByName(name);
+ if(tm)return {kind:zone==="arena"||zone==="colosso"?"ranger":"civil",pal:zone==="arena"||zone==="colosso"?tm.pal:tm.civPal,female:!!tm.pal.female,helmet:zone==="arena"||zone==="colosso"};
+ if(name==="MERIDIANA")return {kind:zone==="arena"||zone==="colosso"?"ranger":"civil",pal:zone==="arena"||zone==="colosso"?PAL_MERIDIANA:PAL_MERIDIANA_CIV,female:true,helmet:zone==="arena"||zone==="colosso"};
+ if(name==="VALE")return {kind:zone==="arena"||zone==="colosso"?"ranger":"civil",pal:zone==="arena"||zone==="colosso"?PAL_RANGER4:PAL_VALE_CIV,female:true,helmet:zone==="arena"||zone==="colosso"};
+ return {kind:"civil",pal:PAL_CIVILE,female:false,helmet:false};
+}
+function drawDialoguePortrait(name){
+ if(!dialoguePortraitCtx)return;
+ const ctx=dialoguePortraitCtx,w=ctx.canvas.width,h=ctx.canvas.height;
+ ctx.clearRect(0,0,w,h);
+ const bg=ctx.createLinearGradient(0,0,0,h); bg.addColorStop(0,'#08111b'); bg.addColorStop(1,'#02060d'); ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
+ ctx.strokeStyle='rgba(127,196,255,.35)'; ctx.strokeRect(1.5,1.5,w-3,h-3);
+ const d=getSpeakerPortraitData(name);
+ if(d.kind==="oculo"){
+  ctx.fillStyle='#07101a'; ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='#0fe0ef'; ctx.beginPath(); ctx.ellipse(w/2,h/2,34,18,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#e6fbff'; ctx.beginPath(); ctx.ellipse(w/2,h/2,18,11,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#05070a'; ctx.beginPath(); ctx.ellipse(w/2,h/2,8,14,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='rgba(37,201,214,.9)'; ctx.lineWidth=3; ctx.beginPath(); ctx.ellipse(w/2,h/2,34,18,0,0,Math.PI*2); ctx.stroke();
+  return;
+ }
+ if(d.kind==="tic"){
+  ctx.fillStyle='#121820'; ctx.fillRect(24,58,48,24);
+  ctx.fillStyle='#2a3340'; ctx.fillRect(28,20,40,40);
+  ctx.fillStyle='#18d6ea'; ctx.fillRect(34,28,28,12);
+  ctx.fillStyle='#6f7d8d'; ctx.fillRect(42,10,12,10);
+  return;
+ }
+ if(d.kind==="terminal"){
+  ctx.fillStyle='#111821'; ctx.fillRect(18,18,60,60);
+  ctx.fillStyle=rgb01(d.accent||[.15,.80,.88]); ctx.fillRect(28,30,40,8);
+  ctx.fillRect(28,44,28,8);
+  ctx.fillRect(28,58,34,6);
+  return;
+ }
+ const pal=d.pal||PAL_CIVILE;
+ ctx.fillStyle='rgba(255,255,255,.05)'; ctx.fillRect(18,14,60,72);
+ ctx.fillStyle=rgb01(pal.suit); ctx.fillRect(24,58,48,26);
+ ctx.fillStyle=rgb01(pal.accent); ctx.fillRect(34,62,28,14);
+ if(d.helmet){
+  ctx.fillStyle=rgb01(pal.suit); ctx.fillRect(28,18,40,36);
+  ctx.fillStyle='rgb(8,12,18)'; ctx.fillRect(30,30,36,10);
+  ctx.fillStyle='#f2f4f6'; ctx.fillRect(38,44,20,6);
+ }else{
+  ctx.fillStyle=rgb01(pal.skin||[.82,.62,.46]); ctx.fillRect(30,22,36,30);
+  ctx.fillStyle=rgb01(pal.hair||[.12,.09,.07]); ctx.fillRect(28,16,40,16);
+  if(d.female){ ctx.fillRect(56,30,8,22); }
+  ctx.fillStyle='#111417'; ctx.fillRect(38,34,4,4); ctx.fillRect(54,34,4,4);
+ }
+}
 function playDialogue(lines,onEnd){
  clearKeys();dialogueQueue=lines; dialogueIndex=0; dialogueActive=true; dialogueOnEnd=onEnd||null;
  dialogueBoxEl.classList.add("show");
@@ -1844,6 +1912,7 @@ function showDialogueLine(){
  dialogueNameEl.textContent=l.speaker;
  dialogueNameEl.className=l.speaker==="OCULO"?"oculo":"";
  dialogueTextEl.textContent=l.text;
+ drawDialoguePortrait(l.speaker);
  // la telecamera si gira verso chi sta parlando, cosi' si capisce subito
  // chi e' — prima restava fissa sul giocatore per tutta la scena.
  const tm=teamMemberByName(l.speaker);
@@ -2323,6 +2392,18 @@ function damageEnemy(en,amt){
   sfx.hitEnemy();
  }
 }
+
+function pickEnemyTarget(en){
+ let tx=player.x,tz=player.z,kind="player",ref=player,best=Math.hypot(player.x-en.x,player.z-en.z);
+ if(zone==="arena"&&!colossoTeamPos){
+  for(const a of arenaAllies){
+   const d=Math.hypot(a.x-en.x,a.z-en.z);
+   if(d<best-.18){best=d;tx=a.x;tz=a.z;kind="ally";ref=a;}
+  }
+ }
+ return {x:tx,z:tz,kind,ref,dist:best};
+}
+
 function updateEnemies(dt){
  maybeAdvanceArenaWave();updateArenaAllies(dt);
  for(const en of enemies){
@@ -2352,23 +2433,27 @@ function updateEnemies(dt){
    if(en.alpha<=0)en.dead=true;
    continue;
   }
-  const f=facingDot(en.x,en.z,en.yaw,player.x,player.z);
-  const distToPlayer=f.dist;
+  const target=pickEnemyTarget(en);
   const wantRange=en.type==="raccoglitore"?1.9:1.5;
-  // orienta il nemico verso il giocatore
-  en.yaw=Math.atan2(player.x-en.x,player.z-en.z);
+  en.yaw=Math.atan2(target.x-en.x,target.z-en.z);
   if(en.cd>0)en.cd-=rawDtGlobal;
-  if(distToPlayer>wantRange+.15){
-   const spd=(en.type==="raccoglitore"?1.5:1.9)*dt;
+  if(target.dist>wantRange+.15){
+   const spd=(en.type==="raccoglitore"?1.45:1.8)*dt;
    en.x+=Math.sin(en.yaw)*spd; en.z+=Math.cos(en.yaw)*spd;
    en.walkPhaseE+=dt*7.5;
   }else if(en.cd<=0){
-   en.cd=en.type==="raccoglitore"?1.7:2.1;
+   en.cd=en.type==="raccoglitore"?1.7:2.05;
    en.attackFlashT=.5;
-   if(player.invuln<=0){
-    const dmg=en.type==="raccoglitore"?14:7;
-    player.hp=Math.max(0,player.hp-dmg);
-    player.hitFlashT=.3;
+   if(target.kind==="player"){
+    if(player.invuln<=0){
+     const dmg=en.type==="raccoglitore"?14:7;
+     player.hp=Math.max(0,player.hp-dmg);
+     player.hitFlashT=.3;
+     sfx.hitPlayer();
+    }
+   }else if(target.ref){
+    target.ref.hurtT=.32;
+    target.ref.attackT=Math.max(target.ref.attackT,.18);
     sfx.hitPlayer();
    }
   }
@@ -2817,13 +2902,13 @@ function frame(now){
   }
  }else if(zone==="archivio"){
   drawBuffer(archivioFloorBuf,mat4.identity(),vp);drawBuffer(archivioWallBuf,mat4.identity(),vp);drawBuffer(archivioHelmetBuf,mat4.identity(),vp);drawBuffer(archivioTerminalBuf,mat4.identity(),vp);drawBuffer(archivioSystemBuf,mat4.identity(),vp);drawBuffer(archivioOculoFrameBuf,mat4.identity(),vp);
-  if(archiveState.revealing)drawTexturedQuad(oculoTex,mul(mat4.translate(ARCH_OCULO_POS.x,ARCH_OCULO_POS.y,ARCH_OCULO_POS.z+.02),mat4.scale(3.75,2.05,1)),vp,.92);
+  drawTexturedQuad(oculoTex,mul(mat4.translate(ARCH_OCULO_POS.x,ARCH_OCULO_POS.y,ARCH_OCULO_POS.z+.02),mat4.scale(archiveState.revealing?5.05:4.35,archiveState.revealing?2.85:2.45,1)),vp,archiveState.revealing?.96:.42);
   // Solo Meridiana e TIC entrano nell'Archivio. Gli altri membri non vengono
   // neppure renderizzati in questa zona, quindi non possono seguirti per bug.
   drawShadow(archiveCompanion.meriX,archiveCompanion.meriZ,.38,vp,.28);
   const meriMoving=Math.hypot(archiveCompanion.meriTX-archiveCompanion.meriX,archiveCompanion.meriTZ-archiveCompanion.meriZ)>.10;
   const meriMesh=buildCharacterBuffers(PAL_MERIDIANA_CIV,now/900,meriMoving?1:.10,false,"ranger",0);
-  drawDynamicMesh(meriMesh,mul(mat4.translate(archiveCompanion.meriX,0,archiveCompanion.meriZ),mat4.rotY(archiveCompanion.meriYaw)),vp,.96);
+  drawDynamicMesh(meriMesh,mul(mat4.translate(archiveCompanion.meriX,0,archiveCompanion.meriZ),mat4.rotY(archiveCompanion.meriYaw)),vp,1);
   drawBuffer(ticBuf,mul(mat4.translate(archiveCompanion.ticX,2.0+Math.sin(now/420)*.08,archiveCompanion.ticZ),mat4.rotY(Math.PI)),vp);
   drawBuffer(capsuleFrameBuf,mat4.identity(),vp);
   for(let ci=0;ci<CAPSULE_POS.length;ci++){

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RANGER ZERO — v37 MODULE SUMMON / FINAL ATTACK</title>
+<title>RANGER ZERO — v38 LAST FIX</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -47,6 +47,9 @@
   #dialogueName{position:absolute;left:5.5%;top:12%;width:17%;height:16%;display:flex;align-items:center;
     justify-content:center;color:#7fc4ff;font-weight:700;font-size:13px;letter-spacing:1px;text-align:center}
   #dialogueName.oculo{color:#ff8a6b}
+
+  #dialoguePortraitWrap{position:absolute;left:6.2%;top:31%;width:13.5%;height:48%;display:flex;align-items:center;justify-content:center;background:rgba(6,12,20,.58);border:1px solid rgba(115,180,230,.32);box-shadow:inset 0 0 18px rgba(0,0,0,.35)}
+  #dialoguePortrait{width:100%;height:100%;image-rendering:pixelated}
   #dialogueText{position:absolute;left:24%;top:30%;width:70%;height:56%;overflow:hidden;
     color:#e8eefc;font-size:15px;line-height:1.5;display:flex;align-items:center}
   #dialoguePrompt{position:absolute;right:8%;bottom:15%;color:#5a6a8a;font-size:10px;animation:blink 1.4s infinite}
@@ -217,6 +220,7 @@ i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del 
 </div>
 <div id="dialogueBox">
   <div id="dialogueName">OCULO</div>
+  <div id="dialoguePortraitWrap"><canvas id="dialoguePortrait" width="96" height="96"></canvas></div>
   <div id="dialogueText">...</div>
   <div id="dialoguePrompt">CLICCA O SPAZIO PER CONTINUARE</div>
 </div>
@@ -263,7 +267,7 @@ i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del 
 </div>
 <div id="hpBar"><div id="hpLabel">HP</div><div id="hpTrack"><div id="hpFill"></div></div></div>
 <div id="missionHint">MISSIONE</div>
-<div id="hud">RANGER ZERO <span style="color:#7fa8ff">// v37 TOKUSATSU PAYOFF</span></div>
+<div id="hud">RANGER ZERO <span style="color:#7fa8ff">// v38 LAST FIX</span></div>
 <div id="tag">LA TORRE — SALA DI COMANDO<br>test movimento + personaggio 3D vero</div>
 <div id="hint">W/S avanti-indietro · A/D ruota · Q/E telecamera · F attacco · SHIFT schivata/guardia · C speciale · P/ESC pausa</div>
 <div id="pauseScreen">
