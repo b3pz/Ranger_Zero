@@ -1,3 +1,97 @@
+# RANGER ZERO v33 — collo aggiunto (nuca non più vuota)
+
+## Cosa ho cambiato
+L'utente aveva notato che nelle versioni precedenti "la nuca sembrava non esistere" — ho
+controllato le coordinate: il busto arriva fino a y≈1.36, l'elmo/testa comincia a y≈1.38-1.42
+a seconda del tipo di personaggio. C'era un vuoto reale di qualche centesimo di unita' tra i
+due, mai coperto da nessun pezzo — visibile soprattutto da dietro, dove si vedeva attraverso
+quel varco.
+
+**Corretto**: aggiunto un pezzo di collo stretto che riempie esattamente quello spazio, per
+tutti i tipi di personaggio (Ranger, civile, scagnozzo, Raccoglitore). Colore della tuta per
+chi e' vestito/armato (Ranger, scagnozzo, Raccoglitore), colore pelle per la forma civile.
+
+## Verificato
+Screenshot da dietro: prima si vedeva un varco tra elmo e busto, ora la connessione e'
+continua e solida. Nessun errore console.
+
+---
+
+# RANGER ZERO v32 — pareti coerenti + menu con cornice immagine
+
+## Cosa ho cambiato
+- **Pareti della Torre uniformate**: prima le pareti laterali (est/ovest) erano un
+  grigio-blu piatto (`wallCol`), mentre solo la parete di fondo dietro Oculo aveva le bande
+  sfumate calde (`backBands`) — si vedeva uno stacco netto agli angoli. Ora tutte e tre le
+  pareti usano le stesse bande di colore, la stanza legge come un unico ambiente coerente.
+  Verificato visivamente: nessuno stacco di colore visibile.
+- **Menu con cornice immagine invece di riquadri di testo**: pausa, errore di sessione, e
+  le tre scelte finali ora usano `dialogue_frame.png` come sfondo (stessa immagine gia'
+  usata per i dialoghi), invece di semplici box con bordo CSS. Nuova classe `.hudPanel`
+  riusabile per qualunque altro popup futuro che vorra' lo stesso trattamento.
+
+## Verificato
+- Pareti: nessuno stacco di colore, confermato visivamente.
+- Schermata di scelta: le tre opzioni hanno tutte la cornice, leggono bene, coerenti con lo
+  stile del resto del gioco. Risultato solido.
+- Menu pausa: la cornice compare correttamente, ma dato che il contenuto (titolo + testo +
+  3 bottoni) e' piu' alto del formato naturale dell'immagine (che e' una banda larga e
+  bassa, pensata per una riga di dialogo), la cornice risulta un po' schiacciata/stirata
+  verticalmente e la "tab" del nome in alto a sinistra si vede tagliata in modo strano.
+  Funziona, ma non e' rifinito quanto la schermata di scelta.
+
+## Se si vuole rifinire ulteriormente
+Il problema del menu pausa si risolverebbe con un'immagine di cornice dedicata, piu'
+verticale/quadrata invece che a banda larga — oppure restringendo il testo/bottoni per
+avvicinarsi di piu' alle proporzioni naturali dell'immagine attuale. Non l'ho fatto in
+questa sessione per limiti di tempo.
+
+---
+
+# RANGER ZERO v31 — redesign tuta vera (riferimento Power Rangers classico)
+
+## Cosa ho cambiato
+L'utente ha mandato un'immagine di riferimento (le tute classiche Mighty Morphin): colore
+pieno, grande diamante bianco sul petto, guanti e stivali bianchi, niente piastre "tattiche"
+sopra. Quello costruito nelle versioni precedenti (v26-v28) era piu' "armatura applicata a
+una sottotuta" — troppi pezzi separati (piastra petto, trim a X, spallacci, polsini,
+ginocchiere, piastre stivali, mandibola, fianchi elmo).
+
+**Rimosso**: piastra del petto + trim a X (sostituiti da un diamante), spallacci per la
+forma Ranger (restano solo su Il Raccoglitore, che deve leggere come armatura raccogliticcia
+per contrasto), polsini/gauntlet a blocco, ginocchiere, piastre sugli stivali, mandibola
+dell'elmo, fianchi dell'elmo.
+
+**Aggiunto**: un diamante bianco sul petto (`chestDiamond`, un box ruotato 45° — tecnica
+identica al riferimento: il diamante e' bianco per tutti i Ranger, non colorato per
+personaggio, esattamente come nella foto). Guanti bianchi piccoli e puliti alla fine
+dell'avambraccio (`pm.glove`, ora bianco invece che colorato). Stivali bianchi: non piu'
+nuovi pezzi, semplicemente il colore `pal.boot` (gia' esistente, cambiato da grigio scuro a
+bianco) ora si vede perche' non c'e' piu' una piastra sopra a coprirlo.
+
+**Elmo semplificato**: resta calotta arrotondata (ottagono+cupola, dalla v28) + visiera nera
++ piccola cresta, ma senza mandibola ne' pezzi laterali — silhouette piu' liscia, piu' vicina
+al casco del riferimento.
+
+## Verificato
+- Sintassi OK, nessun errore console.
+- Guanti e stivali bianchi confermati visivamente sui compagni di squadra E sul giocatore,
+  da piu' angolazioni.
+- Niente piu' spallacci a blocco visibili sulla forma Ranger.
+- Il Raccoglitore mantiene la sua armatura asimmetrica (invariata, per contrasto narrativo).
+
+## Non verificato
+- Non sono riuscito a ottenere uno screenshot pulito di fronte al personaggio (il calcolo
+  dell'angolazione della telecamera nei miei test continuava a mostrare il retro) — quindi
+  non ho visto con i miei occhi il diamante bianco sul petto nella build finale, anche se il
+  codice lo posiziona correttamente in teoria (centrato, sul lato frontale del busto).
+  Verificalo tu appena lo apri.
+- Gli elmi appesi nell'Archivio (corretti nella stessa sessione, vedi sotto) non sono stati
+  ricontrollati con questa ultima modifica alla tuta — dovrebbero essere indipendenti ma
+  vale la pena un'occhiata.
+
+---
+
 # RANGER ZERO v30 — merge v26.1 (Archive Escort) + v27-v29 (Claude)
 
 Unione tra due rami di sviluppo paralleli:

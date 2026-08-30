@@ -528,18 +528,21 @@ const floorBuf=makeBuffer(bakeParts(floorParts));
 
 const wallCol=[.145,.155,.185];
 const wallParts=[
- {mesh:boxMesh(wallCol),mtx:mul(mat4.translate(-ROOM_W/2,ROOM_H/2,0),mat4.scale(.3,ROOM_H,ROOM_D))}, // ovest
- {mesh:boxMesh(wallCol),mtx:mul(mat4.translate(ROOM_W/2,ROOM_H/2,0),mat4.scale(.3,ROOM_H,ROOM_D))},  // est
  {mesh:boxMesh([.08,.085,.11]),mtx:mul(mat4.translate(0,ROOM_H+.15,0),mat4.scale(ROOM_W,.3,ROOM_D))}, // soffitto
 ];
-// parete di fondo a bande sfumate (blu profondo in alto, viola, arancio caldo in basso)
-// per evocare l'illuminazione drammatica dei riferimenti, senza bisogno di un vero gradiente.
+// pareti a bande sfumate (blu profondo in alto, viola, arancio caldo in
+// basso) — PRIMA solo la parete di fondo dietro Oculo le aveva, mentre le
+// laterali erano un grigio-blu piatto: si vedeva uno stacco brutto agli
+// angoli dove si incontravano i due stili. Ora tutte e tre le pareti usano
+// la stessa banda di colori, cosi' la stanza legge come un unico ambiente.
 const backBands=[
  [.10,.11,.22], [.16,.13,.28], [.30,.15,.30], [.42,.20,.24], [.30,.14,.12]
 ];
 for(let i=0;i<backBands.length;i++){
  const bh=ROOM_H/backBands.length;
  wallParts.push({mesh:boxMesh(backBands[i]),mtx:mul(mat4.translate(0,bh*i+bh/2,-ROOM_D/2),mat4.scale(ROOM_W,bh+.02,.3))});
+ wallParts.push({mesh:boxMesh(backBands[i]),mtx:mul(mat4.translate(-ROOM_W/2,bh*i+bh/2,0),mat4.scale(.3,bh+.02,ROOM_D))}); // ovest
+ wallParts.push({mesh:boxMesh(backBands[i]),mtx:mul(mat4.translate(ROOM_W/2,bh*i+bh/2,0),mat4.scale(.3,bh+.02,ROOM_D))});  // est
 }
 const wallBuf=makeBuffer(bakeParts(wallParts));
 
@@ -636,7 +639,9 @@ function makePalette(suit,accent,skin,hair){
  const under=suit.map(v=>Math.max(.035,v*.38));
  // visiera nera (con un pelo di riflesso bluastro scurissimo, non piatta)
  // invece che ciano acceso — cosi' legge da protezione vera, non da schermo.
- return {suit,accent,under,skin:skin||[.85,.63,.48],hair:hair||[.14,.11,.10],visor:[.035,.04,.055],boot:[.07,.075,.09],helmetShell:suit};
+ // stivali e guanti bianchi come nella tuta di riferimento (non piu' scuri
+ // da tattici) — e' proprio quel bianco a "leggere" da tuta sentai classica.
+ return {suit,accent,under,skin:skin||[.85,.63,.48],hair:hair||[.14,.11,.10],visor:[.035,.04,.055],boot:[.92,.92,.94],glove:[.92,.92,.94],helmetShell:suit};
 }
 // Civili: outfit diversi e leggibili. Le armature usano invece una sottotuta
 // scura + placche colorate, cosi' non sembrano piu' mute da sommozzatore.
@@ -657,13 +662,13 @@ function partMeshFor(pal){
  if(meshCache[key])return meshCache[key];
  const m={
   torso:boxMesh(pal.suit), under:boxMesh(pal.under||pal.suit), belt:boxMesh([.08,.09,.11]), buckle:boxMesh(pal.accent),
-  chestPlate:boxMesh(pal.suit), chestTrim:boxMesh(pal.accent), shoulderPad:octMesh(pal.suit),
+  chestDiamond:boxMesh([.97,.97,.98]), shoulderPad:octMesh(pal.suit),
   head:boxMesh(pal.skin), visor:boxMesh(pal.visor),
   hair:boxMesh(pal.hair||[.14,.11,.10]), eye:boxMesh([.05,.05,.06]),
   helmetShell:octMesh(pal.helmetShell,false,true), helmetDome:domeMesh(pal.helmetShell), helmetVisor:boxMesh([.025,.04,.055]), helmetCrest:boxMesh(pal.accent), jaw:boxMesh(pal.accent), helmetSide:boxMesh(pal.suit),
   horn:boxMesh(pal.accent),
-  upperArm:boxMesh(pal.under||pal.suit), lowerArm:boxMesh(pal.skin), gauntlet:boxMesh(pal.accent), glove:boxMesh(pal.accent),
-  upperLeg:boxMesh(pal.under||pal.suit), lowerLeg:boxMesh(pal.boot), bootArmor:boxMesh(pal.suit), knee:boxMesh(pal.accent),
+  upperArm:boxMesh(pal.under||pal.suit), lowerArm:boxMesh(pal.skin), glove:boxMesh(pal.glove||[.92,.92,.94]),
+  upperLeg:boxMesh(pal.under||pal.suit), lowerLeg:boxMesh(pal.boot),
   bladeCore:boxMesh([.85,.92,.98]), bladeEdge:boxMesh(pal.accent), bladeHilt:boxMesh([.15,.14,.16]),
   menaceEye:boxMesh([1.0,.10,.04]),
  };
@@ -689,23 +694,26 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
   {mesh:armored?pm.under:pm.torso, mtx:mul(mat4.translate(0,1.05+bob-hunch*.3,0),mat4.rotX(hunch),mat4.scale(torsoW,.62,.28))},
   {mesh:pm.belt,  mtx:mul(mat4.translate(0,.76+bob,0),mat4.scale(.49,.10,.31))},
  ];
+ // Collo: prima non c'era nulla tra la cima del busto e il fondo di
+ // testa/elmo — un vuoto sottile ma visibile, soprattutto da dietro (la
+ // "nuca" sembrava non esistere). Un pezzo stretto colma lo spazio: colore
+ // della tuta per chi e' vestito/armato, pelle per la forma civile.
+ parts.push({mesh:armored||kind==="scagnozzo"||kind==="raccoglitore"?pm.under:pm.head,
+  mtx:mul(mat4.translate(0,1.375+bob-hunch*.3,0),mat4.rotX(hunch),mat4.scale(.145,.11,.145))});
  if(armored){
-  // vera corazza tokusatsu sopra la sottotuta: petto, spalle, fibbia e
-  // dettagli geometrici. La silhouette diventa subito da Ranger.
-  // v27: pettorale rimpicciolito a "scudo" centrale invece di piastra piena
-  // (leggeva troppo da armatura mecha), spallacci ottagonali piu' piccoli e
-  // arrotondati invece di blocchi squadrati — l'obiettivo e' persona in
-  // costume, non piccolo robot.
-  parts.push({mesh:pm.chestPlate,mtx:mul(mat4.translate(0,1.15+bob,.095),mat4.scale(.28,.19,.13))});
-  parts.push({mesh:pm.chestTrim,mtx:mul(mat4.translate(0,1.16+bob,.175),mat4.rotZ(Math.PI/4),mat4.scale(.040,.22,.020))});
-  parts.push({mesh:pm.chestTrim,mtx:mul(mat4.translate(0,1.16+bob,.176),mat4.rotZ(-Math.PI/4),mat4.scale(.040,.22,.020))});
-  parts.push({mesh:pm.shoulderPad,mtx:mul(mat4.translate(.36,1.36+bob,0),mat4.scale(.115,.10,.145))});
-  parts.push({mesh:pm.shoulderPad,mtx:mul(mat4.translate(-.36,1.36+bob,0),mat4.scale(.115,.10,.145))});
+  // v31: tuta vera, non armatura tattica sopra una sottotuta — un grande
+  // diamante bianco sul petto (un box ruotato 45°, come nella tuta di
+  // riferimento) invece di uno scudo colorato, niente spallacci separati.
+  // Il colore del personaggio resta nel resto della tuta, il bianco e' solo
+  // il disegno sopra, uguale per tutti come nel riferimento.
+  parts.push({mesh:pm.chestDiamond,mtx:mul(mat4.translate(0,1.12+bob,.148),mat4.rotZ(Math.PI/4),mat4.scale(.225,.225,.05))});
   parts.push({mesh:pm.buckle,mtx:mul(mat4.translate(0,.77+bob,.17),mat4.scale(.12,.085,.035))});
  }
  if(kind==="raccoglitore"){
   // spallacci asimmetrici: uno più grande dell'altro, come pezzi di
-  // armature diverse tenute insieme alla bell'e meglio.
+  // armature diverse tenute insieme alla bell'e meglio. Il Raccoglitore
+  // resta l'eccezione "armatura vera", proprio perche' e' fatta di pezzi
+  // raccogliticci — il contrasto con la tuta pulita dei Ranger e' voluto.
   parts.push({mesh:pm.shoulderPad, mtx:mul(mat4.translate(.40,1.42+bob,0),mat4.scale(.22,.16,.24))});
   parts.push({mesh:pm.shoulderPad, mtx:mul(mat4.translate(-.38,1.38+bob,0),mat4.scale(.15,.11,.17))});
  }
@@ -714,12 +722,9 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
   // sopra una cresta — legge subito da casco da motociclista/tokusatsu.
   parts.push({mesh:pm.helmetShell, mtx:mul(mat4.translate(0,1.565+bob,0),mat4.scale(.315,.30,.315))});
   parts.push({mesh:pm.helmetDome, mtx:mul(mat4.translate(0,1.565+bob,0),mat4.scale(.315,.29,.315))});
-  // Visiera grande e casco eroico restano il tratto piu' tokusatsu; i pezzi
-  // laterali e la mandibola sono stati alleggeriti per non sembrare un robot.
+  // v31: via mandibola e pezzi laterali — casco liscio come nel riferimento,
+  // solo calotta + visiera + piccola cresta, niente dettagli meccanici extra.
   parts.push({mesh:pm.helmetVisor, mtx:mul(mat4.translate(0,1.60+bob,.160),mat4.scale(.278,.128,.042))});
-  parts.push({mesh:pm.jaw, mtx:mul(mat4.translate(0,1.46+bob,.137),mat4.scale(.20,.055,.052))});
-  parts.push({mesh:pm.helmetSide, mtx:mul(mat4.translate(.318,1.59+bob,0),mat4.scale(.038,.105,.14))});
-  parts.push({mesh:pm.helmetSide, mtx:mul(mat4.translate(-.318,1.59+bob,0),mat4.scale(.038,.105,.14))});
   parts.push({mesh:pm.helmetCrest, mtx:mul(mat4.translate(0,1.81+bob,-.02),mat4.scale(.055,.095,.26))});
  }else if(kind==="scagnozzo"){
   // niente cresta, visiera a fessura sottile, testa leggermente incassata:
@@ -768,14 +773,11 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
   {mesh:pm.lowerLeg, mtx:mul(mat4.translate(-.16,.74+bob,0),mat4.rotX(swing),mat4.translate(0,-.56,0),mat4.scale(.17,.34,.19))},
  );
  if(armored){
-  // Guanti, polsini e stivali sono accenti compatti; la sottotuta resta
-  // leggibile tra un pezzo e l'altro, come in un costume tokusatsu vero.
-  parts.push({mesh:pm.gauntlet,mtx:mul(mat4.translate(.34,1.30+bob,0),mat4.rotX(rArmRot),mat4.translate(0,-.69,rArmFwd*1.8),mat4.scale(.165,.085,.165))});
-  parts.push({mesh:pm.gauntlet,mtx:mul(mat4.translate(-.34,1.30+bob,0),mat4.rotX(swingOpp*.8),mat4.translate(0,-.69,0),mat4.scale(.165,.085,.165))});
-  parts.push({mesh:pm.knee,mtx:mul(mat4.translate(.16,.49+bob,.16),mat4.scale(.09,.055,.035))});
-  parts.push({mesh:pm.knee,mtx:mul(mat4.translate(-.16,.49+bob,.16),mat4.scale(.09,.055,.035))});
-  parts.push({mesh:pm.bootArmor,mtx:mul(mat4.translate(.16,.14+bob,.08),mat4.scale(.16,.14,.17))});
-  parts.push({mesh:pm.bootArmor,mtx:mul(mat4.translate(-.16,.14+bob,.08),mat4.scale(.16,.14,.17))});
+  // v31: niente piu' polsini/ginocchiere/piastre agli stivali separate —
+  // solo un piccolo guanto bianco alla fine dell'avambraccio, e gli
+  // stivali sono gia' bianchi di suolo (pm.lowerLeg usa pal.boot).
+  parts.push({mesh:pm.glove,mtx:mul(mat4.translate(.34,1.30+bob,0),mat4.rotX(rArmRot),mat4.translate(0,-.66,rArmFwd*1.8),mat4.scale(.155,.14,.155))});
+  parts.push({mesh:pm.glove,mtx:mul(mat4.translate(-.34,1.30+bob,0),mat4.rotX(swingOpp*.8),mat4.translate(0,-.66,0),mat4.scale(.155,.14,.155))});
  }
  if(weaponOut){
   // lama energetica agganciata alla mano destra, inclinata in avanti come
@@ -1445,12 +1447,18 @@ for(const x of [ARCHIVIO_CX-3.7,ARCHIVIO_CX+3.7])archivioWallParts.push({mesh:bo
 const archivioWallBuf=makeBuffer(bakeParts(archivioWallParts));
 
 // Elmi danneggiati vicino all'ingresso: indizio visivo secondario, non lore dump.
+// Prima erano boxMesh puri (letteralmente cubi, si vedeva) — ora usano la
+// stessa calotta arrotondata (ottagono + cupola) del casco del giocatore,
+// solo piu' piccola e senza visiera, per leggere davvero da elmo appeso.
 const oldHelmetPalettes=[[.42,.10,.08],[.30,.40,.44],[.20,.12,.24],[.10,.24,.16],[.35,.18,.10],[.28,.28,.30]];
 const archivioHelmetParts=[];
 for(let i=0;i<oldHelmetPalettes.length;i++){
  const hz=ARCHIVIO_CZ+ARCHIVIO_D/2-2.2-i*1.45,hx=ARCHIVIO_CX+ARCHIVIO_W/2-.65;
- archivioHelmetParts.push({mesh:boxMesh([.10,.10,.11]),mtx:mul(mat4.translate(hx,2.9,hz),mat4.scale(.04,.5,.04))});
- archivioHelmetParts.push({mesh:boxMesh(oldHelmetPalettes[i]),mtx:mul(mat4.translate(hx,2.35,hz),mat4.rotZ((i%2?1:-1)*.12),mat4.scale(.30,.32,.32))});
+ const col=oldHelmetPalettes[i], tilt=(i%2?1:-1)*.12;
+ archivioHelmetParts.push({mesh:boxMesh([.10,.10,.11]),mtx:mul(mat4.translate(hx,2.9,hz),mat4.scale(.04,.5,.04))}); // gancio
+ archivioHelmetParts.push({mesh:octMesh(col,false,true),mtx:mul(mat4.translate(hx,2.35,hz),mat4.rotZ(tilt),mat4.scale(.30,.28,.30))});
+ archivioHelmetParts.push({mesh:domeMesh(col),mtx:mul(mat4.translate(hx,2.35,hz),mat4.rotZ(tilt),mat4.scale(.30,.27,.30))});
+ archivioHelmetParts.push({mesh:boxMesh([.03,.035,.045]),mtx:mul(mat4.translate(hx,2.30,hz),mat4.rotZ(tilt),mat4.translate(0,0,.30*1.0),mat4.scale(.24,.11,.045))}); // visiera scura
 }
 const archivioHelmetBuf=makeBuffer(bakeParts(archivioHelmetParts));
 const archivioTerminalBuf=makeBuffer(bakeParts([
@@ -2544,7 +2552,11 @@ function frame(now){
     }else{
      const p=b.t/.4,a=Math.max(0,1-p),dx=gx-colosso.robotX,dz=gz-colosso.robotZ,len=Math.hypot(dx,dz)||1;
      const mx=(gx+colosso.robotX)/2,mz=(gz+colosso.robotZ)/2,yaw=Math.atan2(dx,dz);
-     drawBuffer(burstBuf,mul(mat4.translate(mx,5.3,mz),mat4.rotY(yaw),mat4.scale(.36,.36,len)),vp,a*.85);
+     // Y del petto scalato: prima era un valore fisso (5.3) tarato sul
+     // Colosso vecchio, non scalato — con l'aumento di taglia (1.62x) finiva
+     // per allinearsi con l'anca invece che col petto. Ora segue la stessa
+     // COLOSSO_SCALE del modello (petto ~y=5.0 in unita' locali).
+     drawBuffer(burstBuf,mul(mat4.translate(mx,5.0*1.62,mz),mat4.rotY(yaw),mat4.scale(.36,.36,len)),vp,a*.85);
     }
    }
   }

@@ -75,11 +75,11 @@
   #choiceScreen.show{display:flex}
   #choiceScreen h2{color:#ff8a6b;font-size:20px;letter-spacing:3px;margin:38vh 0 24px;text-shadow:2px 2px #000}
   #choiceRow{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
-  .choiceBtn{background:rgba(20,20,28,.9);border:1px solid rgba(140,180,255,.4);color:#dfe8ff;
-    font:700 14px "Rajdhani","Courier New",monospace;letter-spacing:.5px;padding:16px 20px;cursor:pointer;
-    max-width:230px;text-align:left;line-height:1.5}
-  .choiceBtn:hover{background:rgba(50,60,90,.9);border-color:#7fc4ff}
-  .choiceBtn .lbl{display:block;color:#7fc4ff;font-size:11px;letter-spacing:1px;margin-bottom:6px}
+  .choiceBtn{background:url('dialogue_frame.png') center/100% 100% no-repeat;color:#dfe8ff;
+    font:700 14px "Rajdhani","Courier New",monospace;letter-spacing:.5px;padding:26px 26px 20px;cursor:pointer;
+    border:none;max-width:230px;text-align:left;line-height:1.5;filter:drop-shadow(0 6px 16px rgba(0,0,0,.5))}
+  .choiceBtn:hover{filter:drop-shadow(0 6px 16px rgba(0,0,0,.5)) brightness(1.18)}
+  .choiceBtn .lbl{display:block;color:#7fc4ff;font-size:11px;letter-spacing:1px;margin-bottom:8px}
 
   #endingScreen{position:absolute;inset:0;background:#000;display:none;align-items:center;
     justify-content:center;flex-direction:column;z-index:99;text-align:center}
@@ -146,9 +146,11 @@
   #pauseScreen,#runtimeOverlay{position:absolute;inset:0;display:none;z-index:110;background:rgba(1,3,7,.90);
     align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:24px}
   #pauseScreen.show,#runtimeOverlay.show{display:flex}
-  #pauseScreen h2,#runtimeOverlay h2{margin:0 0 10px;color:#ffe27a;font-size:28px;letter-spacing:5px}
-  #pauseScreen p,#runtimeOverlay p{max-width:620px;color:#b9c8e6;font-size:13px;line-height:1.6;margin:0 0 22px}
-  #pauseActions{display:flex;flex-direction:column;gap:10px}
+  .hudPanel{background:url('dialogue_frame.png') center/100% 100% no-repeat;padding:56px 80px 44px;
+    display:flex;flex-direction:column;align-items:center;max-width:640px;filter:drop-shadow(0 8px 22px rgba(0,0,0,.55))}
+  .hudPanel h2{margin:0 0 10px;color:#ffe27a;font-size:26px;letter-spacing:5px;text-shadow:2px 2px #000}
+  .hudPanel p{max-width:520px;color:#cfe0ff;font-size:13px;line-height:1.6;margin:0 0 20px}
+  #pauseActions{display:flex;flex-direction:column;gap:10px;width:100%}
   #runtimeOverlay h2{color:#ff7a64}
   #runtimeOverlay p{color:#ffd0c7}
   #hud,#tag{display:none!important}
@@ -240,6 +242,7 @@ i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del 
 <div id="tag">LA TORRE — SALA DI COMANDO<br>test movimento + personaggio 3D vero</div>
 <div id="hint">W/S avanti-indietro · A/D ruota · Q/E telecamera · F attacco · SHIFT schivata/guardia · C speciale · P/ESC pausa</div>
 <div id="pauseScreen">
+ <div class="hudPanel">
   <h2>PAUSA</h2>
   <p>La sessione e' sospesa. Il checkpoint corrente resta disponibile anche dopo un reload.</p>
   <div id="pauseActions">
@@ -247,11 +250,14 @@ i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del 
     <button id="restartCheckpointBtn" class="pauseBtn" type="button">RICOMINCIA DAL CHECKPOINT</button>
     <button id="returnMenuBtn" class="pauseBtn" type="button">TORNA AL MENU</button>
   </div>
+ </div>
 </div>
 <div id="runtimeOverlay">
+ <div class="hudPanel">
   <h2>ERRORE DI SESSIONE</h2>
   <p>Il renderer e' stato interrotto. Il checkpoint e' stato preservato.</p>
   <button id="runtimeReloadBtn" class="runtimeBtn" type="button">RICARICA DAL CHECKPOINT</button>
+ </div>
 </div>
 <div id="colossoGuardHelp">COLOSSO 3/4: F ATTACCO · C SPECIALE · SHIFT GUARDIA</div>
 <div id="titleScreen">
