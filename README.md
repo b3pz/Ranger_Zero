@@ -1,3 +1,119 @@
+# RANGER ZERO v56 — MOBILE COMPLETE
+
+## Mobile pass
+- Smartphone/tablet giocabile senza tastiera.
+- Joystick analogico touch per movimento e rotazione.
+- Swipe sul mondo 3D + CAM sinistra/destra.
+- AZIONE contestuale per dialoghi/interazioni.
+- FORMA per trasformazione/rilascio armatura.
+- ATTACCA, SCHIVA/GUARDIA e SPECIALE su touch.
+- PAUSA touch.
+- Colosso completamente gestibile da touch.
+- Tap sul balloon per avanzare i dialoghi.
+- Safe-area per notch/Dynamic Island.
+- Layout adattivo portrait/landscape; landscape consigliato ma non obbligatorio.
+- Render scale mobile DPR max 1.35 per stabilita' WebGL.
+- Prompt desktop convertiti automaticamente in AZIONE/FORMA sui device touch.
+
+# RANGER ZERO v55 — PULSE BLOCKING + COLLECTOR BALANCE
+
+Build cumulativa basata sulla v54.
+
+## PULSE — pass di blocking / vita NPC
+- Juice bar realmente rialzato con scalinata centrale a 4 gradini.
+- Collisione sul fronte della pedana: si sale dal varco delle scale, non si penetra piu' dentro il blocco.
+- Player e NPC vengono renderizzati alla quota corretta quando sono sulla pedana.
+- Tommy il Barista e' dietro il bancone, sopra la pedana e leggermente piu' grande/leggibile.
+- Un cliente resta realmente al bancone mentre Tommy e' occupato; si allontana solo dopo il gate sociale.
+- Il gate nascosto ora conta SOLO 3 Ranger parlati tra ARCO, MERIDIANA, JUN, VALE e DON. Kim, sacco e NPC ambientali non contano.
+- Arco e Meridiana hanno una scena ambientale continua: Arco insegna una tecnica di karate e Meridiana la prova/corregge.
+- Gli NPC secondari possono essere interpellati per una singola battuta ambientale, senza influenzare il trigger.
+- Restano invariati Kim -> bevuta -> Tommy -> Folletto -> esplosione -> salvataggi -> nucleo -> compatibilita' Zero.
+
+## RACCOGLITORE — ritmo e supporti
+- Velocita' di inseguimento ridotta.
+- Se il PG crea molta distanza, il Raccoglitore rallenta invece di restare incollato.
+- Telegraph del suo attacco portato a circa 0.72s.
+- Dopo due attacchi entra in recupero per circa 1.85s: finestra reale per rifiatare.
+- All'arrivo sulla riva ha circa 2.15s di grace period.
+- All'inizio del boss arriva una scarica di supporto; sotto il 68% HP e' garantita VITALITA'.
+- Durante il boss il director prova a generare un nuovo bonus circa ogni 8.5s se non ce n'e' gia' uno attivo.
+- I bonus durante il boss restano disponibili 8s invece di 6s.
+- VITALITA' durante il Raccoglitore cura fino a 20 HP; durante le wave resta 15 HP.
+- Nessuna cura automatica: il bonus va comunque raggiunto e raccolto.
+
+## FUTURO LONTANO — NON IMPLEMENTATO
+- Cabinato arcade nel PULSE con richiamo a IT SHIFT 2D/3D.
+
+---
+
+RANGER ZERO v54 — PULSE DRINK TRIGGER
+
+FOCUS BUILD
+- Kim e' il nome ufficiale dell'amica di Zero; portrait dedicato nel balloon standard
+- il barista e' TOMMY IL BARISTA; portrait dedicato e stesso balloon di tutto il gioco
+- Kim chiede a Zero di prenderle da bere: e' la missione naturale del prologo
+- il trigger del Folletto NON puo' partire finche' Zero non ha parlato con almeno 3 persone
+- nessun contatore 0/3 visibile: il requisito sociale e' completamente nascosto
+- Tommy resta fisicamente dietro al bancone e serve un cliente finche' il requisito non e' raggiunto
+- dopo 3 conversazioni il cliente si allontana realmente e Tommy diventa disponibile
+- andare da Tommy troppo presto produce solo il suo balloon: "sto finendo di servire"
+- l'incidente parte SOLO quando Zero torna al bancone e ordina la bevanda per Kim
+- dialoghi prima del caos: Tommy -> Zero -> Jun -> Tommy, tutti nel balloon/portrait standard
+- il Nucleo resta invisibile fino all'esplosione; poi compare sospeso e ben leggibile
+- durante la crisi i prompt diventano SALVA KIM / SALVA TOMMY / FERMA IL NUCLEO
+- Hidden Fate e tutto il resto della v53/v52 restano invariati
+
+REGOLA UI BLINDATA
+- nessun nuovo banner narrativo dedicato al PULSE
+- chiunque parli usa sempre il dialogue_frame/balloon standard con portrait
+
+FUTURO LONTANO, NON IMPLEMENTATO
+- cabinato nel PULSE che richiama IT SHIFT 2D/3D
+
+---
+
+RANGER ZERO v53 — PULSE LIVING PROLOGUE
+
+FOCUS BUILD
+- prologo libero nel Bar/Palestra prima dell'incidente
+- collisioni reali con bancone, tavoli, distributori, sacco e NPC
+- barista dietro al bancone
+- futuri Ranger e clienti con piccole routine ambientali
+- un NPC si allena con i pesi
+- 3 interazioni su 4 necessarie prima del trigger del Folletto
+- trigger sul tatami centrale, non timer immediato
+- nucleo sospeso a mezz'aria e piu' leggibile
+- crisi con obiettivi fisici chiari: amica / barista / nucleo
+- sistema Hidden Fate della v52 preservato
+
+FUTURO LONTANO, NON IMPLEMENTATO
+- cabinato nel PULSE che richiama IT SHIFT 2D/3D
+
+# RANGER ZERO v52 — PROLOGUE / HIDDEN FATE
+
+## Nuovo prologo BAR / PALESTRA
+- nuova zona giocabile "PULSE" con palestra pastel teal/menta/rosa e juice bar rialzato
+- i cinque Ranger sono gia' presenti in civile come frequentatori abituali
+- incidente con creatura minore e nucleo nascosto
+- scelta fisica a tempo: salvare l'amica, salvare il barista, oppure correre al nucleo
+- il nucleo riconosce Zero (compatibilita' 99.7%) e rende credibile il reclutamento come sesto Ranger verde
+
+## Finali automatici
+- nessun menu morale finale: REBELLION / COMPLIANCE / CONTROL vengono calcolati in modo invisibile
+- segnali: prologo, comportamento post-boss, forma all'ingresso Archivio, prima scoperta nell'Archivio, Frame Zero
+- Oculo dichiara che il giocatore ha gia' mostrato la propria scelta
+- inclusi e collegati i tre fondali finali GOOD / NORMAL / EVIL
+
+## FUTURO LONTANO — NON IMPLEMENTATO
+- cabinato arcade nel bar/palestra con richiamo a IT SHIFT 2D/3D. Tenere come easter egg futuro, non toccare ora.
+
+---
+
+RANGER ZERO v51.1 — ARCHIVE OCULO HOTFIX
+
+Fix: maxi-monitor di Oculo rialzato sopra nodo di estrazione e Frame Zero; visibile dim gia' entrando nell'Archivio e dominante durante il reveal. Nessun cambiamento a wave, bonus o combat v51.
+
 # RANGER ZERO v51 — WAVE ESCALATION / SUPPORT LIGHTNING
 
 ## Nuovo in v51
