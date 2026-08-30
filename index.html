@@ -16,6 +16,8 @@
         border:1px solid rgba(140,160,200,.4);padding:6px 10px}
   #tag{position:absolute;right:12px;top:12px;color:#5a6a8a;font-size:11px;text-align:right}
   #flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .08s linear}
+  #enterFade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity 1.8s ease;z-index:80}
+  #enterFade.show{opacity:1}
   #specialFlash{position:absolute;inset:0;background:radial-gradient(circle,#fff6cc 0%,#ffb84a 55%,transparent 80%);
     opacity:0;pointer-events:none;transition:opacity .11s ease-out;mix-blend-mode:screen}
   #teleportFlash{position:absolute;inset:0;background:radial-gradient(circle,#eafcff 0%,#25c9d6 45%,transparent 78%);
@@ -214,6 +216,7 @@
 <body>
 <canvas id="c"></canvas>
 <div id="flash"></div>
+<div id="enterFade"></div>
 <div id="specialFlash"></div>
 <div id="teleportFlash"></div>
 <div id="fileWarning"><b>Le texture 3D non si caricano.</b> Stai aprendo il file direttamente (doppio click):

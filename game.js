@@ -548,6 +548,17 @@ for(let i=0;i<backBands.length;i++){
  wallParts.push({mesh:boxMesh(backBands[i]),mtx:mul(mat4.translate(ROOM_W/2,bh*i+bh/2,0),mat4.scale(.3,bh+.02,ROOM_D))});  // est
 }
 const wallBuf=makeBuffer(bakeParts(wallParts));
+// v46 — la Torre non aveva un vero ingresso: si iniziava gia' dentro,
+// senza nessun senso di arrivo. Una cornice di porta sulla parete di
+// fondo (dove il giocatore ora appare all'inizio) da' un punto fisico da
+// cui "entrare" camminando verso il centro della stanza.
+const doorFrameBuf=makeBuffer(bakeParts([
+ {mesh:boxMesh([.09,.10,.13]),mtx:mul(mat4.translate(-1.35,2.3,ROOM_D/2-.05),mat4.scale(.22,4.6,.22))},
+ {mesh:boxMesh([.09,.10,.13]),mtx:mul(mat4.translate(1.35,2.3,ROOM_D/2-.05),mat4.scale(.22,4.6,.22))},
+ {mesh:boxMesh([.09,.10,.13]),mtx:mul(mat4.translate(0,4.5,ROOM_D/2-.05),mat4.scale(2.8,.22,.22))},
+ {mesh:boxMesh([.35,.55,.65]),mtx:mul(mat4.translate(-1.35,2.3,ROOM_D/2-.10),mat4.scale(.05,4.4,.05))},
+ {mesh:boxMesh([.35,.55,.65]),mtx:mul(mat4.translate(1.35,2.3,ROOM_D/2-.10),mat4.scale(.05,4.4,.05))},
+]));
 
 // fascio di luce verticale dietro Oculo
 const lightBeamBuf=makeBuffer(bakeParts([
@@ -989,7 +1000,9 @@ const rockCol=[.30,.28,.27];
 arenaPropParts.push(...buildRock(ARENA_CX-8, ARENA_CZ-2, 1.6,1.1,1.3,rockCol));
 arenaPropParts.push(...buildRock(ARENA_CX+7, ARENA_CZ-4, 1.2,.8,1.0,rockCol));
 arenaPropParts.push(...buildRock(ARENA_CX-5, ARENA_CZ+6, .9,.6,.8,[.32,.30,.28]));
-arenaPropParts.push(...buildRock(ARENA_CX+9, ARENA_CZ+3, 1.4,.9,1.1,rockCol));
+// Rimossa la roccia a (ARENA_CX+9, ARENA_CZ+3): troppo vicina al confine
+// dell'arena, leggeva come un "box di fine mappa" fuori posto invece che
+// da copertura vera nel combattimento.
 const arenaPropBuf=makeBuffer(bakeParts(arenaPropParts));
 // confine basso solo sui tre lati di sabbia: il lato mare non ha muro, ci
 // pensa il mare stesso a essere il limite (sia visivo che, piu' avanti,
@@ -1266,28 +1279,33 @@ function drawAnimalModule(vp,def,q,now){
  const z=z0+(z1-z0)*q, y=(flying?(3.1-(3.1-.75)*q):.30)+Math.sin(now/180+def.x)*.05;
  const base=mul(mat4.translate(def.x,y,z),mat4.rotY(Math.PI));
  const P=(buf,x,y,z,sx,sy,sz,rz=0)=>drawBuffer(buf,mul(base,mat4.translate(x,y,z),mat4.rotZ(rz),mat4.scale(sx,sy,sz)),vp,q);
+ // v49 — i moduli a terra prima della combinazione erano scatole pure,
+ // stessa causa del "pile di cubi" gia' vista sul Colosso. Corpo e testa
+ // (le forme piu' grandi e piu' visibili) ora usano gli stessi ottagoni
+ // gia' pronti per il Colosso — zampe/corna/orecchie restano box per
+ // leggere ancora nitide, non serve arrotondare i dettagli piccoli.
  if(def.kind==="redDragon"){
-  P(COLOSSO_BOX.red,0,.55,0,1.25,.36,.58);P(COLOSSO_BOX.red,0,.60,.78,.52,.42,.50);
+  P(COLOSSO_OCT.red,0,.55,0,1.25,.36,.58);P(COLOSSO_OCT.red,0,.60,.78,.52,.42,.50);
   P(COLOSSO_BOX.gold,-.28,1.00,.84,.08,.34,.08,-.35);P(COLOSSO_BOX.gold,.28,1.00,.84,.08,.34,.08,.35);
   P(COLOSSO_BOX.dark,0,.54,-.88,.22,.18,.80);
  }else if(def.kind==="yellowCat"){
-  P(COLOSSO_BOX.yellow,0,.55,0,1.05,.34,.52);P(COLOSSO_BOX.yellow,0,.62,.68,.52,.40,.46);
+  P(COLOSSO_OCT.yellow,0,.55,0,1.05,.34,.52);P(COLOSSO_OCT.yellow,0,.62,.68,.52,.40,.46);
   P(COLOSSO_BOX.gold,-.23,1.00,.73,.10,.28,.08,-.45);P(COLOSSO_BOX.gold,.23,1.00,.73,.10,.28,.08,.45);
   for(const x of [-.68,.68])for(const z2 of [-.30,.35])P(COLOSSO_BOX.silver,x,.08,z2,.15,.45,.16);
   P(COLOSSO_BOX.yellow,0,.78,-.78,.08,.08,.70,.45);
  }else if(def.kind==="blueDog"){
-  P(COLOSSO_BOX.blue,0,.55,0,1.10,.36,.55);P(COLOSSO_BOX.blue,0,.64,.70,.56,.42,.48);P(COLOSSO_BOX.silver,0,.54,1.08,.32,.20,.30);
+  P(COLOSSO_OCT.blue,0,.55,0,1.10,.36,.55);P(COLOSSO_OCT.blue,0,.64,.70,.56,.42,.48);P(COLOSSO_BOX.silver,0,.54,1.08,.32,.20,.30);
   P(COLOSSO_BOX.dark,-.32,.96,.70,.10,.30,.08,-.25);P(COLOSSO_BOX.dark,.32,.96,.70,.10,.30,.08,.25);
   for(const x of [-.68,.68])for(const z2 of [-.28,.34])P(COLOSSO_BOX.silver,x,.08,z2,.15,.45,.16);
  }else if(def.kind==="blackGorilla"){
-  P(COLOSSO_BOX.black,0,.92,0,.90,.82,.58);P(COLOSSO_BOX.silver,0,1.62,.30,.50,.42,.44);
-  P(COLOSSO_BOX.black,-1.05,.70,.05,.42,.85,.42,.20);P(COLOSSO_BOX.black,1.05,.70,.05,.42,.85,.42,-.20);
+  P(COLOSSO_OCT.black,0,.92,0,.90,.82,.58);P(COLOSSO_BOX.silver,0,1.62,.30,.50,.42,.44);
+  P(COLOSSO_OCT.black,-1.05,.70,.05,.42,.85,.42,.20);P(COLOSSO_OCT.black,1.05,.70,.05,.42,.85,.42,-.20);
   P(COLOSSO_BOX.dark,-1.12,.08,.10,.50,.25,.50);P(COLOSSO_BOX.dark,1.12,.08,.10,.50,.25,.50);
  }else if(def.kind==="pinkBird"){
-  P(COLOSSO_BOX.pink,0,.72,0,.62,.34,.55);P(COLOSSO_BOX.pink,0,.75,.62,.40,.34,.42);P(COLOSSO_BOX.gold,0,.72,1.02,.18,.10,.42);
+  P(COLOSSO_OCT.pink,0,.72,0,.62,.34,.55);P(COLOSSO_OCT.pink,0,.75,.62,.40,.34,.42);P(COLOSSO_BOX.gold,0,.72,1.02,.18,.10,.42);
   P(COLOSSO_BOX.pink,-1.05,.80,0,.95,.08,.45,.20);P(COLOSSO_BOX.pink,1.05,.80,0,.95,.08,.45,-.20);
  }else{
-  P(COLOSSO_BOX.zero,0,.68,0,.90,.34,.62);P(COLOSSO_BOX.zero,0,.72,.70,.48,.38,.45);
+  P(COLOSSO_OCT.zero,0,.68,0,.90,.34,.62);P(COLOSSO_OCT.zero,0,.72,.70,.48,.38,.45);
   P(COLOSSO_BOX.zero,-1.10,.82,-.10,1.05,.10,.50,.35);P(COLOSSO_BOX.zero,1.10,.82,-.10,1.05,.10,.50,-.35);
   P(COLOSSO_BOX.gold,-.24,1.05,.76,.08,.34,.08,-.35);P(COLOSSO_BOX.gold,.24,1.05,.76,.08,.34,.08,.35);
  }
@@ -1606,6 +1624,26 @@ function updateArenaAllies(dt){
   else if(a.cd<=0){a.cd=(t.type==="raccoglitore"?.95:.82)+i*.08;a.attackT=.38;
    // Aiutano davvero ma NON possono dare il colpo finale.
    const allyDmg=t.type==="raccoglitore"?2:4;t.hp=Math.max(1,t.hp-allyDmg);t.hitFlash=.08;
+  }
+ }
+ // Separazione vera: prima gli alleati non si spingevano mai via l'uno
+ // dall'altro ne' dai nemici — quando piu' di uno convergeva sullo stesso
+ // bersaglio (capita spesso col modulo su pochi scagnozzi) finivano
+ // accavallati. Stessa tecnica gia' usata per il giocatore contro i
+ // nemici, applicata qui tra alleati e tra alleati/nemici.
+ const allyR=.34;
+ for(let i=0;i<arenaAllies.length;i++){
+  const a=arenaAllies[i];
+  for(let j=i+1;j<arenaAllies.length;j++){
+   const b=arenaAllies[j];
+   const dx=b.x-a.x,dz=b.z-a.z,d=Math.hypot(dx,dz)||.001,minD=allyR*2;
+   if(d<minD){const push=(minD-d)*.5,nx=dx/d,nz=dz/d;a.x-=nx*push;a.z-=nz*push;b.x+=nx*push;b.z+=nz*push;}
+  }
+  for(const en of enemies){
+   if(en.dead||en.hidden||en.state==="retreat")continue;
+   const er=(en.type==="raccoglitore"?.55:.40)*en.scale;
+   const dx=a.x-en.x,dz=a.z-en.z,d=Math.hypot(dx,dz)||.001,minD=allyR+er;
+   if(d<minD){const push=minD-d,nx=dx/d,nz=dz/d;a.x+=nx*push;a.z+=nz*push;}
   }
  }
 }
@@ -2265,6 +2303,9 @@ const endingScreenEl=document.getElementById("endingScreen");
 const cliffFlashEl=document.getElementById("cliffFlash");
 const cliffEyeEl=document.getElementById("cliffEye");
 const cliffMenuBtnEl=document.getElementById("cliffMenuBtn");
+const enterFadeEl=document.getElementById("enterFade");
+let enteringTorre=false, enterTorreT=0;
+const ENTER_TORRE_DUR=2.3, ENTER_TORRE_FROM_Z=ROOM_D/2-1.4, ENTER_TORRE_TO_Z=4.0;
 cliffMenuBtnEl.addEventListener("click",()=>location.reload());
 const ENDINGS={
  good:{cls:"good",title:"CICLO INTERROTTO",text:"Meridiana resta al terminale, TIC sblocca le capsule e Zero spezza il proprio legame con l'armatura. Le camere si aprono una dopo l'altra. Arco arriva troppo tardi per fermarvi — e sceglie di aiutarvi. Il ciclo, per ora, si ferma."},
@@ -2316,7 +2357,18 @@ function prepareStartedGame(){
  unlockAudio();gameStarted=true;paused=false;titleEl.style.display="none";hudEl.style.display="block";document.body.classList.add("started");clearKeys();
 }
 function beginNewGame(){
- if(gameStarted)return;clearCheckpoint();prepareStartedGame();morphUnlocked=false;resetTeamIntro();player.transformed=false;player.helmet=false;player.hp=player.hpMax;player.energy=0;enterTorre();saveCheckpoint("torre");startIntro();
+ if(gameStarted)return;clearCheckpoint();prepareStartedGame();morphUnlocked=false;resetTeamIntro();player.transformed=false;player.helmet=false;player.hp=player.hpMax;player.energy=0;
+ // v46 — ingresso vero nella Torre: il giocatore appare alla porta (fondo
+ // stanza) invece che gia' al centro, l'inquadratura parte da nero e si
+ // schiarisce, poi cammina automaticamente verso il centro per ~2.2s prima
+ // che parta il dialogo — un vero arrivo, non piu' uno spawn a freddo.
+ zone="torre";player.x=0;player.z=ROOM_D/2-1.4;player.yaw=Math.PI;missionHintEl.classList.remove("show");playAmbient("torre");
+ saveCheckpoint("torre");
+ enterFadeEl.classList.add("show");
+ clearKeys();
+ enteringTorre=true;enterTorreT=0;
+ requestAnimationFrame(()=>{enterFadeEl.classList.remove("show");});
+ afterGame(2300,()=>{enteringTorre=false;startIntro();});
 }
 function continueGame(){
  if(gameStarted)return;const cp=readCheckpoint();if(!cp){beginNewGame();return;}prepareStartedGame();restoreCheckpoint(cp.id||"torre",cp);
@@ -2683,7 +2735,13 @@ function frame(now){
  let dt=rawDt;
  if(slowMoT>0){ dt=rawDt*slowMoFactor; slowMoT-=rawDt; }
  updateTransformation(dt);
- const inputLocked=paused||!!transformState||!gameStarted||dialogueActive||gameOverActive||archiveEscortState||zone==="colosso"||(colosso&&colosso.phase==="pose")||choiceScreenEl.classList.contains("show")||endingScreenEl.classList.contains("show")||!!emergeCutscene;
+ const inputLocked=paused||!!transformState||!gameStarted||dialogueActive||gameOverActive||archiveEscortState||enteringTorre||zone==="colosso"||(colosso&&colosso.phase==="pose")||choiceScreenEl.classList.contains("show")||endingScreenEl.classList.contains("show")||!!emergeCutscene;
+ if(enteringTorre){
+  enterTorreT=Math.min(ENTER_TORRE_DUR,enterTorreT+dt);
+  const q=1-Math.pow(1-Math.min(1,enterTorreT/ENTER_TORRE_DUR),2);
+  player.z=ENTER_TORRE_FROM_Z+(ENTER_TORRE_TO_Z-ENTER_TORRE_FROM_Z)*q;
+  player.walkPhase=(player.walkPhase||0)+dt*6.5;
+ }
  if(gameStarted)energyFillEl.style.width=(player.energy/player.energyMax*100)+"%";
  if(zone!==lastZoneLabel){ lastZoneLabel=zone; hudLocationEl.textContent=ZONE_LABELS[zone]||""; }
 
@@ -2869,6 +2927,7 @@ function frame(now){
  if(zone==="torre"){
   drawBuffer(floorBuf,mat4.identity(),vp);
   drawBuffer(wallBuf,mat4.identity(),vp);
+  drawBuffer(doorFrameBuf,mat4.identity(),vp);
   drawBuffer(lightBeamBuf,mat4.identity(),vp);
   drawBuffer(pillarBuf,mat4.identity(),vp);
   drawBuffer(sidePanelBuf,mat4.identity(),vp);

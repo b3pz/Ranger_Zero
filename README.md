@@ -1,3 +1,83 @@
+# RANGER ZERO v50 — moduli animali arrotondati
+
+## Cambiato
+Corpo e testa dei sei moduli animali (Dragone Rosso, Gatto Giallo, Cane Blu, Gorilla Nero,
+Uccello Rosa, Drago Verde/Zero) — le forme piu' grandi e piu' visibili prima della
+combinazione — ora usano gli stessi ottagoni gia' pronti per il Colosso (`COLOSSO_OCT`)
+invece di box puri. Zampe, corna, orecchie, coda restano box normali: sono dettagli piccoli,
+arrotondarli non avrebbe aggiunto niente e avrebbe solo appesantito la costruzione.
+
+## Verificato
+Screenshot durante la chiamata moduli: il corpo del Dragone Rosso mostra sfaccettature/
+angoli invece di spigoli puri. Nessun errore console.
+
+## Non affrontato in questa risposta
+La "wave escalation" (più nemici/onde con difficoltà progressiva, bonus di recupero vita a
+metà mappa) — richiesta capita ma non implementata, è un sistema nuovo a se', non
+rifinitura grafica. Prossima risposta dedicata quando sei pronto.
+
+---
+
+# RANGER ZERO v49 — box rimosso, collisioni alleati corrette
+
+## Rimosso
+La roccia di copertura a (ARENA_CX+9, ARENA_CZ+3) — troppo vicina al confine dell'arena,
+leggeva come un "box di fine mappa" fuori posto. Restano le altre 3 rocce, piu' centrali.
+
+## Corretto: collisioni tra alleati e nemici
+Gli alleati (i compagni che combattono in spiaggia) non avevano NESSUNA logica di
+separazione — ne' tra loro ne' contro i nemici. Quando piu' di un alleato finiva ad
+inseguire lo stesso bersaglio (capita spesso, dato che il bersaglio si assegna con un
+modulo su un numero di scagnozzi minore del numero di alleati), si accavallavano
+visivamente senza mai spingersi via.
+
+**Corretto**: aggiunta la stessa logica di separazione gia' usata per il giocatore contro
+i nemici — dopo che ogni alleato si e' mosso verso il suo bersaglio, un passaggio finale
+controlla le distanze tra tutti gli alleati e tra alleati e nemici, spingendoli via se
+troppo vicini.
+
+**Verificato con dati veri**: tracciata la distanza minima tra alleati durante 6 secondi
+di combattimento reale — non scende mai sotto la soglia di collisione (0.68), prima non
+c'era alcun limite.
+
+## Sulla richiesta più grande (più wave, bonus vita, ribilanciamento)
+Capito il ragionamento: con gli alleati che aiutano a colpire i nemici, il combattimento
+diventa piu' facile, quindi serve piu' carne al fuoco (piu' nemici/wave) bilanciata da
+bonus di recupero vita a meta' mappa. **Non implementato in questa sessione** — e' un
+lavoro di bilanciamento e nuovi sistemi (spawn di bonus, wave aggiuntive) che merita una
+risposta dedicata invece di infilarlo insieme alla correzione delle collisioni. La
+correzione delle collisioni era comunque un prerequisito reale prima di aggiungere piu'
+nemici sulla mappa, quindi era giusto partire da li'.
+
+---
+
+# RANGER ZERO v47 — la Torre ha un vero ingresso
+
+## Cosa ho aggiunto
+Prima il gioco iniziava gia' dentro la Torre, senza nessun senso di arrivo. Ora:
+- Il giocatore appare alla porta (fondo della stanza), non piu' gia' al centro.
+- Cornice di porta vera (`doorFrameBuf`) sulla parete di fondo, punto fisico da cui "entrare".
+- Schermo che parte da nero e si schiarisce (`#enterFade`), poi il giocatore cammina
+  automaticamente verso il centro della stanza per ~2.3s (input bloccato durante il
+  cammino, come per le altre cutscene) — solo dopo essere arrivato parte il dialogo di
+  apertura con Oculo e la squadra.
+
+## Verificato
+- Tracciata la posizione Z durante l'ingresso: si muove progressivamente dalla porta
+  verso il centro e si ferma esattamente al punto giusto.
+- Il dialogo d'apertura parte correttamente solo DOPO che il cammino e' finito, non prima.
+- Nessun errore console.
+
+## Sul "tondo"
+Discusso con l'utente: per la citta' del combattimento col Colosso il tondo rischia di
+leggere meno come citta' vera (le strade a griglia funzionano meglio con isolati
+rettangolari) — proposto invece di rendere tonda solo la piattaforma centrale dove
+Colosso e Raccoglitore combattono davvero, lasciando la citta' a griglia intorno.
+Non implementato in questa risposta (e' un cambio di forma del terreno, va fatto a se'),
+in attesa di conferma dall'utente prima di procedere.
+
+---
+
 # RANGER ZERO v46 — la citta' non e' piu' un'isola
 
 ## Nota importante
