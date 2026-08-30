@@ -1,92 +1,103 @@
-# RANGER ZERO v25 — CHARACTER ARC / SUIT REWORK / CIVILIAN LIFE
+# RANGER ZERO v26 — FINAL ACT / NPC DIRECTING / CITY STAGE
 
-Base cumulativa: v24.1.1 CAMERA / 360 / TUTORIAL HOTFIX.
+Base cumulativa: v25 CHARACTER ARC / SUIT REWORK.
 
-## Obiettivo della v25
-Questa build non aggiunge nuove mappe o nuovi boss: trasforma la squadra da semplici comparse in personaggi con un piccolo arco narrativo e rende piu' leggibile il contrasto fra persone e armature Ranger.
+## Obiettivo
+Questa build non aggiunge nuovi boss o nuove mappe principali. Rifinisce regia, coreografia NPC, scena di combinazione, stage gigante e Archivio finale, mantenendo il loop completo gia' stabile.
 
-## Nuova apertura giocabile
-Dopo il briefing di Oculo non parte piu' immediatamente l'allarme.
-Zero resta in civile e deve conoscere la squadra nella Torre:
-- ARCO — leader protettivo, crede ancora in Oculo.
-- MERIDIANA — tecnica e sospettosa; nota subito qualcosa di strano nella numerazione di Zero.
-- JUN — ironico, usa le battute per gestire la paura.
-- VALE — disciplinata, difende il protocollo.
+## NPC: coreografia vera nella Torre
+- Arco, Meridiana, Jun e Vale hanno waypoint manuali diversi all'inizio.
+- Dopo il Colosso usano routine differenti e non si limitano ad arrivare a un punto e congelarsi.
+- I percorsi sono lontani dal pannello anomalo e dagli oggetti interattivi.
+- Il personaggio che sta parlando si ferma durante il dialogo, gli altri possono continuare la propria routine.
+- Entrando nell'Archivio, la routine della Torre viene disattivata: solo Meridiana e TIC esistono nella scena finale.
 
-Dopo aver parlato con tutti e quattro parte la sequenza:
-briefing -> allarme -> trasformazione -> trasferimento -> spiaggia.
+## Combinazione Colosso
+La combinazione non fa piu' convergere i Ranger uno sopra l'altro.
+1. La squadra interrompe il combattimento.
+2. I quattro alleati raggiungono una formazione tokusatsu leggibile.
+3. Arco chiama la Formazione Colosso.
+4. La squadra richiama i moduli.
+5. Solo dopo parte la cinematic di assemblaggio del robot, gia' riuscita nelle build precedenti.
 
-## Squadra viva nella Torre
-I quattro membri non sono piu' disposti come una fila di manichini:
-- sono distribuiti in punti diversi della Sala di Comando;
-- nel rientro post-boss si muovono verso console e pannelli con waypoint scriptati;
-- TIC attraversa la sala e raggiunge fisicamente il pannello anomalo;
-- e' possibile parlare di nuovo con Arco, Meridiana, Jun e Vale prima di entrare nell'Archivio.
+Battute di raccordo:
+- `ARCO // NON BASTA. SQUADRA — FORMAZIONE COLOSSO!`
+- `ARCO // CHIAMIAMO I MODULI!`
+- `SQUADRA // MODULI, RISPONDETE! COLOSSO — COMBINAZIONE!`
 
-## Forma civile / trasformazione libera
-Dopo aver sbloccato la prima trasformazione:
-- `R` in TORRE o ARCHIVIO = TRASFORMA / RILASCIA ARMATURA.
-- Non e' disponibile durante il combattimento.
-- Il checkpoint conserva la forma scelta.
-- L'Archivio puo' quindi essere esplorato sia in civile sia in armatura.
+## Giant fight: citta' costiera
+- Nel combattimento gigante non viene piu' usato il terreno della piccola spiaggia come base.
+- Colosso e Raccoglitore combattono su un quartiere urbano costiero.
+- Il mare e' oltre il porto, non tutto intorno ai giganti.
+- Citta' ampliata con viale centrale, strade trasversali, edifici laterali, banchina e piccolo distretto industriale.
+- Il centro resta volutamente libero per leggere i due giganti e non farli compenetrare nei palazzi.
+- Il panorama 360 resta invariato e potra' essere sostituito in seguito con un asset migliore senza riscrivere il livello.
 
-La scena delle capsule reagisce alla scelta:
-- in armatura viene rilevata la firma RANGER ZERO;
-- in civile il vecchio Ranger avverte Zero di togliere la tuta quando puo' e suggerisce che l'armatura e' il legame con la Torre.
+## Armature Ranger v26
+Il v25 aveva corretto l'effetto "sommozzatore" ma si era spinto troppo verso il mini-mecha. In v26:
+- pettorale piu' piccolo;
+- spallacci molto piu' sottili;
+- mandibola e pinne del casco alleggerite;
+- avambraccio principalmente in sottotuta con polsino/guanto rigido;
+- ginocchiere e stivali meno voluminosi;
+- restano visiera, cintura, casco e accenti colorati.
 
-## Archivio piu' dinamico
-- Meridiana entra realmente con Zero e si sposta fra terminale e capsule.
-- TIC pattuglia/scansiona la stanza.
-- Una vecchia unita' in capsula reagisce e parla.
-- La rivelazione include la memoria cancellata di TIC e le precedenti Meridiana.
-- Oculo spiega che l'armatura e' anche un collegamento di misura/controllo, non soltanto un costume da combattimento.
+Target visivo: persona in costume tokusatsu con dettagli rigidi, non piccolo robot.
 
-## Armature Ranger ridisegnate proceduralmente
-I modelli restano low-poly e leggeri ma ora hanno:
-- sottotuta scura separata;
-- corazza toracica colorata;
-- spallacci;
-- cintura scura con fibbia;
-- guanti/avambracci corazzati;
-- ginocchiere e stivali corazzati;
-- visiera nera ampia;
-- mandibola metallica;
-- elementi laterali del casco e cresta.
+## Archivio ricostruito
+La scena finale ora ha una stanza piu' leggibile:
+- pavimento industriale continuo;
+- passerella centrale e guide luminose;
+- pareti piu' visibili;
+- soffitto, costole strutturali e tubazioni;
+- terminale piu' leggibile;
+- 8 capsule di vecchie unita' disposte in due file;
+- ulteriori record implicano che quello visibile e' solo una parte dell'Archivio;
+- nicchia separata per `FRAME ZERO`.
 
-L'obiettivo e' allontanare la silhouette da una muta da sommozzatore e avvicinarla a un vero eroe tokusatsu originale, senza copiare IP esistenti.
+### Frame Zero
+La capsula speciale e' vuota e restituisce:
+`FRAME: ZERO // STATUS: VACANT // RESERVATION: ACTIVE`
 
-## Preservato dalla v24.1.1
+Il gioco non dichiara che Zero sia "l'ultima squadra". La designazione viene trattata come qualcosa di speciale gia' usato in passato, ma il significato resta volutamente incompleto.
+
+Per arrivare alla rivelazione di Oculo bisogna scoprire:
+1. Registro.
+2. Capsule in stasi.
+3. Frame Zero vuoto gia' riservato.
+
+## Regia narrativa rivista
+- Rimossa la battuta `siamo gia' arrivati a Zero`.
+- Il vecchio Ranger riconosce la designazione ma non ne spiega subito il significato.
+- Vale e Meridiana hanno un conflitto piu' chiaro sul dato `RANGER CORE`.
+- TIC recupera una memoria incompatibile con i propri log.
+- Oculo distingue esplicitamente fra designazioni permanenti e individui temporanei.
+- La rottura della quarta parete arriva solo dopo Registro + capsule + Frame Zero.
+- Il collegamento LMN_01 / STUDIO resta un indizio piccolo, non un crossover esplicito.
+
+## Forma civile
+Resta disponibile `R` nelle zone sicure per trasformare/rilasciare l'armatura. Il Frame Zero riporta anche se il `COMBAT FRAME LINK` e' ACTIVE o SUSPENDED.
+
+## Preservato
+- intro con dialoghi prima dell'allarme;
+- trasformazione;
 - doppia wave;
-- alleati in combattimento;
+- squadra che combatte in spiaggia;
 - Raccoglitore dal mare;
 - cura TIC;
-- combinazione del Colosso;
-- giant fight 3/4;
+- combinazione del robot;
+- boss gigante 3/4;
+- guardia/speciale/fase 2/finisher;
 - panorama 360;
-- mini-citta';
-- tutorial Colosso;
-- fase 2 e finisher;
-- checkpoint e safety pass;
+- checkpoint/safety;
 - tre finali LIMEN.
 
-## Controlli principali
-- W / S = avanti / indietro
-- A / D = ruota Zero
-- Q / E = camera
-- SPAZIO = interagisci / dialoghi
-- F = attacco
-- SHIFT = schivata / guardia nel Colosso
-- C = speciale
-- R = trasforma / rilascia armatura nelle zone sicure dopo lo sblocco
-- P / ESC = pausa
-
-## Test automatici eseguiti
+## Test eseguiti
 - `node --check game.js`: OK.
-- Intro interattiva: 4/4 personaggi -> allarme -> trasformazione -> arena: OK.
-- Rientro post-boss: squadra civile + waypoint: OK.
-- Trasformazione manuale con R nelle zone sicure: OK.
-- Ripristino Archivio in civile: OK.
-- Capsule in forma civile: reazione/dialogo: OK.
-- Loop combat v24.1 (wave 1, wave 2, Raccoglitore, Colosso): inizializzazione/runtime mock OK.
+- Intro 4/4 -> allarme -> trasformazione -> arena: OK.
+- Waypoint post-boss: movimento verificato nel runtime mock.
+- Formazione Colosso: 4 Ranger in quattro posizioni distinte, poi cinematic di assemblaggio: OK.
+- Archivio: Registro -> capsule -> Frame Zero -> rivelazione Oculo: OK.
+- Ripristino checkpoint Archivio in forma civile: OK.
 
-Nota: il playtest visivo finale va comunque fatto nel browser/GitHub Pages, soprattutto per valutare silhouette delle nuove tute e posizioni dei waypoint NPC.
+Il playtest browser resta necessario per valutare soprattutto coreografia, silhouette delle tute e resa grafica della nuova citta'/Archivio.

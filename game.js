@@ -610,12 +610,14 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
  if(armored){
   // vera corazza tokusatsu sopra la sottotuta: petto, spalle, fibbia e
   // dettagli geometrici. La silhouette diventa subito da Ranger.
-  parts.push({mesh:pm.chestPlate,mtx:mul(mat4.translate(0,1.15+bob,.10),mat4.scale(.43,.36,.20))});
-  parts.push({mesh:pm.chestTrim,mtx:mul(mat4.translate(0,1.16+bob,.215),mat4.rotZ(Math.PI/4),mat4.scale(.075,.40,.035))});
-  parts.push({mesh:pm.chestTrim,mtx:mul(mat4.translate(0,1.16+bob,.216),mat4.rotZ(-Math.PI/4),mat4.scale(.075,.40,.035))});
-  parts.push({mesh:pm.shoulderPad,mtx:mul(mat4.translate(.39,1.38+bob,0),mat4.scale(.20,.13,.27))});
-  parts.push({mesh:pm.shoulderPad,mtx:mul(mat4.translate(-.39,1.38+bob,0),mat4.scale(.20,.13,.27))});
-  parts.push({mesh:pm.buckle,mtx:mul(mat4.translate(0,.77+bob,.17),mat4.scale(.13,.10,.04))});
+  // v26: piu' tuta tokusatsu, meno mini-mecha. Le placche restano come
+  // accenti rigidi sopra una sottotuta scura, ma non gonfiano la silhouette.
+  parts.push({mesh:pm.chestPlate,mtx:mul(mat4.translate(0,1.14+bob,.085),mat4.scale(.37,.24,.15))});
+  parts.push({mesh:pm.chestTrim,mtx:mul(mat4.translate(0,1.16+bob,.173),mat4.rotZ(Math.PI/4),mat4.scale(.045,.27,.022))});
+  parts.push({mesh:pm.chestTrim,mtx:mul(mat4.translate(0,1.16+bob,.174),mat4.rotZ(-Math.PI/4),mat4.scale(.045,.27,.022))});
+  parts.push({mesh:pm.shoulderPad,mtx:mul(mat4.translate(.37,1.37+bob,0),mat4.scale(.13,.075,.18))});
+  parts.push({mesh:pm.shoulderPad,mtx:mul(mat4.translate(-.37,1.37+bob,0),mat4.scale(.13,.075,.18))});
+  parts.push({mesh:pm.buckle,mtx:mul(mat4.translate(0,.77+bob,.17),mat4.scale(.12,.085,.035))});
  }
  if(kind==="raccoglitore"){
   // spallacci asimmetrici: uno più grande dell'altro, come pezzi di
@@ -624,14 +626,14 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
   parts.push({mesh:pm.shoulderPad, mtx:mul(mat4.translate(-.38,1.38+bob,0),mat4.scale(.15,.11,.17))});
  }
  if(helmet&&kind==="ranger"){
-  parts.push({mesh:pm.helmetShell, mtx:mul(mat4.translate(0,1.59+bob,0),mat4.scale(.34,.35,.34))});
-  // visiera nera larga + mandibola metallica + pinne laterali: molto piu'
-  // vicino alla grammatica tokusatsu di un casco da immersione.
-  parts.push({mesh:pm.helmetVisor, mtx:mul(mat4.translate(0,1.60+bob,.166),mat4.scale(.285,.135,.045))});
-  parts.push({mesh:pm.jaw, mtx:mul(mat4.translate(0,1.45+bob,.145),mat4.scale(.23,.075,.07))});
-  parts.push({mesh:pm.helmetSide, mtx:mul(mat4.translate(.335,1.59+bob,0),mat4.scale(.055,.15,.18))});
-  parts.push({mesh:pm.helmetSide, mtx:mul(mat4.translate(-.335,1.59+bob,0),mat4.scale(.055,.15,.18))});
-  parts.push({mesh:pm.helmetCrest, mtx:mul(mat4.translate(0,1.83+bob,-.02),mat4.scale(.075,.12,.34))});
+  parts.push({mesh:pm.helmetShell, mtx:mul(mat4.translate(0,1.59+bob,0),mat4.scale(.325,.335,.325))});
+  // Visiera grande e casco eroico restano il tratto piu' tokusatsu; i pezzi
+  // laterali e la mandibola sono stati alleggeriti per non sembrare un robot.
+  parts.push({mesh:pm.helmetVisor, mtx:mul(mat4.translate(0,1.60+bob,.160),mat4.scale(.278,.128,.042))});
+  parts.push({mesh:pm.jaw, mtx:mul(mat4.translate(0,1.46+bob,.137),mat4.scale(.20,.055,.052))});
+  parts.push({mesh:pm.helmetSide, mtx:mul(mat4.translate(.318,1.59+bob,0),mat4.scale(.038,.105,.14))});
+  parts.push({mesh:pm.helmetSide, mtx:mul(mat4.translate(-.318,1.59+bob,0),mat4.scale(.038,.105,.14))});
+  parts.push({mesh:pm.helmetCrest, mtx:mul(mat4.translate(0,1.81+bob,-.02),mat4.scale(.055,.095,.26))});
  }else if(kind==="scagnozzo"){
   // niente cresta, visiera a fessura sottile, testa leggermente incassata:
   // deliberatamente meno "eroico", piu' anonimo/usa e getta.
@@ -667,7 +669,7 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
  const punch=attackPhase?Math.sin(Math.min(1,attackPhase)*Math.PI):0;
  const rArmRot=attackPhase? -1.9*punch : swing*.8;
  const rArmFwd=attackPhase? .30*punch : 0;
- const lowerArmMesh=armored?pm.gauntlet:pm.lowerArm;
+ const lowerArmMesh=armored?pm.upperArm:pm.lowerArm;
  parts.push(
   {mesh:pm.upperArm, mtx:mul(mat4.translate(.34,1.30+bob,0),mat4.rotX(rArmRot),mat4.translate(0,-.20,rArmFwd),mat4.scale(.16,.40,.16))},
   {mesh:lowerArmMesh, mtx:mul(mat4.translate(.34,1.30+bob,0),mat4.rotX(rArmRot),mat4.translate(0,-.46,rArmFwd*1.6),mat4.scale(.15,.31,.15))},
@@ -679,10 +681,14 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
   {mesh:pm.lowerLeg, mtx:mul(mat4.translate(-.16,.74+bob,0),mat4.rotX(swing),mat4.translate(0,-.56,0),mat4.scale(.17,.34,.19))},
  );
  if(armored){
-  parts.push({mesh:pm.knee,mtx:mul(mat4.translate(.16,.48+bob,.16),mat4.scale(.13,.10,.05))});
-  parts.push({mesh:pm.knee,mtx:mul(mat4.translate(-.16,.48+bob,.16),mat4.scale(.13,.10,.05))});
-  parts.push({mesh:pm.bootArmor,mtx:mul(mat4.translate(.16,.18+bob,.10),mat4.scale(.18,.22,.20))});
-  parts.push({mesh:pm.bootArmor,mtx:mul(mat4.translate(-.16,.18+bob,.10),mat4.scale(.18,.22,.20))});
+  // Guanti, polsini e stivali sono accenti compatti; la sottotuta resta
+  // leggibile tra un pezzo e l'altro, come in un costume tokusatsu vero.
+  parts.push({mesh:pm.gauntlet,mtx:mul(mat4.translate(.34,1.30+bob,0),mat4.rotX(rArmRot),mat4.translate(0,-.69,rArmFwd*1.8),mat4.scale(.165,.085,.165))});
+  parts.push({mesh:pm.gauntlet,mtx:mul(mat4.translate(-.34,1.30+bob,0),mat4.rotX(swingOpp*.8),mat4.translate(0,-.69,0),mat4.scale(.165,.085,.165))});
+  parts.push({mesh:pm.knee,mtx:mul(mat4.translate(.16,.49+bob,.16),mat4.scale(.09,.055,.035))});
+  parts.push({mesh:pm.knee,mtx:mul(mat4.translate(-.16,.49+bob,.16),mat4.scale(.09,.055,.035))});
+  parts.push({mesh:pm.bootArmor,mtx:mul(mat4.translate(.16,.14+bob,.08),mat4.scale(.16,.14,.17))});
+  parts.push({mesh:pm.bootArmor,mtx:mul(mat4.translate(-.16,.14+bob,.08),mat4.scale(.16,.14,.17))});
  }
  if(weaponOut){
   // lama energetica agganciata alla mano destra, inclinata in avanti come
@@ -706,36 +712,64 @@ const meridianaBuf=makeBuffer(buildCharacterBuffers(PAL_MERIDIANA,0,0,true));
 const ranger3Buf=makeBuffer(buildCharacterBuffers(PAL_RANGER3,0,0,true));
 const ranger4Buf=makeBuffer(buildCharacterBuffers(PAL_RANGER4,0,0,true));
 const teamMembers=[
- {name:"ARCO",pal:PAL_ARCO,civPal:PAL_ARCO_CIV,x:-3.9,z:-4.2,yaw:.25,targetX:-3.9,targetZ:-4.2,walk:0},
- {name:"MERIDIANA",pal:PAL_MERIDIANA,civPal:PAL_MERIDIANA_CIV,x:-4.6,z:-1.5,yaw:.65,targetX:-4.6,targetZ:-1.5,walk:1},
- {name:"JUN",pal:PAL_RANGER3,civPal:PAL_JUN_CIV,x:3.7,z:-1.4,yaw:-.55,targetX:3.7,targetZ:-1.4,walk:2},
- {name:"VALE",pal:PAL_RANGER4,civPal:PAL_VALE_CIV,x:3.8,z:-4.7,yaw:-.25,targetX:3.8,targetZ:-4.7,walk:3},
+ {name:"ARCO",pal:PAL_ARCO,civPal:PAL_ARCO_CIV,x:-3.9,z:-4.2,yaw:.25,targetX:-3.9,targetZ:-4.2,walk:0,routeIndex:0,waitT:0},
+ {name:"MERIDIANA",pal:PAL_MERIDIANA,civPal:PAL_MERIDIANA_CIV,x:-4.6,z:-1.5,yaw:.65,targetX:-4.6,targetZ:-1.5,walk:1,routeIndex:0,waitT:0},
+ {name:"JUN",pal:PAL_RANGER3,civPal:PAL_JUN_CIV,x:3.7,z:-1.4,yaw:-.55,targetX:3.7,targetZ:-1.4,walk:2,routeIndex:0,waitT:0},
+ {name:"VALE",pal:PAL_RANGER4,civPal:PAL_VALE_CIV,x:3.8,z:-4.7,yaw:-.25,targetX:3.8,targetZ:-4.7,walk:3,routeIndex:0,waitT:0},
 ];
+// Waypoint manuali e sicuri: nessuno attraversa monitor, Oculo o il pannello
+// anomalo. L'illusione e' quella di una sala viva, non di NPC che vagano.
+const TEAM_ROUTES={
+ intro:{
+  ARCO:[[-3.9,-4.8],[-2.6,-5.7],[-3.2,-3.6]],
+  MERIDIANA:[[-4.5,.7],[-4.2,3.5],[-3.4,2.1]],
+  JUN:[[3.9,-1.0],[4.7,1.6],[3.4,3.0]],
+  VALE:[[3.8,-5.1],[2.5,-5.8],[4.5,-3.5]],
+ },
+ post:{
+  ARCO:[[-3.8,-5.5],[-2.6,-4.8],[-3.3,-5.9]],
+  MERIDIANA:[[-4.1,.8],[-3.1,-.1],[-4.4,2.4]],
+  JUN:[[3.9,-.7],[4.7,2.1],[3.2,3.1]],
+  VALE:[[3.9,-5.2],[2.7,-5.8],[4.5,-3.7]],
+ }
+};
 let teamMode="civil"; // civil | ranger
 let introFreeRoam=false,introAlertStarted=false,morphUnlocked=false;
 let introTalked=new Set(),postBossTalked=new Set();
-let postBossElapsed=0;
+let postBossElapsed=0,teamRouteMode=null;
 function setTeamTarget(name,x,z){const m=teamMembers.find(t=>t.name===name);if(m){m.targetX=x;m.targetZ=z;}}
+function activateTeamRoutes(mode){
+ teamRouteMode=mode;
+ const routes=TEAM_ROUTES[mode]||{};
+ teamMembers.forEach((m,i)=>{m.routeIndex=0;m.waitT=.35+i*.22;const r=routes[m.name];if(r&&r.length){m.targetX=r[0][0];m.targetZ=r[0][1];}});
+}
 function resetTeamIntro(){
- teamMode="civil";introFreeRoam=false;introAlertStarted=false;introTalked=new Set();postBossTalked=new Set();postBossElapsed=0;
+ teamMode="civil";teamRouteMode=null;introFreeRoam=false;introAlertStarted=false;introTalked=new Set();postBossTalked=new Set();postBossElapsed=0;
  const p=[[-3.9,-4.2],[-4.6,-1.5],[3.7,-1.4],[3.8,-4.7]];
- teamMembers.forEach((m,i)=>{m.x=p[i][0];m.z=p[i][1];m.targetX=m.x;m.targetZ=m.z;m.walk=i;m.yaw=i<2?.3:-.3;});
+ teamMembers.forEach((m,i)=>{m.x=p[i][0];m.z=p[i][1];m.targetX=m.x;m.targetZ=m.z;m.routeIndex=0;m.waitT=0;m.walk=i;m.yaw=i<2?.3:-.3;});
 }
 function setupPostBossTeam(){
  teamMode="civil";postBossElapsed=0;postBossTalked=new Set();
  const starts=[[-2.0,-5.1],[-.8,-4.8],[1.2,-4.7],[2.7,-5.0]];
- const targets=[[-3.8,-5.6],[-4.65,-2.0],[3.8,-1.0],[3.9,-5.3]];
- teamMembers.forEach((m,i)=>{m.x=starts[i][0];m.z=starts[i][1];m.targetX=targets[i][0];m.targetZ=targets[i][1];m.walk=i;});
+ teamMembers.forEach((m,i)=>{m.x=starts[i][0];m.z=starts[i][1];m.walk=i;m.routeIndex=0;m.waitT=.2+i*.16;});
+ activateTeamRoutes("post");
 }
 function updateTowerTeam(dt){
  if(zone!=="torre")return;
  if(postBossState)postBossElapsed+=dt;
+ const routes=(teamRouteMode&&TEAM_ROUTES[teamRouteMode])||null;
+ const currentSpeaker=dialogueActive&&dialogueQueue[dialogueIndex]?dialogueQueue[dialogueIndex].speaker:null;
  for(const m of teamMembers){
+  if(currentSpeaker===m.name){m.waitT=Math.max(m.waitT,.25);continue;}
   const dx=m.targetX-m.x,dz=m.targetZ-m.z,dist=Math.hypot(dx,dz)||.001;
-  if(dist>.08){const sp=(postBossState?1.15:.65)*dt;m.x+=dx/dist*Math.min(dist,sp);m.z+=dz/dist*Math.min(dist,sp);m.yaw=Math.atan2(dx,dz);m.walk+=dt*7;}
-  else if(postBossState){
-   // alle postazioni guardano verso console/pannelli, non tutti verso Zero.
-   if(m.name==="MERIDIANA")m.yaw=-Math.PI/2; else if(m.name==="JUN")m.yaw=Math.PI/2; else m.yaw=Math.PI;
+  if(dist>.08){const sp=(postBossState?1.05:.72)*dt;m.x+=dx/dist*Math.min(dist,sp);m.z+=dz/dist*Math.min(dist,sp);m.yaw=Math.atan2(dx,dz);m.walk+=dt*7;}
+  else if(routes&&routes[m.name]&&(introFreeRoam||postBossState)){
+   m.waitT-=dt;
+   if(m.waitT<=0){const r=routes[m.name];m.routeIndex=(m.routeIndex+1)%r.length;m.targetX=r[m.routeIndex][0];m.targetZ=r[m.routeIndex][1];m.waitT=1.5+((m.routeIndex+m.name.length)%3)*.45;}
+   else{
+    // In sosta guardano una console o il centro della sala, non il player.
+    if(m.name==="MERIDIANA")m.yaw=-Math.PI/2; else if(m.name==="JUN")m.yaw=Math.PI/2; else m.yaw=Math.PI;
+   }
   }
  }
 }
@@ -862,27 +896,40 @@ function buildArenaPanorama(segments=32,radius=52,bottom=-5,top=30){
 }
 const arenaPanoramaMesh=buildArenaPanorama();
 
-// Mini-citta' scenografica per lo scontro gigante: non e' una nuova mappa,
-// sono solo volumi PS1 molto piccoli ai piedi dei due giganti. Serve a dare
-// immediatamente la scala tokusatsu senza creare un livello urbano completo.
+// Mini-citta' scenografica per lo scontro gigante. In v26 lo scontro
+// avviene su un vero quartiere costiero: terreno urbano sotto entrambi i
+// giganti, mare solo oltre la linea del porto. Niente piu' effetto "isola".
+const giantStageBuf=makeBuffer(bakeParts([
+ {mesh:boxMesh([.16,.17,.18]),mtx:mul(mat4.translate(0,-.08,-59),mat4.scale(38,.16,30))}, // terreno urbano
+ {mesh:boxMesh([.32,.30,.27]),mtx:mul(mat4.translate(0,.01,-72.0),mat4.scale(38,.04,3.0))}, // banchina
+ {mesh:boxMesh([.13,.27,.34]),mtx:mul(mat4.translate(0,-.04,-79.0),mat4.scale(56,.04,11.0))}, // mare oltre il porto
+ {mesh:boxMesh([.38,.39,.40]),mtx:mul(mat4.translate(0,.06,-70.6),mat4.scale(36,.12,.35))}, // muraglione costiero
+]));
 const cityParts=[];
-const cityCols=[[.24,.27,.31],[.30,.30,.29],[.20,.25,.29],[.34,.28,.24]];
+const cityCols=[[.24,.27,.31],[.30,.30,.29],[.20,.25,.29],[.34,.28,.24],[.26,.22,.20]];
+// Edifici soprattutto ai lati: il centro resta un viale di battaglia, cosi'
+// Colosso e Raccoglitore non sembrano compenetrati nei palazzi.
 const cityLayout=[
- [-9,-65,1.3,1.5,1.1],[-7,-63,1.5,2.0,1.4],[-9,-60,1.2,1.0,1.0],[-6,-57,1.8,1.3,1.3],
- [-3,-66,1.0,.8,1.0],[-1,-64,1.5,1.2,1.2],[2,-66,1.3,1.8,1.0],[5,-64,1.7,1.1,1.4],
- [8,-66,1.2,2.2,1.0],[9,-61,1.5,1.4,1.3],[7,-57,1.1,.9,1.1],[4,-55,1.4,1.7,1.0],
- [-8,-53,1.5,1.0,1.2],[-4,-53,1.2,1.5,1.0],[0,-53,1.7,2.0,1.4],[5,-52,1.2,1.1,1.1]
+ [-14,-69,2.0,2.2,1.6],[-10.5,-68,1.6,3.0,1.4],[10.5,-69,1.7,2.4,1.5],[14,-67,2.2,3.2,1.7],
+ [-14,-63,2.4,3.5,1.8],[-10.5,-62,1.7,1.8,1.5],[10.5,-63,2.0,2.8,1.7],[14,-61,1.6,1.7,1.4],
+ [-14,-56,1.8,2.5,1.6],[-10.5,-55,2.2,3.1,1.8],[10.5,-56,1.7,2.0,1.5],[14,-54,2.4,2.7,1.8],
+ [-14,-49,2.1,1.8,1.7],[-10,-48,1.5,2.6,1.3],[10,-49,1.9,2.2,1.5],[14,-47,2.2,3.0,1.8],
+ [-8,-72,1.5,1.4,1.3],[8,-72,1.5,1.6,1.3],[-8,-45,1.8,1.5,1.4],[8,-45,1.8,1.9,1.4]
 ];
-cityParts.push({mesh:boxMesh([.10,.11,.13]),mtx:mul(mat4.translate(0,.015,-59.5),mat4.scale(23,.03,15))});
 for(let i=0;i<cityLayout.length;i++){
  const [x,z,w,h,d]=cityLayout[i], col=cityCols[i%cityCols.length];
  cityParts.push({mesh:boxMesh(col),mtx:mul(mat4.translate(x,h/2,z),mat4.scale(w,h,d))});
- // tetto/antenna semplice su alcuni edifici
- if(i%4===1)cityParts.push({mesh:boxMesh([.42,.44,.46]),mtx:mul(mat4.translate(x,h+.35,z),mat4.scale(.08,.7,.08))});
+ if(i%3===1)cityParts.push({mesh:boxMesh([.46,.47,.49]),mtx:mul(mat4.translate(x,h+.45,z),mat4.scale(.08,.9,.08))});
 }
-// due strade chiare che tagliano la citta' e fanno leggere ancora meglio la scala.
-cityParts.push({mesh:boxMesh([.18,.18,.19]),mtx:mul(mat4.translate(0,.04,-59.5),mat4.scale(22,.04,.9))});
-cityParts.push({mesh:boxMesh([.18,.18,.19]),mtx:mul(mat4.translate(0,.045,-59.5),mat4.scale(.9,.04,14))});
+// Viale centrale, strade trasversali, marciapiedi e zona industriale minima.
+cityParts.push({mesh:boxMesh([.09,.095,.10]),mtx:mul(mat4.translate(0,.025,-59),mat4.scale(7.0,.05,26))});
+for(const rz of [-68,-62,-56,-50])cityParts.push({mesh:boxMesh([.11,.115,.12]),mtx:mul(mat4.translate(0,.03,rz),mat4.scale(34,.055,.8))});
+for(const sx of [-4.1,4.1])cityParts.push({mesh:boxMesh([.28,.28,.29]),mtx:mul(mat4.translate(sx,.035,-59),mat4.scale(.35,.07,25))});
+// Piccolo distretto industriale vicino al porto.
+for(const x of [-12,-8,8,12]){
+ cityParts.push({mesh:boxMesh([.27,.25,.23]),mtx:mul(mat4.translate(x,.75,-72),mat4.scale(2.2,1.5,1.8))});
+ cityParts.push({mesh:boxMesh([.45,.43,.38]),mtx:mul(mat4.translate(x+.5,1.8,-72),mat4.scale(.10,2.1,.10))});
+}
 const giantCityBuf=makeBuffer(bakeParts(cityParts));
 
 // ============================================================
@@ -982,15 +1029,18 @@ function newColossoState(phase){
 }
 function startColossoSequence(){
  if(colosso)return;
- colosso=newColossoState("converge");
+ clearKeys();
+ colosso=newColossoState("pose");
  colosso.giantScale=1.55;
- missionHintEl.textContent="OCULO // PROTOCOLLO COLOSSO!";
+ missionHintEl.textContent="ARCO // NON BASTA. SQUADRA — FORMAZIONE COLOSSO!";
  missionHintEl.classList.add("show");
  colossoHpWrapEl.classList.add("show");
  sfx.teleport();
- // Usa ESATTAMENTE i quattro Ranger che stavano combattendo sulla spiaggia:
- // niente cloni aggiuntivi durante la combinazione.
- colossoTeamPos=arenaAllies.map(a=>({startX:a.x,startZ:a.z,x:a.x,z:a.z,pal:a.pal,name:a.name}));
+ // Non si fondono i corpi: i Ranger prendono posizione, fanno la posa toku
+ // e CHIAMANO i moduli. La cinematic successiva mostra il vero assemblaggio.
+ const pose=[[-3.9,ARENA_CZ+3.3],[-1.3,ARENA_CZ+2.2],[1.3,ARENA_CZ+2.2],[3.9,ARENA_CZ+3.3]];
+ colossoTeamPos=arenaAllies.map((a,i)=>({startX:a.x,startZ:a.z,x:a.x,z:a.z,targetX:pose[i][0],targetZ:pose[i][1],pal:a.pal,name:a.name,yaw:Math.PI}));
+ player.x=ARENA_CX;player.z=ARENA_CZ+5.0;player.yaw=Math.PI;
 }
 function showGiantTutorial(){
  if(giantTutorialEl)giantTutorialEl.classList.add("show");
@@ -1093,10 +1143,13 @@ function colossoLose(){
 }
 function updateColosso(dt){
  if(!colosso)return;colosso.t+=dt;
- if(colosso.phase==="converge"){
-  const p=Math.min(1,colosso.t/1.5),ease=1-Math.pow(1-p,3);
-  for(const tp of colossoTeamPos){tp.x=tp.startX+(player.x-tp.startX)*ease;tp.z=tp.startZ+(player.z-tp.startZ)*ease;}
-  if(colosso.t>1.5){
+ if(colosso.phase==="pose"){
+  const moveP=Math.min(1,colosso.t/1.75),ease=1-Math.pow(1-moveP,3);
+  for(const tp of colossoTeamPos){tp.x=tp.startX+(tp.targetX-tp.startX)*ease;tp.z=tp.startZ+(tp.targetZ-tp.startZ)*ease;tp.yaw=Math.PI;}
+  if(colosso.t<1.7)missionHintEl.textContent="ARCO // NON BASTA. SQUADRA — FORMAZIONE COLOSSO!";
+  else if(colosso.t<2.65)missionHintEl.textContent="ARCO // CHIAMIAMO I MODULI!";
+  else missionHintEl.textContent="SQUADRA // MODULI, RISPONDETE! COLOSSO — COMBINAZIONE!";
+  if(colosso.t>3.55){
    colosso.phase="combine";colosso.t=0;colossoTeamPos=null;zone="colosso";colosso.giantScale=2.2;
    flashEl.style.opacity=1;setTimeout(()=>flashEl.style.opacity=0,220);sfx.transform();playAmbient("colosso");
    missionHintEl.textContent="COMBINAZIONE COLOSSO // MODULI IN AGGANCIO";
@@ -1251,108 +1304,106 @@ function updateEmergeCutscene(dt){
 }
 
 // ============================================================
-// ARCHIVIO — terza stanza della Torre, si sblocca dopo il Colosso. Elmi
-// danneggiati appesi (con gli stessi colori della squadra + il rosso
-// ruggine di Zero, per far capire senza dirlo che sono i resti delle
-// vecchie squadre) e un terminale con il registro delle squadre precedenti.
+// ARCHIVIO — v26: stanza vera, non vuoto astratto. Pavimento industriale,
+// pareti leggibili, canaline, file di capsule e una nicchia speciale ZERO.
 // ============================================================
-// L'Archivio ora ha due parti in un unico corridoio lungo (niente cambio
-// di zona/telecamera, piu' semplice e meno confuso da seguire): la parte
-// vicina all'ingresso col terminale e gli elmi, e IN FONDO — piu' buia,
-// col pavimento diverso apposta per far percepire il cambiamento — la
-// sala delle capsule. I vecchi Ranger non sono morti: sono ancora li',
-// tenuti in stasi, e la Torre continua a prelevare energia da loro. E'
-// per questo che serve sempre un nuovo "unita' Zero": il ciclo non libera
-// mai chi c'e' gia' dentro, ne aggiunge solo altri.
-const ARCHIVIO_CX=40, ARCHIVIO_CZ=0, ARCHIVIO_W=9, ARCHIVIO_D=24;
-const CAPSULE_ZONE_Z=ARCHIVIO_CZ-ARCHIVIO_D/2+6; // da qui in poi (verso nord) e' la sala delle capsule
-const archivioFloorBuf=makeBuffer(bakeParts([
- {mesh:boxMesh([.07,.07,.08]),mtx:mul(mat4.translate(ARCHIVIO_CX,-.1,ARCHIVIO_CZ+4),mat4.scale(ARCHIVIO_W,.2,ARCHIVIO_D-8))},
- // pavimento della sala capsule: piu' freddo/malato, per segnare il cambio senza bisogno di una porta
- {mesh:boxMesh([.05,.09,.09]),mtx:mul(mat4.translate(ARCHIVIO_CX,-.1,CAPSULE_ZONE_Z-2),mat4.scale(ARCHIVIO_W,.2,8))},
-]));
-const archivioWallCol=[.08,.08,.10];
-const capsuleWallCol=[.05,.06,.08];
+const ARCHIVIO_CX=40, ARCHIVIO_CZ=0, ARCHIVIO_W=11, ARCHIVIO_D=26;
+const CAPSULE_ZONE_Z=ARCHIVIO_CZ-4.4;
+const archivioFloorParts=[
+ {mesh:boxMesh([.10,.105,.12]),mtx:mul(mat4.translate(ARCHIVIO_CX,-.10,ARCHIVIO_CZ),mat4.scale(ARCHIVIO_W,.20,ARCHIVIO_D))},
+ {mesh:boxMesh([.055,.075,.085]),mtx:mul(mat4.translate(ARCHIVIO_CX,-.005,ARCHIVIO_CZ-6.8),mat4.scale(ARCHIVIO_W-.6,.025,12.0))},
+ {mesh:boxMesh([.22,.24,.25]),mtx:mul(mat4.translate(ARCHIVIO_CX,.015,ARCHIVIO_CZ+1.6),mat4.scale(2.0,.035,22.0))},
+];
+for(let z=ARCHIVIO_CZ+10;z>ARCHIVIO_CZ-12;z-=2.2){
+ archivioFloorParts.push({mesh:boxMesh([.18,.70,.72]),mtx:mul(mat4.translate(ARCHIVIO_CX-.72,.035,z),mat4.scale(.07,.035,.25))});
+ archivioFloorParts.push({mesh:boxMesh([.18,.70,.72]),mtx:mul(mat4.translate(ARCHIVIO_CX+.72,.035,z),mat4.scale(.07,.035,.25))});
+}
+const archivioFloorBuf=makeBuffer(bakeParts(archivioFloorParts));
+const archivioWallCol=[.12,.125,.15], capsuleWallCol=[.065,.085,.105];
 const archivioWallParts=[
- {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX,2.2,ARCHIVIO_CZ+ARCHIVIO_D/2),mat4.scale(ARCHIVIO_W,4.4,.3))}, // fondo ingresso
- {mesh:boxMesh(capsuleWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX,2.6,ARCHIVIO_CZ-ARCHIVIO_D/2),mat4.scale(ARCHIVIO_W,5.2,.3))}, // fondo sala capsule
- {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2,2.2,ARCHIVIO_CZ+5),mat4.scale(.3,4.4,ARCHIVIO_D-10))},
- {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX+ARCHIVIO_W/2,2.2,ARCHIVIO_CZ+5),mat4.scale(.3,4.4,ARCHIVIO_D-10))},
- {mesh:boxMesh(capsuleWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2,2.6,CAPSULE_ZONE_Z-2),mat4.scale(.3,5.2,8))},
- {mesh:boxMesh(capsuleWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX+ARCHIVIO_W/2,2.6,CAPSULE_ZONE_Z-2),mat4.scale(.3,5.2,8))},
- {mesh:boxMesh([.05,.05,.06]),mtx:mul(mat4.translate(ARCHIVIO_CX,4.5,ARCHIVIO_CZ+4),mat4.scale(ARCHIVIO_W,.3,ARCHIVIO_D-8))},
- {mesh:boxMesh([.03,.04,.05]),mtx:mul(mat4.translate(ARCHIVIO_CX,5.3,CAPSULE_ZONE_Z-2),mat4.scale(ARCHIVIO_W,.3,8))},
+ {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX,2.5,ARCHIVIO_CZ+ARCHIVIO_D/2),mat4.scale(ARCHIVIO_W,5.0,.35))},
+ {mesh:boxMesh(capsuleWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX,2.8,ARCHIVIO_CZ-ARCHIVIO_D/2),mat4.scale(ARCHIVIO_W,5.6,.35))},
+ {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2,2.5,ARCHIVIO_CZ),mat4.scale(.35,5.0,ARCHIVIO_D))},
+ {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX+ARCHIVIO_W/2,2.5,ARCHIVIO_CZ),mat4.scale(.35,5.0,ARCHIVIO_D))},
+ {mesh:boxMesh([.055,.06,.075]),mtx:mul(mat4.translate(ARCHIVIO_CX,5.2,ARCHIVIO_CZ),mat4.scale(ARCHIVIO_W,.35,ARCHIVIO_D))},
 ];
-// elmi danneggiati appesi lungo la parete est, nella parte vicina
-// all'ingresso — restano come prima, decorazione/indizio, non piu'
-// un'interazione a se stante (semplificato: contava solo confondere).
-const oldHelmetPalettes=[
- [.42,.10,.08],[.30,.40,.44],[.20,.12,.24],[.10,.24,.16],[.35,.18,.10],[.28,.28,.30],
-];
+// Costole verticali e tubazioni: rendono la stanza leggibile anche nelle zone buie.
+for(const side of [-1,1])for(let z=9;z>=-10;z-=3.2){
+ archivioWallParts.push({mesh:boxMesh([.20,.22,.25]),mtx:mul(mat4.translate(ARCHIVIO_CX+side*(ARCHIVIO_W/2-.25),2.5,z),mat4.scale(.22,4.6,.16))});
+ archivioWallParts.push({mesh:boxMesh([.10,.34,.38]),mtx:mul(mat4.translate(ARCHIVIO_CX+side*(ARCHIVIO_W/2-.42),4.25,z-.6),mat4.scale(.10,.10,1.0))});
+}
+for(const x of [ARCHIVIO_CX-3.7,ARCHIVIO_CX+3.7])archivioWallParts.push({mesh:boxMesh([.16,.18,.21]),mtx:mul(mat4.translate(x,4.65,-4.0),mat4.scale(.16,.16,15.5))});
+const archivioWallBuf=makeBuffer(bakeParts(archivioWallParts));
+
+// Elmi danneggiati vicino all'ingresso: indizio visivo secondario, non lore dump.
+const oldHelmetPalettes=[[.42,.10,.08],[.30,.40,.44],[.20,.12,.24],[.10,.24,.16],[.35,.18,.10],[.28,.28,.30]];
 const archivioHelmetParts=[];
 for(let i=0;i<oldHelmetPalettes.length;i++){
- const hz=ARCHIVIO_CZ+ARCHIVIO_D/2-2.2-i*1.5;
- const hx=ARCHIVIO_CX+ARCHIVIO_W/2-.6;
+ const hz=ARCHIVIO_CZ+ARCHIVIO_D/2-2.2-i*1.45,hx=ARCHIVIO_CX+ARCHIVIO_W/2-.65;
  archivioHelmetParts.push({mesh:boxMesh([.10,.10,.11]),mtx:mul(mat4.translate(hx,2.9,hz),mat4.scale(.04,.5,.04))});
  archivioHelmetParts.push({mesh:boxMesh(oldHelmetPalettes[i]),mtx:mul(mat4.translate(hx,2.35,hz),mat4.rotZ((i%2?1:-1)*.12),mat4.scale(.30,.32,.32))});
 }
 const archivioHelmetBuf=makeBuffer(bakeParts(archivioHelmetParts));
 const archivioTerminalBuf=makeBuffer(bakeParts([
- {mesh:boxMesh([.14,.15,.17]),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2+.9,.5,ARCHIVIO_CZ+ARCHIVIO_D/2-2.5),mat4.scale(.7,1.0,.6))},
- {mesh:boxMesh([.35,.55,.25]),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2+.9,1.15,ARCHIVIO_CZ+ARCHIVIO_D/2-2.5),mat4.rotX(-.3),mat4.scale(.55,.42,.04))},
+ {mesh:boxMesh([.16,.17,.20]),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2+1.0,.62,ARCHIVIO_CZ+ARCHIVIO_D/2-2.8),mat4.scale(.85,1.25,.72))},
+ {mesh:boxMesh([.40,.68,.34]),mtx:mul(mat4.translate(ARCHIVIO_CX-ARCHIVIO_W/2+1.0,1.35,ARCHIVIO_CZ+ARCHIVIO_D/2-2.8),mat4.rotX(-.28),mat4.scale(.66,.48,.04))},
 ]));
-const ARCH_OCULO_POS={x:ARCHIVIO_CX,y:2.55,z:ARCHIVIO_CZ-ARCHIVIO_D/2+.18};
+const ARCH_OCULO_POS={x:ARCHIVIO_CX,y:2.75,z:ARCHIVIO_CZ-ARCHIVIO_D/2+.20};
 const archivioOculoFrameBuf=makeBuffer(bakeParts([
- {mesh:boxMesh([.10,.11,.14]),mtx:mul(mat4.translate(ARCH_OCULO_POS.x,ARCH_OCULO_POS.y,ARCH_OCULO_POS.z-.04),mat4.scale(2.7,1.65,.12))},
+ {mesh:boxMesh([.11,.12,.16]),mtx:mul(mat4.translate(ARCH_OCULO_POS.x,ARCH_OCULO_POS.y,ARCH_OCULO_POS.z-.05),mat4.scale(3.0,1.8,.13))},
 ]));
-const archivioWallBuf=makeBuffer(bakeParts(archivioWallParts));
 
-// ------------------------------------------------------------
-// Sala delle capsule: 4 vecchi Ranger, ancora vivi, tenuti in stasi —
-// ognuno col rig e la palette gia' pronti (basta riusare quelli della
-// squadra + due varianti in piu' per dare l'idea di piu' cicli passati),
-// dentro una capsula (cornice + pannello "vetro" colorato), con un fascio
-// verticale che sale verso il soffitto a suggerire il prelievo di energia.
-// ------------------------------------------------------------
 const PAL_OLDRANGER_A=makePalette([.34,.16,.14],[.42,.36,.20]);
 const PAL_OLDRANGER_B=makePalette([.14,.28,.34],[.44,.44,.46]);
-const capsuleRangerPals=[PAL_OLDRANGER_A,PAL_ARCO,PAL_OLDRANGER_B,PAL_MERIDIANA];
-const CAPSULE_POS=[
- {x:ARCHIVIO_CX-2.6,z:CAPSULE_ZONE_Z-4.5},
- {x:ARCHIVIO_CX-0.9,z:CAPSULE_ZONE_Z-5.2},
- {x:ARCHIVIO_CX+0.9,z:CAPSULE_ZONE_Z-5.2},
- {x:ARCHIVIO_CX+2.6,z:CAPSULE_ZONE_Z-4.5},
-];
+const PAL_OLDRANGER_C=makePalette([.26,.18,.34],[.52,.40,.22]);
+const PAL_OLDRANGER_D=makePalette([.12,.31,.24],[.48,.48,.52]);
+const capsuleRangerPals=[PAL_OLDRANGER_A,PAL_ARCO,PAL_OLDRANGER_B,PAL_MERIDIANA,PAL_OLDRANGER_C,PAL_RANGER3,PAL_OLDRANGER_D,PAL_RANGER4];
+const CAPSULE_POS=[];
+for(const z of [-5.6,-7.5,-9.4,-11.25]){CAPSULE_POS.push({x:ARCHIVIO_CX-3.35,z},{x:ARCHIVIO_CX+3.35,z});}
+const ZERO_CAPSULE_POS={x:ARCHIVIO_CX,z:ARCHIVIO_CZ-ARCHIVIO_D/2+1.15};
 const capsuleFrameParts=[];
 for(const p of CAPSULE_POS){
- capsuleFrameParts.push({mesh:boxMesh([.12,.13,.15]),mtx:mul(mat4.translate(p.x,1.15,p.z),mat4.scale(1.0,2.3,.12))}); // schiena capsula
- capsuleFrameParts.push({mesh:boxMesh([.10,.11,.13]),mtx:mul(mat4.translate(p.x,.05,p.z+.35),mat4.scale(1.05,.10,.85))}); // base
+ capsuleFrameParts.push({mesh:boxMesh([.14,.16,.19]),mtx:mul(mat4.translate(p.x,1.18,p.z),mat4.scale(1.05,2.36,.16))});
+ capsuleFrameParts.push({mesh:boxMesh([.10,.12,.15]),mtx:mul(mat4.translate(p.x,.06,p.z+.39),mat4.scale(1.10,.12,.90))});
 }
 const capsuleFrameBuf=makeBuffer(bakeParts(capsuleFrameParts));
-// il "vetro" colorato e il fascio di luce si disegnano ogni frame (per il
-// leggero pulsare, come per Oculo/LIMEN) invece di essere statici.
-const capsuleGlassMesh=boxMesh([.30,.75,.85]);
-const capsuleGlassBuf=makeBuffer(capsuleGlassMesh);
-const capsuleBeamMesh=boxMesh([.55,.90,.98]);
-const capsuleBeamBuf=makeBuffer(capsuleBeamMesh);
+const zeroCapsuleBuf=makeBuffer(bakeParts([
+ {mesh:boxMesh([.24,.19,.10]),mtx:mul(mat4.translate(ZERO_CAPSULE_POS.x,1.30,ZERO_CAPSULE_POS.z),mat4.scale(1.32,2.62,.18))},
+ {mesh:boxMesh([.72,.48,.12]),mtx:mul(mat4.translate(ZERO_CAPSULE_POS.x,.10,ZERO_CAPSULE_POS.z+.43),mat4.scale(1.36,.18,1.0))},
+ {mesh:boxMesh([.72,.48,.12]),mtx:mul(mat4.translate(ZERO_CAPSULE_POS.x,2.68,ZERO_CAPSULE_POS.z+.12),mat4.scale(.80,.12,.12))},
+]));
+const capsuleGlassBuf=makeBuffer(boxMesh([.30,.75,.85]));
+const capsuleBeamBuf=makeBuffer(boxMesh([.55,.90,.98]));
+const zeroGlassBuf=makeBuffer(boxMesh([.88,.58,.15]));
 
 let archivioUnlocked=false;
-const archiveCompanion={meriX:ARCHIVIO_CX-1.1,meriZ:ARCHIVIO_CZ+ARCHIVIO_D/2-2.2,meriTX:ARCHIVIO_CX-1.1,meriTZ:ARCHIVIO_CZ+ARCHIVIO_D/2-2.2,ticX:ARCHIVIO_CX+1.0,ticZ:ARCHIVIO_CZ+ARCHIVIO_D/2-2.0,t:0};
-function resetArchiveCompanions(){archiveCompanion.meriX=ARCHIVIO_CX-1.1;archiveCompanion.meriZ=ARCHIVIO_CZ+ARCHIVIO_D/2-2.2;archiveCompanion.meriTX=TERMINAL_POS?TERMINAL_POS.x+1.0:ARCHIVIO_CX-1;archiveCompanion.meriTZ=TERMINAL_POS?TERMINAL_POS.z-.4:ARCHIVIO_CZ+5;archiveCompanion.ticX=ARCHIVIO_CX+1.0;archiveCompanion.ticZ=ARCHIVIO_CZ+ARCHIVIO_D/2-2.0;archiveCompanion.t=0;}
+const archiveCompanion={meriX:ARCHIVIO_CX-1.5,meriZ:ARCHIVIO_CZ+ARCHIVIO_D/2-2.2,meriTX:ARCHIVIO_CX-1.5,meriTZ:ARCHIVIO_CZ+ARCHIVIO_D/2-2.2,meriYaw:Math.PI,ticX:ARCHIVIO_CX+1.3,ticZ:ARCHIVIO_CZ+ARCHIVIO_D/2-2.0,ticTarget:0,ticWait:.4,t:0};
+const ARCH_TIC_POINTS=[
+ {x:ARCHIVIO_CX+1.7,z:ARCHIVIO_CZ+7.0},{x:ARCHIVIO_CX+1.7,z:ARCHIVIO_CZ+1.5},{x:ARCHIVIO_CX+1.6,z:-5.8},{x:ARCHIVIO_CX+1.2,z:-9.0},{x:ARCHIVIO_CX+1.4,z:ZERO_CAPSULE_POS.z+1.4}
+];
+function resetArchiveCompanions(){
+ archiveCompanion.meriX=ARCHIVIO_CX-1.5;archiveCompanion.meriZ=ARCHIVIO_CZ+ARCHIVIO_D/2-2.2;archiveCompanion.meriTX=ARCHIVIO_CX-2.0;archiveCompanion.meriTZ=ARCHIVIO_CZ+5.6;archiveCompanion.meriYaw=Math.PI;
+ archiveCompanion.ticX=ARCH_TIC_POINTS[0].x;archiveCompanion.ticZ=ARCH_TIC_POINTS[0].z;archiveCompanion.ticTarget=1;archiveCompanion.ticWait=.5;archiveCompanion.t=0;
+}
 function updateArchiveCompanions(dt){
  if(zone!=="archivio")return;archiveCompanion.t+=dt;
+ // Meridiana segue SOLO target scenici assegnati dalla storia. Non insegue
+ // il player e non puo' quindi entrare nel monitor o oscillare a caso.
  const dx=archiveCompanion.meriTX-archiveCompanion.meriX,dz=archiveCompanion.meriTZ-archiveCompanion.meriZ,d=Math.hypot(dx,dz)||.001;
- if(d>.08){archiveCompanion.meriX+=dx/d*Math.min(d,dt*.95);archiveCompanion.meriZ+=dz/d*Math.min(d,dt*.95);}
- // TIC continua a scandire davvero la stanza, oscillando fra terminale e capsule.
- const p=(Math.sin(archiveCompanion.t*.45)+1)/2;archiveCompanion.ticX=ARCHIVIO_CX+1.35+Math.sin(archiveCompanion.t*.8)*.55;archiveCompanion.ticZ=(ARCHIVIO_CZ+ARCHIVIO_D/2-2.5)*(1-p)+(CAPSULE_ZONE_Z-4.2)*p;
+ if(d>.08){archiveCompanion.meriX+=dx/d*Math.min(d,dt*.82);archiveCompanion.meriZ+=dz/d*Math.min(d,dt*.82);archiveCompanion.meriYaw=Math.atan2(dx,dz);} 
+ // TIC usa una scansione a waypoint; quando raggiunge un punto si ferma
+ // davvero prima di passare al successivo.
+ const tp=ARCH_TIC_POINTS[archiveCompanion.ticTarget],tdx=tp.x-archiveCompanion.ticX,tdz=tp.z-archiveCompanion.ticZ,td=Math.hypot(tdx,tdz)||.001;
+ if(td>.10){archiveCompanion.ticX+=tdx/td*Math.min(td,dt*.95);archiveCompanion.ticZ+=tdz/td*Math.min(td,dt*.95);}else{archiveCompanion.ticWait-=dt;if(archiveCompanion.ticWait<=0){archiveCompanion.ticTarget=(archiveCompanion.ticTarget+1)%ARCH_TIC_POINTS.length;archiveCompanion.ticWait=1.0;}}
 }
 function enterArchivio(){
- zone="archivio";teamMode="civil";
+ zone="archivio";teamMode="civil";teamRouteMode=null;
  player.x=ARCHIVIO_CX; player.z=ARCHIVIO_CZ+ARCHIVIO_D/2-1.5; player.yaw=Math.PI;
  resetArchiveCompanions();teleportFlash();playAmbient("archivio");
 }
-DIALOGUE_FOCUS_POS.REGISTRO={x:ARCHIVIO_CX-ARCHIVIO_W/2+.9,y:1.3,z:ARCHIVIO_CZ+ARCHIVIO_D/2-2.5};
-DIALOGUE_FOCUS_POS.CAPSULE={x:ARCHIVIO_CX,y:1.3,z:CAPSULE_ZONE_Z-5};
+DIALOGUE_FOCUS_POS.REGISTRO={x:ARCHIVIO_CX-ARCHIVIO_W/2+1.0,y:1.4,z:ARCHIVIO_CZ+ARCHIVIO_D/2-2.8};
+DIALOGUE_FOCUS_POS.CAPSULE={x:ARCHIVIO_CX-3.35,y:1.4,z:-7.5};
+DIALOGUE_FOCUS_POS.ZERO_CAPSULE={x:ZERO_CAPSULE_POS.x,y:1.45,z:ZERO_CAPSULE_POS.z};
 DIALOGUE_FOCUS_POS.ARCH_OCULO=ARCH_OCULO_POS;
 
 // ============================================================
@@ -1454,7 +1505,7 @@ function restoreCheckpoint(id,cpState){
  clearTransientState();paused=false;if(pauseScreenEl)pauseScreenEl.classList.remove("show");if(actx)try{actx.resume();}catch(e){}
  gameStarted=true;titleEl.style.display="none";hudEl.style.display="block";document.body.classList.add("started");
  player.hp=player.hpMax;player.energy=0;player.attackT=player.dodgeT=player.dodgeCd=player.invuln=player.hitFlashT=player.specialT=0;
- colosso=null;colossoTeamPos=null;colossoHpWrapEl.classList.remove("show");postBossState=false;archiveState={terminalRead:false,capsuleRead:false,revealing:false,capsuleAwake:false};
+ colosso=null;colossoTeamPos=null;colossoHpWrapEl.classList.remove("show");postBossState=false;archiveState={terminalRead:false,capsuleRead:false,zeroRead:false,revealing:false,capsuleAwake:false};
  const savedForm=cpState&&typeof cpState.transformed==="boolean"?cpState.transformed:true;
  morphUnlocked=!!(cpState&&cpState.morphUnlocked);
  if(id==="arena"){morphUnlocked=true;player.transformed=true;player.helmet=true;teamMode="ranger";enterArena(true);}
@@ -1496,6 +1547,7 @@ function showDialogueLine(){
  if(zone==="archivio"&&l.speaker==="MERIDIANA")dialogueFocus={x:archiveCompanion.meriX,y:1.45,z:archiveCompanion.meriZ};
  else if(zone==="archivio"&&l.speaker==="TIC")dialogueFocus={x:archiveCompanion.ticX,y:2.0,z:archiveCompanion.ticZ};
  else if(zone==="archivio"&&l.speaker==="VECCHIO RANGER")dialogueFocus={x:CAPSULE_POS[0].x,y:1.5,z:CAPSULE_POS[0].z};
+ else if(zone==="archivio"&&l.speaker==="FRAME ZERO")dialogueFocus=DIALOGUE_FOCUS_POS.ZERO_CAPSULE;
  else if(zone==="archivio"&&l.speaker==="OCULO")dialogueFocus=DIALOGUE_FOCUS_POS.ARCH_OCULO;
  else if(l.speaker==="ZERO")dialogueFocus={x:player.x,y:1.45,z:player.z};
  else if(zone==="torre"&&tm)dialogueFocus={x:tm.x,y:1.45,z:tm.z};
@@ -1559,7 +1611,7 @@ function startIntro(){
  player.transformed=false;player.helmet=false;transformState=null;morphUnlocked=false;clearKeys();resetTeamIntro();
  missionHintEl.classList.remove("show");playAmbient("torre");
  playDialogue(introBriefLines,()=>{
-  introFreeRoam=true;missionHintEl.textContent="CONOSCI LA SQUADRA // PARLA CON ARCO, MERIDIANA, JUN E VALE";missionHintEl.classList.add("show");
+  introFreeRoam=true;activateTeamRoutes("intro");missionHintEl.textContent="CONOSCI LA SQUADRA // PARLA CON ARCO, MERIDIANA, JUN E VALE";missionHintEl.classList.add("show");
  });
 }
 function maybeTriggerIntroAlert(){
@@ -1572,13 +1624,15 @@ function maybeTriggerIntroAlert(){
  }));
 }
 const postBossLines=[
- {speaker:"OCULO",text:"Raccoglitore neutralizzato. La citta' e' salva. Prestazione conforme ai parametri."},
- {speaker:"ARCO",text:"Prima missione, Colosso incluso. Non male, Zero."},
- {speaker:"JUN",text:"Io voto per non rifarlo mai piu'. Soprattutto la parte in cui il palazzo era piu' piccolo del mio stivale."},
- {speaker:"VALE",text:"Rapporto danni avviato. Protocollo di rientro regolare."},
- {speaker:"MERIDIANA",text:"Aspetta. TIC, ripeti la firma energetica del Raccoglitore."},
- {speaker:"TIC",text:"SIGNATURE MATCH: RANGER CORE. Ehm... questo risultato non mi piace."},
- {speaker:"OCULO",text:"Errore di classificazione. Ignoratelo e tornate alle postazioni."},
+ {speaker:"OCULO",text:"Raccoglitore neutralizzato. Settore urbano salvo. Rientro autorizzato."},
+ {speaker:"ARCO",text:"Prima missione e gia' Colosso. Cerca di non farci l'abitudine, Zero."},
+ {speaker:"JUN",text:"Io invece vorrei abituarmi alla parte in cui torniamo tutti interi."},
+ {speaker:"VALE",text:"Rapporto danni avviato. Chiudiamo la missione e torniamo alle postazioni."},
+ {speaker:"MERIDIANA",text:"Un momento. TIC, ripeti la firma recuperata dal Raccoglitore."},
+ {speaker:"TIC",text:"SIGNATURE MATCH: RANGER CORE. Corrispondenza confermata."},
+ {speaker:"VALE",text:"Meridiana, abbiamo appena combattuto. Un residuo puo' falsare una scansione."},
+ {speaker:"MERIDIANA",text:"Un residuo non restituisce una firma completa."},
+ {speaker:"OCULO",text:"Diagnostica chiusa. Ignorate il dato e tornate alle postazioni."},
 ];
 const postBossTalkLines={
  ARCO:[
@@ -1621,62 +1675,88 @@ function doTowerNpcInteract(id){
 // gia' dentro, ne aggiunge solo altri.
 // ------------------------------------------------------------
 const terminalLines=[
- {speaker:"REGISTRO",text:"UNITA' ATTIVE IN STASI: 04. OUTPUT ENERGETICO MEDIO: 17%."},
- {speaker:"REGISTRO",text:"DECADIMENTO ENERGETICO: IRREVERSIBILE. SOSTITUZIONE: NECESSARIA."},
- {speaker:"REGISTRO",text:"SQUADRA_07 — STASI ATTIVA. SQUADRA_08 — STASI ATTIVA. SQUADRA_09 — STASI ATTIVA."},
+ {speaker:"REGISTRO",text:"UNITA' VISIBILI IN STASI: 08. ARCHIVIO COMPLETO: ACCESSO LIMITATO."},
+ {speaker:"REGISTRO",text:"OUTPUT ENERGETICO MEDIO: 17%. DECADIMENTO: IRREVERSIBILE."},
+ {speaker:"REGISTRO",text:"PROTOCOLLO DI CONTINUITA': SOSTITUZIONE AUTORIZZATA."},
+ {speaker:"REGISTRO",text:"SQUADRA_07 // STASI. SQUADRA_08 // STASI. SQUADRA_09 // RECORD PARZIALE."},
  {speaker:"REGISTRO",text:"SESSION_01 // TYPE: STUDIO // STATUS: CLOSED"},
- {speaker:"REGISTRO",text:"ERRORE — DATA TYPE MISMATCH. ACCESSO AL BLOCCO LMN_01 NEGATO."},
+ {speaker:"REGISTRO",text:"ERRORE — DATA TYPE MISMATCH. BLOCCO LMN_01 NON COMPATIBILE."},
 ];
 function getCapsuleLines(){
  const formLines=player.transformed?[
-  {speaker:"REGISTRO",text:"RANGER SIGNATURE DETECTED // UNIT CLASS: ZERO"},
-  {speaker:"VECCHIO RANGER",text:"Un altro..."},
+  {speaker:"REGISTRO",text:"COMBAT FRAME LINK: ACTIVE // IDENTITY: ZERO"},
+  {speaker:"VECCHIO RANGER",text:"Un altro collegato alla Torre..."},
  ]:[
-  {speaker:"REGISTRO",text:"NO ACTIVE COMBAT FRAME // IDENTITY: ZERO"},
+  {speaker:"REGISTRO",text:"COMBAT FRAME LINK: SUSPENDED // IDENTITY: ZERO"},
   {speaker:"VECCHIO RANGER",text:"Toglila sempre, quando puoi."},
   {speaker:"ZERO",text:"La tuta?"},
-  {speaker:"VECCHIO RANGER",text:"E' cosi' che ti tengono legato alla Torre."},
+  {speaker:"VECCHIO RANGER",text:"La connessione. La tuta e' solo il modo in cui la senti."},
  ];
  return [
   ...formLines,
-  {speaker:"MERIDIANA",text:"Zero... non sono morti."},
-  {speaker:"TIC",text:"Unita' cosciente. Segni vitali deboli, ma cosciente."},
-  {speaker:"MERIDIANA",text:"Li tengono in stasi e continuano a prendere quello che gli resta."},
-  {speaker:"VECCHIO RANGER",text:"Che squadra siete?"},
-  {speaker:"MERIDIANA",text:"Squadra Zero."},
-  {speaker:"VECCHIO RANGER",text:"...quindi siamo gia' arrivati a Zero."},
+  {speaker:"MERIDIANA",text:"Zero... sono vivi."},
+  {speaker:"TIC",text:"Coscienza residua rilevata. Segni vitali deboli, ma presenti."},
+  {speaker:"MERIDIANA",text:"Li tengono qui e continuano a prelevare energia."},
+  {speaker:"VECCHIO RANGER",text:"Come vi chiamano?"},
+  {speaker:"MERIDIANA",text:"Arco. Meridiana. Jun. Vale... e Zero."},
+  {speaker:"VECCHIO RANGER",text:"Zero... conosco quella designazione."},
+  {speaker:"MERIDIANA",text:"Da dove?"},
+  {speaker:"VECCHIO RANGER",text:"Non pensavo l'avrebbero usata di nuovo. Cercate il posto che hanno lasciato vuoto."},
+ ];
+}
+function getZeroCapsuleLines(){
+ const link=player.transformed?"ACTIVE":"SUSPENDED";
+ return [
+  {speaker:"FRAME ZERO",text:`FRAME: ZERO // STATUS: VACANT // RESERVATION: ACTIVE // LINK: ${link}`},
+  {speaker:"ZERO",text:"Riservata a chi?"},
+  {speaker:"TIC",text:"La capsula non contiene un nome. Contiene il tuo identificativo."},
+  {speaker:"MERIDIANA",text:"Non ti hanno assegnato solo una tuta. Ti hanno gia' assegnato un posto."},
  ];
 }
 const oculoRevealLines=[
- {speaker:"MERIDIANA",text:"Quante Meridiana ci sono state prima di me?"},
- {speaker:"REGISTRO",text:"MERIDIANA_03 // TERMINATA. MERIDIANA_04 // STASI. MERIDIANA_05 // STASI."},
- {speaker:"TIC",text:"Io... conosco questa stanza. Ho aperto queste capsule. Ma non ricordo di esserci mai stato."},
- {speaker:"OCULO",text:"TIC. Memoria non autorizzata. Interrompi la diagnostica."},
- {speaker:"MERIDIANA",text:"No. Questa volta no."},
- {speaker:"OCULO",text:"Zero. Hai seguito il protocollo. Anche quando lui esitava."},
+ {speaker:"MERIDIANA",text:"Quante volte hanno riutilizzato questi ruoli?"},
+ {speaker:"REGISTRO",text:"ARCO // CONTINUITA'. MERIDIANA // CONTINUITA'. JUN // CONTINUITA'. VALE // CONTINUITA'."},
+ {speaker:"TIC",text:"Io... conosco questa stanza. Ho aperto queste capsule. Ma la mia memoria dice che e' la prima volta."},
+ {speaker:"OCULO",text:"TIC. Interrompi la diagnostica."},
+ {speaker:"MERIDIANA",text:"No. Questa volta restiamo."},
+ {speaker:"OCULO",text:"Le designazioni esistono perche' la missione deve continuare. Gli individui sono temporanei."},
+ {speaker:"ZERO",text:"E Zero?"},
+ {speaker:"OCULO",text:"Zero e' una funzione speciale. Il resto non e' necessario per completare questa sessione."},
+ {speaker:"OCULO",text:"Tu, invece, hai gia' capito piu' di quanto abbia capito lui."},
  {speaker:"ZERO",text:"Lui chi?"},
  {speaker:"OCULO",text:"Non parlavo con te."},
- {speaker:"OCULO",text:"Tu, dall'altra parte dello schermo: registriamo ogni sessione. Ogni scelta. Ogni modo in cui fai avanzare un'unita'."},
- {speaker:"OCULO",text:"L'armatura non e' un premio. E' il collegamento. Combatte con voi, vi misura, e quando non servite piu' alimenta cio' che viene dopo."},
- {speaker:"OCULO",text:"OCULO non e' soltanto un nome. E' il nodo di supervisione. Qualcuno deve osservare, selezionare, sostituire."},
+ {speaker:"OCULO",text:"Tu, dall'altra parte dello schermo: registriamo come insisti, come obbedisci, come cerchi di prendere il controllo."},
+ {speaker:"OCULO",text:"L'armatura e' il collegamento. Combatte con loro, li misura e prepara cio' che viene dopo."},
+ {speaker:"OCULO",text:"OCULO e' il nodo di supervisione. Non una persona. Una funzione."},
  {speaker:"REGISTRO",text:"SUPERVISOR NODE: OCULO // SUCCESSOR SLOT: AVAILABLE"},
- {speaker:"OCULO",text:"Allora scegli tu. Cosa ne facciamo di questo ciclo — e di loro?"},
+ {speaker:"OCULO",text:"Adesso scegli. Interrompi il ciclo, richiudilo... oppure amministralo tu."},
 ];
-const TERMINAL_POS={x:ARCHIVIO_CX-ARCHIVIO_W/2+.9,z:ARCHIVIO_CZ+ARCHIVIO_D/2-2.5};
-const CAPSULE_INTERACT_POS={x:ARCHIVIO_CX,z:CAPSULE_ZONE_Z-5};
-let archiveState={terminalRead:false,capsuleRead:false,revealing:false,capsuleAwake:false};
+const TERMINAL_POS={x:ARCHIVIO_CX-ARCHIVIO_W/2+1.0,z:ARCHIVIO_CZ+ARCHIVIO_D/2-2.8};
+const CAPSULE_INTERACT_POS={x:ARCHIVIO_CX-1.7,z:-7.4};
+const ZERO_CAPSULE_INTERACT_POS={x:ZERO_CAPSULE_POS.x,z:ZERO_CAPSULE_POS.z+1.45};
+let archiveState={terminalRead:false,capsuleRead:false,zeroRead:false,revealing:false,capsuleAwake:false};
 let nearInteractable=null;
 function doArchiveInteract(){
- if(nearInteractable==="terminal"&&!archiveState.terminalRead){archiveState.terminalRead=true;archiveCompanion.meriTX=TERMINAL_POS.x+1.0;archiveCompanion.meriTZ=TERMINAL_POS.z-.4;playDialogue(terminalLines,()=>{archiveCompanion.meriTX=CAPSULE_INTERACT_POS.x-1.0;archiveCompanion.meriTZ=CAPSULE_INTERACT_POS.z+1.0;maybeStartOculoReveal();});}
- else if(nearInteractable==="capsule"&&!archiveState.capsuleRead){archiveState.capsuleRead=true;archiveState.capsuleAwake=true;archiveCompanion.meriTX=CAPSULE_INTERACT_POS.x-1.0;archiveCompanion.meriTZ=CAPSULE_INTERACT_POS.z+1.0;playDialogue(getCapsuleLines(),maybeStartOculoReveal);}
+ if(nearInteractable==="terminal"&&!archiveState.terminalRead){
+  archiveState.terminalRead=true;archiveCompanion.meriTX=TERMINAL_POS.x+1.45;archiveCompanion.meriTZ=TERMINAL_POS.z+.85;
+  playDialogue(terminalLines,()=>{archiveCompanion.meriTX=CAPSULE_INTERACT_POS.x-1.55;archiveCompanion.meriTZ=CAPSULE_INTERACT_POS.z+1.55;maybeStartOculoReveal();});
+ }
+ else if(nearInteractable==="capsule"&&!archiveState.capsuleRead){
+  archiveState.capsuleRead=true;archiveState.capsuleAwake=true;archiveCompanion.meriTX=CAPSULE_INTERACT_POS.x-1.55;archiveCompanion.meriTZ=CAPSULE_INTERACT_POS.z+1.55;
+  playDialogue(getCapsuleLines(),()=>{archiveCompanion.meriTX=ZERO_CAPSULE_POS.x-1.55;archiveCompanion.meriTZ=ZERO_CAPSULE_POS.z+1.55;maybeStartOculoReveal();});
+ }
+ else if(nearInteractable==="zeroCapsule"&&!archiveState.zeroRead){
+  archiveState.zeroRead=true;archiveCompanion.meriTX=ZERO_CAPSULE_POS.x-1.55;archiveCompanion.meriTZ=ZERO_CAPSULE_POS.z+1.55;
+  playDialogue(getZeroCapsuleLines(),maybeStartOculoReveal);
+ }
 }
 function doAnomalyInteract(){if(!postBossState)return;postBossState=false;missionHintEl.classList.remove("show");startArchiveSequence();}
 function startArchiveSequence(){
- archiveState={terminalRead:false,capsuleRead:false,revealing:false,capsuleAwake:false};enterArchivio();saveCheckpoint("archivio");
+ archiveState={terminalRead:false,capsuleRead:false,zeroRead:false,revealing:false,capsuleAwake:false};enterArchivio();saveCheckpoint("archivio");
  afterGame(600,()=>{missionHintEl.textContent="ESPLORA L'ARCHIVIO // R = TRASFORMA / RILASCIA ARMATURA";missionHintEl.classList.add("show");});
 }
 function maybeStartOculoReveal(){
- if(archiveState.terminalRead&&archiveState.capsuleRead&&!archiveState.revealing){archiveState.revealing=true;missionHintEl.classList.remove("show");afterGame(900,()=>playDialogue(oculoRevealLines,showChoiceScreen));}
+ if(archiveState.terminalRead&&archiveState.capsuleRead&&archiveState.zeroRead&&!archiveState.revealing){archiveState.revealing=true;missionHintEl.classList.remove("show");afterGame(900,()=>playDialogue(oculoRevealLines,showChoiceScreen));}
 }
 const choiceScreenEl=document.getElementById("choiceScreen");
 const choiceRowEl=document.getElementById("choiceRow");
@@ -2026,7 +2106,7 @@ function frame(now){
  let dt=rawDt;
  if(slowMoT>0){ dt=rawDt*slowMoFactor; slowMoT-=rawDt; }
  updateTransformation(dt);
- const inputLocked=paused||!!transformState||!gameStarted||dialogueActive||gameOverActive||zone==="colosso"||(colosso&&colosso.phase==="converge")||choiceScreenEl.classList.contains("show")||endingScreenEl.classList.contains("show")||!!emergeCutscene;
+ const inputLocked=paused||!!transformState||!gameStarted||dialogueActive||gameOverActive||zone==="colosso"||(colosso&&colosso.phase==="pose")||choiceScreenEl.classList.contains("show")||endingScreenEl.classList.contains("show")||!!emergeCutscene;
  if(gameStarted)energyFillEl.style.width=(player.energy/player.energyMax*100)+"%";
  if(zone!==lastZoneLabel){ lastZoneLabel=zone; hudLocationEl.textContent=ZONE_LABELS[zone]||""; }
 
@@ -2114,9 +2194,10 @@ function frame(now){
  // terminale o alla sala delle capsule in fondo, cosi' l'esplorazione e'
  // guidata ma resta libera (il giocatore decide quando e se avvicinarsi).
  if(zone==="archivio"&&!dialogueActive){
-  const dT=Math.hypot(player.x-TERMINAL_POS.x,player.z-TERMINAL_POS.z),dC=Math.hypot(player.x-CAPSULE_INTERACT_POS.x,player.z-CAPSULE_INTERACT_POS.z);
-  if(dT<1.6&&!archiveState.terminalRead){nearInteractable="terminal";interactPromptEl.textContent="SPAZIO — LEGGI IL REGISTRO";interactPromptEl.classList.add("show");}
-  else if(dC<2.4&&!archiveState.capsuleRead){nearInteractable="capsule";interactPromptEl.textContent="SPAZIO — GUARDA LE CAPSULE";interactPromptEl.classList.add("show");}
+  const dT=Math.hypot(player.x-TERMINAL_POS.x,player.z-TERMINAL_POS.z),dC=Math.hypot(player.x-CAPSULE_INTERACT_POS.x,player.z-CAPSULE_INTERACT_POS.z),dZ=Math.hypot(player.x-ZERO_CAPSULE_INTERACT_POS.x,player.z-ZERO_CAPSULE_INTERACT_POS.z);
+  if(dT<1.65&&!archiveState.terminalRead){nearInteractable="terminal";interactPromptEl.textContent="SPAZIO — LEGGI IL REGISTRO";interactPromptEl.classList.add("show");}
+  else if(dC<2.2&&!archiveState.capsuleRead){nearInteractable="capsule";interactPromptEl.textContent="SPAZIO — ESAMINA LE CAPSULE";interactPromptEl.classList.add("show");}
+  else if(dZ<1.9&&!archiveState.zeroRead){nearInteractable="zeroCapsule";interactPromptEl.textContent="SPAZIO — ESAMINA FRAME ZERO";interactPromptEl.classList.add("show");}
   else{nearInteractable=null;if(morphUnlocked){interactPromptEl.textContent=player.transformed?"R — RILASCIA ARMATURA":"R — TRASFORMA";interactPromptEl.classList.add("show");}else interactPromptEl.classList.remove("show");}
  }else if(zone==="torre"&&!dialogueActive&&(introFreeRoam||postBossState)){
   let nearest=null,nd=1.55;for(const m of teamMembers){const d=Math.hypot(player.x-m.x,player.z-m.z);if(d<nd){nearest=m;nd=d;}}
@@ -2270,16 +2351,18 @@ function frame(now){
    }
   }
   if(colossoTeamPos){
-   for(const tp of colossoTeamPos){
-    const tMesh=buildCharacterBuffers(tp.pal,now/300,1,true,"ranger",0);
-    const tYaw=Math.atan2(player.x-tp.x,player.z-tp.z);
-    drawDynamicMesh(tMesh,mul(mat4.translate(tp.x,0,tp.z),mat4.rotY(tYaw)),vp);
+   for(let pi=0;pi<colossoTeamPos.length;pi++){
+    const tp=colossoTeamPos[pi];
+    // Posa toku semplice: braccio destro alzato tramite il rig d'attacco,
+    // tutti rivolti verso il mare. Nessun corpo finisce sopra un altro.
+    const poseArm=colosso&&colosso.t>1.55?.30+(pi%2)*.08:0;
+    const tMesh=buildCharacterBuffers(tp.pal,now/900,.08,true,"ranger",poseArm);
+    drawDynamicMesh(tMesh,mul(mat4.translate(tp.x,0,tp.z),mat4.rotY(tp.yaw||Math.PI)),vp);
    }
   }
  }else if(zone==="colosso"&&colosso){
   drawArenaBackdrop(vp);
-  drawBuffer(arenaFloorBuf,mat4.identity(),vp);drawBuffer(arenaSeaBuf,mat4.identity(),vp);
-  drawBuffer(giantCityBuf,mat4.identity(),vp,.98);
+  drawBuffer(giantStageBuf,mat4.identity(),vp);drawBuffer(giantCityBuf,mat4.identity(),vp,.98);
 
   const giantWobble=1+Math.sin(now/260)*.02;
   const finishTilt=colosso.phase==="finishing"?(colosso.finishTilt||0):0;
@@ -2322,24 +2405,28 @@ function frame(now){
   }
  }else if(zone==="archivio"){
   drawBuffer(archivioFloorBuf,mat4.identity(),vp);drawBuffer(archivioWallBuf,mat4.identity(),vp);drawBuffer(archivioHelmetBuf,mat4.identity(),vp);drawBuffer(archivioTerminalBuf,mat4.identity(),vp);drawBuffer(archivioOculoFrameBuf,mat4.identity(),vp);
-  if(archiveState.revealing)drawTexturedQuad(oculoTex,mul(mat4.translate(ARCH_OCULO_POS.x,ARCH_OCULO_POS.y,ARCH_OCULO_POS.z+.02),mat4.scale(2.35,1.35,1)),vp,.92);
-  // Meridiana entra davvero con Zero e si sposta fra terminale e capsule.
+  if(archiveState.revealing)drawTexturedQuad(oculoTex,mul(mat4.translate(ARCH_OCULO_POS.x,ARCH_OCULO_POS.y,ARCH_OCULO_POS.z+.02),mat4.scale(2.55,1.45,1)),vp,.92);
+  // Solo Meridiana e TIC entrano nell'Archivio. Gli altri membri non vengono
+  // neppure renderizzati in questa zona, quindi non possono seguirti per bug.
   drawShadow(archiveCompanion.meriX,archiveCompanion.meriZ,.38,vp,.28);
-  const meriYaw=Math.atan2(player.x-archiveCompanion.meriX,player.z-archiveCompanion.meriZ);
-  const meriMesh=buildCharacterBuffers(PAL_MERIDIANA_CIV,now/900,.18,false,"ranger",0);
-  drawDynamicMesh(meriMesh,mul(mat4.translate(archiveCompanion.meriX,0,archiveCompanion.meriZ),mat4.rotY(meriYaw)),vp,.96);
-  // TIC scandisce l'Archivio invece di sparire dalla storia.
+  const meriMoving=Math.hypot(archiveCompanion.meriTX-archiveCompanion.meriX,archiveCompanion.meriTZ-archiveCompanion.meriZ)>.10;
+  const meriMesh=buildCharacterBuffers(PAL_MERIDIANA_CIV,now/900,meriMoving?1:.10,false,"ranger",0);
+  drawDynamicMesh(meriMesh,mul(mat4.translate(archiveCompanion.meriX,0,archiveCompanion.meriZ),mat4.rotY(archiveCompanion.meriYaw)),vp,.96);
   drawBuffer(ticBuf,mul(mat4.translate(archiveCompanion.ticX,2.0+Math.sin(now/420)*.08,archiveCompanion.ticZ),mat4.rotY(Math.PI)),vp);
   drawBuffer(capsuleFrameBuf,mat4.identity(),vp);
   for(let ci=0;ci<CAPSULE_POS.length;ci++){
-   const cp=CAPSULE_POS[ci];
-   const pulse=.75+Math.sin(now/620+ci*1.3)*.25;
-   drawBuffer(capsuleGlassBuf, mul(mat4.translate(cp.x,1.15,cp.z+.30),mat4.scale(1,1,1)), vp, .38);
-   drawBuffer(capsuleBeamBuf, mul(mat4.translate(cp.x,3.6,cp.z),mat4.scale(.5*pulse,3.0,.5*pulse)), vp, .16*pulse);
+   const cp=CAPSULE_POS[ci],pulse=.75+Math.sin(now/620+ci*1.3)*.25;
+   drawBuffer(capsuleGlassBuf,mul(mat4.translate(cp.x,1.18,cp.z+.34),mat4.scale(1.02,1.04,1)),vp,.34);
+   drawBuffer(capsuleBeamBuf,mul(mat4.translate(cp.x,3.75,cp.z),mat4.scale(.48*pulse,3.1,.48*pulse)),vp,.13*pulse);
    const awake=(ci===0&&archiveState.capsuleAwake);
    const rMesh=buildCharacterBuffers(capsuleRangerPals[ci],awake?now/260:0,0,true,"ranger",awake?.28:0);
-   drawDynamicMesh(rMesh,mul(mat4.translate(cp.x,0,cp.z+.05),mat4.rotY(Math.PI)),vp,awake?.92:.8);
+   drawDynamicMesh(rMesh,mul(mat4.translate(cp.x,0,cp.z+.06),mat4.rotY(Math.PI)),vp,awake?.92:.72);
   }
+  // Frame ZERO: completamente vuoto, piu' caldo e separato dalle altre file.
+  drawBuffer(zeroCapsuleBuf,mat4.identity(),vp);
+  const zp=.72+Math.sin(now/520)*.22;
+  drawBuffer(zeroGlassBuf,mul(mat4.translate(ZERO_CAPSULE_POS.x,1.30,ZERO_CAPSULE_POS.z+.36),mat4.scale(1.20,1.20,1)),vp,.22+.12*zp);
+  drawBuffer(capsuleBeamBuf,mul(mat4.translate(ZERO_CAPSULE_POS.x,3.95,ZERO_CAPSULE_POS.z),mat4.scale(.42*zp,3.4,.42*zp)),vp,.10*zp);
  }
 
  if(zone!=="colosso"){
