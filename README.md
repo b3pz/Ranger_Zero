@@ -1,3 +1,41 @@
+# RANGER ZERO v30 — merge v26.1 (Archive Escort) + v27-v29 (Claude)
+
+Unione tra due rami di sviluppo paralleli:
+- **v26.1** (caricata dall'utente): Meridiana e TIC ora entrano fisicamente nell'Archivio
+  insieme a Zero invece di teletrasportarsi separatamente — scena di accompagnamento al
+  pannello anomalo (`archiveEscortLines`), poi arrivo insieme (`archiveArrivalLines`), solo
+  dopo TIC comincia la scansione a waypoint (`ticPatrol`). Telecamera dei dialoghi corretta
+  per puntare alla posizione vera di TIC nella Torre invece di un punto fisso vecchio
+  (`getTowerTicPosition`, condivisa tra render e fuoco dialogo).
+- **v27-v29** (mie, sessioni precedenti): luce di riempimento nello shader, redesign tuta
+  (visiera nera, elmo arrotondato, pettorale/spallacci ridimensionati), scala del Colosso
+  aumentata (1.62×) per essere piu' grande de Il Raccoglitore, impatti dei pugni sparsi sul
+  corpo invece che sempre nello stesso punto.
+
+## Come ho fatto il merge
+Diff riga per riga tra il game.js della v26 (base condivisa) e quello della v26.1 (105 righe
+di differenza, tutte isolate al sistema Archivio/TIC — nessuna sovrapposizione con le zone
+toccate in v27-v29, quindi applicazione diretta senza conflitti). Applicate tutte le stesse
+modifiche, nello stesso ordine, sopra il game.js della v29. Verificato che ogni punto di
+innesto matchasse esattamente il codice base prima di sostituire.
+
+## Verificato
+- Sintassi OK.
+- Scena di arrivo nell'Archivio testata direttamente: la battuta di Meridiana
+  ("Siamo dentro. Io controllo il registro...") appare correttamente, TIC resta con lei
+  invece di partire subito in pattuglia.
+- Nessun errore console.
+
+## Non verificato in questa sessione
+- La scena di accompagnamento al pannello anomalo (`doAnomalyInteract`, la parte PRIMA
+  dell'ingresso, con Arco che avverte "fate attenzione") non e' stata testata direttamente
+  — richiede replicare lo stato `postBossState` che non ho un aggancio dev diretto per
+  forzare. La logica e' identica a quella della v26.1 originale (stesso codice, non
+  modificato durante il merge), quindi il rischio di rottura e' basso, ma non l'ho vista
+  con i miei occhi in questa sessione.
+
+---
+
 # RANGER ZERO v29 — SCALA COLOSSO + IMPATTI SPARSI
 
 ## Cosa ho cambiato (feedback: "Colosso più piccolo del Raccoglitore" + "hitbox sempre a basso ventre")

@@ -899,6 +899,19 @@ const TIC_PATROL=[
  {x: ROOM_W/2-1.3, z:-5.2},
  {x: 0, z:-3.5},
 ];
+// v26.1: posizione di TIC nella Torre calcolata una sola volta e riusata
+// sia dal loop di render sia dal fuoco della telecamera nei dialoghi —
+// prima i dialoghi puntavano a un punto fisso vecchio invece della
+// posizione vera di TIC dopo il boss (verso il pannello anomalo).
+function getTowerTicPosition(nowMs){
+ const patrolT=(nowMs/1000)%(TIC_PATROL.length*2.4);
+ const seg=Math.floor(patrolT/2.4), segT=Math.min(1,(patrolT%2.4)/1.6);
+ const pA=TIC_PATROL[seg], pB=TIC_PATROL[(seg+1)%TIC_PATROL.length];
+ const easeT=segT<1?(1-Math.cos(segT*Math.PI))/2:1;
+ let x=pA.x+(pB.x-pA.x)*easeT, z=pA.z+(pB.z-pA.z)*easeT;
+ if(postBossState){const p=Math.min(1,postBossElapsed/4.0),e=1-Math.pow(1-p,3);x=4.8+(ANOMALO_POS.x+.75-4.8)*e;z=1.4+(ANOMALO_POS.z-1.4)*e;}
+ return {x,z,y:2.1,pA,pB};
+}
 
 // ============================================================
 // ARENA — spiaggia vicino al mare per il primo combattimento, separata da
@@ -1377,6 +1390,7 @@ function updateArenaAllies(dt){
  }
 }
 let emergeCutscene=null;
+let archiveEscortState=false;
 function maybeEmergeRaccoglitore(){
  const racc=enemies.find(e=>e.type==="raccoglitore");
  if(arenaWave<3||!racc||racc.emerging||racc.emerged||emergeCutscene)return;
@@ -1472,13 +1486,16 @@ const capsuleBeamBuf=makeBuffer(boxMesh([.55,.90,.98]));
 const zeroGlassBuf=makeBuffer(boxMesh([.88,.58,.15]));
 
 let archivioUnlocked=false;
-const archiveCompanion={meriX:ARCHIVIO_CX-1.5,meriZ:ARCHIVIO_CZ+ARCHIVIO_D/2-2.2,meriTX:ARCHIVIO_CX-1.5,meriTZ:ARCHIVIO_CZ+ARCHIVIO_D/2-2.2,meriYaw:Math.PI,ticX:ARCHIVIO_CX+1.3,ticZ:ARCHIVIO_CZ+ARCHIVIO_D/2-2.0,ticTarget:0,ticWait:.4,t:0};
+const archiveCompanion={meriX:ARCHIVIO_CX-1.0,meriZ:ARCHIVIO_CZ+ARCHIVIO_D/2-1.0,meriTX:ARCHIVIO_CX-1.0,meriTZ:ARCHIVIO_CZ+ARCHIVIO_D/2-1.0,meriYaw:Math.PI,ticX:ARCHIVIO_CX+1.0,ticZ:ARCHIVIO_CZ+ARCHIVIO_D/2-1.0,ticTarget:0,ticWait:.4,t:0,ticPatrol:false};
 const ARCH_TIC_POINTS=[
  {x:ARCHIVIO_CX+1.7,z:ARCHIVIO_CZ+7.0},{x:ARCHIVIO_CX+1.7,z:ARCHIVIO_CZ+1.5},{x:ARCHIVIO_CX+1.6,z:-5.8},{x:ARCHIVIO_CX+1.2,z:-9.0},{x:ARCHIVIO_CX+1.4,z:ZERO_CAPSULE_POS.z+1.4}
 ];
 function resetArchiveCompanions(){
- archiveCompanion.meriX=ARCHIVIO_CX-1.5;archiveCompanion.meriZ=ARCHIVIO_CZ+ARCHIVIO_D/2-2.2;archiveCompanion.meriTX=ARCHIVIO_CX-2.0;archiveCompanion.meriTZ=ARCHIVIO_CZ+5.6;archiveCompanion.meriYaw=Math.PI;
- archiveCompanion.ticX=ARCH_TIC_POINTS[0].x;archiveCompanion.ticZ=ARCH_TIC_POINTS[0].z;archiveCompanion.ticTarget=1;archiveCompanion.ticWait=.5;archiveCompanion.t=0;
+ // Entrano davvero CON Zero: per il primo beat restano ai suoi lati invece
+ // di teletrasportarsi direttamente verso terminale e capsule.
+ const entryZ=ARCHIVIO_CZ+ARCHIVIO_D/2-1.0;
+ archiveCompanion.meriX=ARCHIVIO_CX-1.05;archiveCompanion.meriZ=entryZ;archiveCompanion.meriTX=archiveCompanion.meriX;archiveCompanion.meriTZ=archiveCompanion.meriZ;archiveCompanion.meriYaw=Math.PI;
+ archiveCompanion.ticX=ARCHIVIO_CX+1.05;archiveCompanion.ticZ=entryZ;archiveCompanion.ticTarget=0;archiveCompanion.ticWait=.5;archiveCompanion.t=0;archiveCompanion.ticPatrol=false;
 }
 function updateArchiveCompanions(dt){
  if(zone!=="archivio")return;archiveCompanion.t+=dt;
@@ -1486,10 +1503,13 @@ function updateArchiveCompanions(dt){
  // il player e non puo' quindi entrare nel monitor o oscillare a caso.
  const dx=archiveCompanion.meriTX-archiveCompanion.meriX,dz=archiveCompanion.meriTZ-archiveCompanion.meriZ,d=Math.hypot(dx,dz)||.001;
  if(d>.08){archiveCompanion.meriX+=dx/d*Math.min(d,dt*.82);archiveCompanion.meriZ+=dz/d*Math.min(d,dt*.82);archiveCompanion.meriYaw=Math.atan2(dx,dz);} 
- // TIC usa una scansione a waypoint; quando raggiunge un punto si ferma
- // davvero prima di passare al successivo.
- const tp=ARCH_TIC_POINTS[archiveCompanion.ticTarget],tdx=tp.x-archiveCompanion.ticX,tdz=tp.z-archiveCompanion.ticZ,td=Math.hypot(tdx,tdz)||.001;
- if(td>.10){archiveCompanion.ticX+=tdx/td*Math.min(td,dt*.95);archiveCompanion.ticZ+=tdz/td*Math.min(td,dt*.95);}else{archiveCompanion.ticWait-=dt;if(archiveCompanion.ticWait<=0){archiveCompanion.ticTarget=(archiveCompanion.ticTarget+1)%ARCH_TIC_POINTS.length;archiveCompanion.ticWait=1.0;}}
+ // TIC resta accanto a Zero durante l'ingresso; solo DOPO il breve dialogo
+ // di entrata inizia la scansione a waypoint. In questo modo il giocatore
+ // vede chiaramente che e' entrato insieme a Meridiana e TIC.
+ if(archiveCompanion.ticPatrol){
+  const tp=ARCH_TIC_POINTS[archiveCompanion.ticTarget],tdx=tp.x-archiveCompanion.ticX,tdz=tp.z-archiveCompanion.ticZ,td=Math.hypot(tdx,tdz)||.001;
+  if(td>.10){archiveCompanion.ticX+=tdx/td*Math.min(td,dt*.95);archiveCompanion.ticZ+=tdz/td*Math.min(td,dt*.95);}else{archiveCompanion.ticWait-=dt;if(archiveCompanion.ticWait<=0){archiveCompanion.ticTarget=(archiveCompanion.ticTarget+1)%ARCH_TIC_POINTS.length;archiveCompanion.ticWait=1.0;}}
+ }
 }
 function enterArchivio(){
  zone="archivio";teamMode="civil";teamRouteMode=null;
@@ -1543,12 +1563,12 @@ function clearKeys(){for(const k of Object.keys(keys))keys[k]=false;}
 function clearTransientState(){
  clearKeys();gameTimers.length=0;gameOverActive=false;gameOverEl.classList.remove("show");colossoOutcomeEl.classList.remove("show","win");
  choiceScreenEl?.classList.remove("show");interactPromptEl.classList.remove("show");nearInteractable=null;
- transformState=null;emergeCutscene=null;specialBursts.length=0;splashBursts.length=0;dialogueActive=false;dialogueBoxEl?.classList.remove("show");document.body.classList.remove("dialogue-active");
+ transformState=null;emergeCutscene=null;archiveEscortState=false;specialBursts.length=0;splashBursts.length=0;dialogueActive=false;dialogueBoxEl?.classList.remove("show");document.body.classList.remove("dialogue-active");
 }
 function readCheckpoint(){try{return JSON.parse(localStorage.getItem(CHECKPOINT_KEY)||"null");}catch(e){return null;}}
 function refreshContinueButton(){if(!continueBtnEl)return;const cp=readCheckpoint();continueBtnEl.disabled=!cp;continueBtnEl.style.opacity=cp?1:.38;}
 function saveCheckpoint(id){
- currentCheckpoint=id;try{localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({id,ts:Date.now(),version:25,transformed:!!player.transformed,morphUnlocked:!!morphUnlocked}));}catch(e){}refreshContinueButton();
+ currentCheckpoint=id;try{localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({id,ts:Date.now(),version:26.1,transformed:!!player.transformed,morphUnlocked:!!morphUnlocked}));}catch(e){}refreshContinueButton();
 }
 function clearCheckpoint(){try{localStorage.removeItem(CHECKPOINT_KEY);}catch(e){}currentCheckpoint=null;refreshContinueButton();}
 function showRuntimeError(title,msg){
@@ -1643,6 +1663,7 @@ function showDialogueLine(){
  else if(zone==="archivio"&&l.speaker==="TIC")dialogueFocus={x:archiveCompanion.ticX,y:2.0,z:archiveCompanion.ticZ};
  else if(zone==="archivio"&&l.speaker==="VECCHIO RANGER")dialogueFocus={x:CAPSULE_POS[0].x,y:1.5,z:CAPSULE_POS[0].z};
  else if(zone==="archivio"&&l.speaker==="FRAME ZERO")dialogueFocus=DIALOGUE_FOCUS_POS.ZERO_CAPSULE;
+ else if(zone==="torre"&&l.speaker==="TIC"){const tp=getTowerTicPosition(performance.now());dialogueFocus={x:tp.x,y:2.0,z:tp.z};}
  else if(zone==="archivio"&&l.speaker==="OCULO")dialogueFocus=DIALOGUE_FOCUS_POS.ARCH_OCULO;
  else if(l.speaker==="ZERO")dialogueFocus={x:player.x,y:1.45,z:player.z};
  else if(zone==="torre"&&tm)dialogueFocus={x:tm.x,y:1.45,z:tm.z};
@@ -1845,10 +1866,40 @@ function doArchiveInteract(){
   playDialogue(getZeroCapsuleLines(),maybeStartOculoReveal);
  }
 }
-function doAnomalyInteract(){if(!postBossState)return;postBossState=false;missionHintEl.classList.remove("show");startArchiveSequence();}
+const archiveEscortLines=[
+ {speaker:"MERIDIANA",text:"Aspetta. Vengo con te. Se quella firma e' davvero Ranger, non ti lascio entrare li' dentro da solo."},
+ {speaker:"TIC",text:"Confermo accompagnamento. Il segnale del pannello risponde anche ai miei registri interni."},
+ {speaker:"ARCO",text:"Meridiana... fate attenzione. Se qualcosa non torna, tornate indietro."},
+];
+const archiveArrivalLines=[
+ {speaker:"MERIDIANA",text:"Siamo dentro. Io controllo il registro. TIC, scansiona le capsule. Zero... guarda bene prima di toccare qualcosa."},
+ {speaker:"TIC",text:"Ricevuto. Resto con voi."},
+];
+function doAnomalyInteract(){
+ if(!postBossState||archiveEscortState)return;
+ archiveEscortState=true;missionHintEl.classList.remove("show");
+ // Blocchiamo le routine normali e facciamo convergere SOLO Meridiana e TIC
+ // sul pannello: e' una piccola scena di accompagnamento, non follower AI.
+ teamRouteMode=null;
+ for(const m of teamMembers){m.targetX=m.x;m.targetZ=m.z;}
+ const meri=teamMemberByName("MERIDIANA");
+ if(meri){meri.targetX=ANOMALO_POS.x-1.15;meri.targetZ=ANOMALO_POS.z+.65;}
+ playDialogue(archiveEscortLines,()=>{
+  missionHintEl.textContent="MERIDIANA + TIC // VENGONO CON TE";missionHintEl.classList.add("show");
+  // Lasciamo due secondi reali alla scena per far vedere Meridiana arrivare
+  // e TIC posizionarsi sul pannello, poi entriamo tutti insieme.
+  afterGame(2100,()=>{postBossState=false;archiveEscortState=false;startArchiveSequence();});
+ });
+}
 function startArchiveSequence(){
  archiveState={terminalRead:false,capsuleRead:false,zeroRead:false,revealing:false,capsuleAwake:false};enterArchivio();saveCheckpoint("archivio");
- afterGame(600,()=>{missionHintEl.textContent="ESPLORA L'ARCHIVIO // R = TRASFORMA / RILASCIA ARMATURA";missionHintEl.classList.add("show");});
+ // All'arrivo i tre sono nello stesso punto scenico: prima si stabilisce
+ // verbalmente il gruppo, poi Meridiana e TIC si separano per investigare.
+ afterGame(500,()=>playDialogue(archiveArrivalLines,()=>{
+  archiveCompanion.meriTX=TERMINAL_POS.x+1.45;archiveCompanion.meriTZ=TERMINAL_POS.z+.85;
+  archiveCompanion.ticPatrol=true;archiveCompanion.ticTarget=0;archiveCompanion.ticWait=.5;
+  missionHintEl.textContent="ESPLORA L'ARCHIVIO // MERIDIANA E TIC SONO CON TE // R = ARMATURA";missionHintEl.classList.add("show");
+ }));
 }
 function maybeStartOculoReveal(){
  if(archiveState.terminalRead&&archiveState.capsuleRead&&archiveState.zeroRead&&!archiveState.revealing){archiveState.revealing=true;missionHintEl.classList.remove("show");afterGame(900,()=>playDialogue(oculoRevealLines,showChoiceScreen));}
@@ -2201,7 +2252,7 @@ function frame(now){
  let dt=rawDt;
  if(slowMoT>0){ dt=rawDt*slowMoFactor; slowMoT-=rawDt; }
  updateTransformation(dt);
- const inputLocked=paused||!!transformState||!gameStarted||dialogueActive||gameOverActive||zone==="colosso"||(colosso&&colosso.phase==="pose")||choiceScreenEl.classList.contains("show")||endingScreenEl.classList.contains("show")||!!emergeCutscene;
+ const inputLocked=paused||!!transformState||!gameStarted||dialogueActive||gameOverActive||archiveEscortState||zone==="colosso"||(colosso&&colosso.phase==="pose")||choiceScreenEl.classList.contains("show")||endingScreenEl.classList.contains("show")||!!emergeCutscene;
  if(gameStarted)energyFillEl.style.width=(player.energy/player.energyMax*100)+"%";
  if(zone!==lastZoneLabel){ lastZoneLabel=zone; hudLocationEl.textContent=ZONE_LABELS[zone]||""; }
 
@@ -2403,14 +2454,9 @@ function frame(now){
 
   // TIC: pattuglia tra i pannelli laterali facendo finta di controllarli,
   // invece di restare fermo a fluttuare sempre nello stesso punto.
-  const patrolT=(now/1000)%(TIC_PATROL.length*2.4);
-  const seg=Math.floor(patrolT/2.4), segT=Math.min(1,(patrolT%2.4)/1.6);
-  const pA=TIC_PATROL[seg], pB=TIC_PATROL[(seg+1)%TIC_PATROL.length];
-  const easeT=segT<1?(1-Math.cos(segT*Math.PI))/2:1;
-  let ticX=pA.x+(pB.x-pA.x)*easeT, ticZ=pA.z+(pB.z-pA.z)*easeT;
-  if(postBossState){const p=Math.min(1,postBossElapsed/4.0),e=1-Math.pow(1-p,3);ticX=4.8+(ANOMALO_POS.x+.75-4.8)*e;ticZ=1.4+(ANOMALO_POS.z-1.4)*e;}
-  const ticY=2.1+Math.sin(now/500)*.10;
-  const ticFaceYaw=Math.atan2(pB.x-pA.x,pB.z-pA.z);
+  const ticPos=getTowerTicPosition(now);
+  const ticX=ticPos.x,ticZ=ticPos.z,ticY=2.1+Math.sin(now/500)*.10;
+  const ticFaceYaw=Math.atan2(ticPos.pB.x-ticPos.pA.x,ticPos.pB.z-ticPos.pA.z);
   const ticModel=mul(mat4.translate(ticX,ticY,ticZ),mat4.rotY(ticFaceYaw));
   drawBuffer(ticBuf,ticModel,vp);
  }else if(zone==="arena"){
