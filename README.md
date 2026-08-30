@@ -1,3 +1,43 @@
+# RANGER ZERO v35 — bug visiera, colori classici, sesto Ranger
+
+## Bug corretto (confermato in foto dall'utente)
+La visiera dell'elmo era visibile anche da dietro — verificato con uno screenshot identico
+al problema mostrato. Corretto con un occlusore pieno dentro il casco (invece di rincorrere
+la causa esatta nel motore di render, un blocco opaco garantisce che non si possa vedere
+attraverso da nessun angolo). Rimossa anche la cresta sull'elmo, come richiesto — profilo
+piu' pulito.
+
+## Colori classici da sentai
+Riassegnati: Arco rosso (capo squadra), Meridiana blu vero (prima era azzurro ghiaccio),
+Jun giallo, Vale rosa. **Zero resta apposta fuori da questa palette** — il suo rosso ruggine
+desaturato lo mantiene visivamente separato, perche' narrativamente e' il sesto Ranger, non
+un membro qualunque della squadra classica dei cinque.
+
+## Forma civile: maglia del colore dell'uniforme
+Prima tutti avevano una maglia grigia/blu generica in borghese. Ora il colore della maglia
+riprende quello della tuta da Ranger di ciascuno — verificato visivamente nella Torre: si
+vedono chiaramente maglie blu, rossa, rosa, gialla sui quattro compagni.
+
+## Differenziazione NPC femminili
+Meridiana e Vale (le due donne della squadra) hanno ora una coda di cavallo che le
+distingue anche di spalle, non solo per colore — un pezzo in piu' sulla nuca, gestito da un
+flag `pal.female` nella palette.
+
+## Il sesto Ranger: modulo dorsale per Zero
+Aggiunto un modulo esclusivo sulla schiena di Zero (nucleo centrale + due ali angolate +
+due propulsori con bagliore caldo) — nessun altro Ranger lo porta. Verificato visivamente:
+la sagoma di Zero da dietro e' chiaramente diversa dagli altri quattro.
+
+## NON affrontato in questa sessione (grandi, a se')
+- **Ridisegno del Colosso e de Il Raccoglitore**: l'utente ha segnalato che il Colosso
+  "sembra un ammasso di cubi che si muove" — vero, ma un ridisegno vero della geometria di
+  questi due modelli e' un lavoro a se', non una rifinitura, e non l'ho toccato.
+- **Archivio come stanza vera**: l'utente vuole schermi/computer grafici che mostrano
+  l'assorbimento, tubi che si collegano, un monitor con Oculo in forma piu' grande — anche
+  questo e' un lavoro di scena a se', non fatto in questa sessione.
+
+---
+
 # RANGER ZERO v34 — fine sessione: bug vittoria, ciclo vittoria vero, cornici nuove, controlli touch
 
 ## Bug corretto

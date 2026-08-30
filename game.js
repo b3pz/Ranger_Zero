@@ -646,15 +646,33 @@ function makePalette(suit,accent,skin,hair){
 // Civili: outfit diversi e leggibili. Le armature usano invece una sottotuta
 // scura + placche colorate, cosi' non sembrano piu' mute da sommozzatore.
 const PAL_CIVILE=makePalette([.18,.19,.22],[.58,.30,.11],[.85,.63,.48],[.12,.09,.07]);
+// v35: colori classici da sentai — Arco rosso (capo squadra), Meridiana blu
+// vero (prima era un azzurro ghiaccio, meno leggibile come "blu" puro),
+// Jun giallo, Vale rosa. Zero resta apposta FUORI da questa palette
+// classica: e' il sesto Ranger, quello speciale che c'e' in ogni serie
+// toku, non il quinto/sesto membro qualunque — il suo rosso ruggine
+// desaturato lo tiene visivamente separato dal gruppo "canonico".
 const PAL_ZERO   =makePalette([.58,.30,.11],[.50,.40,.18],[.85,.63,.48],[.12,.09,.07]);
-const PAL_ARCO   =makePalette([.74,.10,.08],[.85,.66,.16],[.78,.55,.40],[.13,.08,.05]);
-const PAL_MERIDIANA=makePalette([.42,.65,.76],[.80,.84,.88],[.78,.58,.46],[.08,.07,.08]);
-const PAL_RANGER3=makePalette([.34,.18,.42],[.68,.56,.34],[.76,.54,.40],[.10,.07,.05]);
-const PAL_RANGER4=makePalette([.14,.40,.28],[.74,.76,.78],[.84,.62,.47],[.07,.055,.045]);
-const PAL_ARCO_CIV=makePalette([.20,.22,.25],[.64,.16,.10],[.78,.55,.40],[.13,.08,.05]);
-const PAL_MERIDIANA_CIV=makePalette([.18,.24,.29],[.42,.65,.76],[.78,.58,.46],[.08,.07,.08]);
-const PAL_JUN_CIV=makePalette([.28,.22,.31],[.34,.18,.42],[.76,.54,.40],[.10,.07,.05]);
-const PAL_VALE_CIV=makePalette([.18,.27,.22],[.14,.40,.28],[.84,.62,.47],[.07,.055,.045]);
+// Zero e' il sesto Ranger, non un sesto/quinto qualunque della squadra
+// classica — il modulo dorsale (vedi buildBodyParts) e' il suo pezzo
+// distintivo, quello che nessun altro porta.
+PAL_ZERO.isZero=true;
+const PAL_ARCO   =makePalette([.80,.09,.07],[.90,.72,.18],[.78,.55,.40],[.13,.08,.05]);
+const PAL_MERIDIANA=makePalette([.10,.30,.78],[.85,.88,.92],[.78,.58,.46],[.08,.07,.08]);
+const PAL_RANGER3=makePalette([.92,.78,.08],[.30,.24,.10],[.76,.54,.40],[.10,.07,.05]);
+const PAL_RANGER4=makePalette([.92,.35,.62],[.98,.90,.94],[.84,.62,.47],[.30,.10,.16]);
+// Forma civile: prima la maglia era un grigio/blu generico uguale per
+// tutti, ora il colore della maglia riprende quello della tuta da Ranger
+// (un'idea da tokusatsu vero: l'abbigliamento civile "tradisce" un po' chi
+// sei), l'accento resta comunque il colore ranger per coerenza.
+const PAL_ARCO_CIV=makePalette([.55,.09,.08],[.90,.72,.18],[.78,.55,.40],[.13,.08,.05]);
+const PAL_MERIDIANA_CIV=makePalette([.10,.24,.55],[.85,.88,.92],[.78,.58,.46],[.08,.07,.08]);
+const PAL_JUN_CIV=makePalette([.62,.52,.10],[.30,.24,.10],[.76,.54,.40],[.10,.07,.05]);
+const PAL_VALE_CIV=makePalette([.62,.26,.42],[.98,.90,.94],[.84,.62,.47],[.30,.10,.16]);
+// Meridiana e Vale sono donne: coda di cavallo per distinguerle anche di
+// spalle (vedi buildBodyParts, ramo civile). Arco e Jun restano senza.
+PAL_MERIDIANA.female=true; PAL_MERIDIANA_CIV.female=true;
+PAL_RANGER4.female=true; PAL_VALE_CIV.female=true;
 
 const meshCache={};
 function partMeshFor(pal){
@@ -671,6 +689,7 @@ function partMeshFor(pal){
   upperLeg:boxMesh(pal.under||pal.suit), lowerLeg:boxMesh(pal.boot),
   bladeCore:boxMesh([.85,.92,.98]), bladeEdge:boxMesh(pal.accent), bladeHilt:boxMesh([.15,.14,.16]),
   menaceEye:boxMesh([1.0,.10,.04]),
+  backCore:boxMesh(pal.suit), backWing:boxMesh(pal.accent), backThruster:boxMesh([.10,.11,.13]), backGlow:boxMesh([.95,.55,.20]),
  };
  meshCache[key]=m;
  return m;
@@ -708,6 +727,19 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
   // il disegno sopra, uguale per tutti come nel riferimento.
   parts.push({mesh:pm.chestDiamond,mtx:mul(mat4.translate(0,1.12+bob,.148),mat4.rotZ(Math.PI/4),mat4.scale(.225,.225,.05))});
   parts.push({mesh:pm.buckle,mtx:mul(mat4.translate(0,.77+bob,.17),mat4.scale(.12,.085,.035))});
+  if(pal.isZero){
+   // Il modulo dorsale: quello che rende Zero il sesto Ranger e non un
+   // membro qualunque della squadra classica — nessun altro lo porta.
+   // Nucleo centrale + due ali/pinne angolate + due propulsori piccoli con
+   // un bagliore caldo, tutto ancorato al centro della schiena.
+   parts.push({mesh:pm.backCore, mtx:mul(mat4.translate(0,1.22+bob,-.175),mat4.scale(.20,.28,.09))});
+   parts.push({mesh:pm.backWing, mtx:mul(mat4.translate(.16,1.30+bob,-.19),mat4.rotZ(-.5),mat4.rotY(.15),mat4.scale(.26,.045,.15))});
+   parts.push({mesh:pm.backWing, mtx:mul(mat4.translate(-.16,1.30+bob,-.19),mat4.rotZ(.5),mat4.rotY(-.15),mat4.scale(.26,.045,.15))});
+   parts.push({mesh:pm.backThruster, mtx:mul(mat4.translate(.075,1.02+bob,-.20),mat4.scale(.075,.11,.075))});
+   parts.push({mesh:pm.backThruster, mtx:mul(mat4.translate(-.075,1.02+bob,-.20),mat4.scale(.075,.11,.075))});
+   parts.push({mesh:pm.backGlow, mtx:mul(mat4.translate(.075,.965+bob,-.20),mat4.scale(.05,.025,.05))});
+   parts.push({mesh:pm.backGlow, mtx:mul(mat4.translate(-.075,.965+bob,-.20),mat4.scale(.05,.025,.05))});
+  }
  }
  if(kind==="raccoglitore"){
   // spallacci asimmetrici: uno più grande dell'altro, come pezzi di
@@ -722,10 +754,15 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
   // sopra una cresta — legge subito da casco da motociclista/tokusatsu.
   parts.push({mesh:pm.helmetShell, mtx:mul(mat4.translate(0,1.565+bob,0),mat4.scale(.315,.30,.315))});
   parts.push({mesh:pm.helmetDome, mtx:mul(mat4.translate(0,1.565+bob,0),mat4.scale(.315,.29,.315))});
+  // Occlusore pieno dentro il casco: la visiera si vedeva anche da dietro
+  // (bug reale, confermato in foto) — invece di rincorrere la causa esatta
+  // nel motore di render, un blocco opaco riempie l'interno del casco cosi'
+  // non si puo' vedere attraverso da nessun angolo, qualunque fosse la causa.
+  parts.push({mesh:pm.helmetShell, mtx:mul(mat4.translate(0,1.565+bob,0),mat4.scale(.26,.24,.26))});
   // v31: via mandibola e pezzi laterali — casco liscio come nel riferimento,
-  // solo calotta + visiera + piccola cresta, niente dettagli meccanici extra.
+  // solo calotta + visiera, niente dettagli meccanici extra. Via anche la
+  // cresta (richiesta) — profilo ancora piu' pulito.
   parts.push({mesh:pm.helmetVisor, mtx:mul(mat4.translate(0,1.60+bob,.160),mat4.scale(.278,.128,.042))});
-  parts.push({mesh:pm.helmetCrest, mtx:mul(mat4.translate(0,1.81+bob,-.02),mat4.scale(.055,.095,.26))});
  }else if(kind==="scagnozzo"){
   // niente cresta, visiera a fessura sottile, testa leggermente incassata:
   // deliberatamente meno "eroico", piu' anonimo/usa e getta.
@@ -753,6 +790,12 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
  }else{
   parts.push({mesh:pm.head,  mtx:mul(mat4.translate(0,1.55+bob,0),mat4.scale(.30,.30,.30))});
   parts.push({mesh:pm.hair,  mtx:mul(mat4.translate(0,1.665+bob,-.01),mat4.scale(.305,.14,.30))});
+  if(pal.female){
+   // Coda di cavallo: un NPC donna deve leggersi diverso dagli altri anche
+   // solo di spalle, non solo per il colore della tuta — una forma in piu'
+   // sulla nuca basta a distinguerla nella sagoma.
+   parts.push({mesh:pm.hair, mtx:mul(mat4.translate(0,1.50+bob,-.175),mat4.rotX(.55),mat4.scale(.11,.30,.11))});
+  }
   parts.push({mesh:pm.eye,   mtx:mul(mat4.translate(-.08,1.565+bob,.148),mat4.scale(.045,.045,.03))});
   parts.push({mesh:pm.eye,   mtx:mul(mat4.translate(.08,1.565+bob,.148),mat4.scale(.045,.045,.03))});
  }
