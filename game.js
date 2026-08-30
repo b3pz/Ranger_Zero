@@ -719,8 +719,9 @@ function partMeshFor(pal){
 // della cresta, spallacci asimmetrici — armatura raccogliticcia, non di
 // serie). attackPhase (0..1, opzionale) fa scattare in avanti il braccio
 // destro per un pugno leggibile invece di restare fermo mentre "attacca".
-function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weaponOut){
+function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weaponOut,attackStyle){
  kind=kind||"ranger";
+ attackStyle=attackStyle||0;
  const pm=partMeshFor(pal);
  const swing=Math.sin(walkPhase)*.55*speedFactor;
  const swingOpp=Math.sin(walkPhase+Math.PI)*.55*speedFactor;
@@ -814,19 +815,25 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
   parts.push({mesh:pm.eye,   mtx:mul(mat4.translate(-.08,1.565+bob,.148),mat4.scale(.045,.045,.03))});
   parts.push({mesh:pm.eye,   mtx:mul(mat4.translate(.08,1.565+bob,.148),mat4.scale(.045,.045,.03))});
  }
- // braccio destro: pugno in avanti se attackPhase e' passato (0->1->0),
- // altrimenti la normale oscillazione di camminata.
+ // v51: lo stesso tasto F alterna pugno destro, pugno sinistro e calcio.
+ // Il danno resta semplice, ma visivamente Zero e gli NPC non ripetono piu'
+ // lo stesso identico pugno per tutta la battaglia.
  const punch=attackPhase?Math.sin(Math.min(1,attackPhase)*Math.PI):0;
- const rArmRot=attackPhase? -1.9*punch : swing*.8;
- const rArmFwd=attackPhase? .30*punch : 0;
+ const isLeftPunch=attackStyle===1, isKick=attackStyle===2;
+ const rArmRot=attackPhase&&!isLeftPunch&&!isKick? -1.9*punch : swing*.8;
+ const lArmRot=attackPhase&&isLeftPunch? -1.9*punch : swingOpp*.8;
+ const rArmFwd=attackPhase&&!isLeftPunch&&!isKick? .30*punch : 0;
+ const lArmFwd=attackPhase&&isLeftPunch? .30*punch : 0;
+ const kickRot=attackPhase&&isKick? -1.35*punch : swingOpp;
+ const kickFwd=attackPhase&&isKick? .42*punch : 0;
  const lowerArmMesh=armored?pm.upperArm:pm.lowerArm;
  parts.push(
   {mesh:pm.upperArm, mtx:mul(mat4.translate(.34,1.30+bob,0),mat4.rotX(rArmRot),mat4.translate(0,-.20,rArmFwd),mat4.scale(.16,.40,.16))},
   {mesh:lowerArmMesh, mtx:mul(mat4.translate(.34,1.30+bob,0),mat4.rotX(rArmRot),mat4.translate(0,-.46,rArmFwd*1.6),mat4.scale(.15,.31,.15))},
-  {mesh:pm.upperArm, mtx:mul(mat4.translate(-.34,1.30+bob,0),mat4.rotX(swingOpp*.8),mat4.translate(0,-.20,0),mat4.scale(.16,.40,.16))},
-  {mesh:lowerArmMesh, mtx:mul(mat4.translate(-.34,1.30+bob,0),mat4.rotX(swingOpp*.8),mat4.translate(0,-.46,0),mat4.scale(.15,.31,.15))},
-  {mesh:pm.upperLeg, mtx:mul(mat4.translate(.16,.74+bob,0),mat4.rotX(swingOpp),mat4.translate(0,-.24,0),mat4.scale(.19,.48,.19))},
-  {mesh:pm.lowerLeg, mtx:mul(mat4.translate(.16,.74+bob,0),mat4.rotX(swingOpp),mat4.translate(0,-.56,0),mat4.scale(.17,.34,.19))},
+  {mesh:pm.upperArm, mtx:mul(mat4.translate(-.34,1.30+bob,0),mat4.rotX(lArmRot),mat4.translate(0,-.20,lArmFwd),mat4.scale(.16,.40,.16))},
+  {mesh:lowerArmMesh, mtx:mul(mat4.translate(-.34,1.30+bob,0),mat4.rotX(lArmRot),mat4.translate(0,-.46,lArmFwd*1.6),mat4.scale(.15,.31,.15))},
+  {mesh:pm.upperLeg, mtx:mul(mat4.translate(.16,.74+bob,0),mat4.rotX(kickRot),mat4.translate(0,-.24,kickFwd),mat4.scale(.19,.48,.19))},
+  {mesh:pm.lowerLeg, mtx:mul(mat4.translate(.16,.74+bob,0),mat4.rotX(kickRot),mat4.translate(0,-.56,kickFwd*1.45),mat4.scale(.17,.34,.19))},
   {mesh:pm.upperLeg, mtx:mul(mat4.translate(-.16,.74+bob,0),mat4.rotX(swing),mat4.translate(0,-.24,0),mat4.scale(.19,.48,.19))},
   {mesh:pm.lowerLeg, mtx:mul(mat4.translate(-.16,.74+bob,0),mat4.rotX(swing),mat4.translate(0,-.56,0),mat4.scale(.17,.34,.19))},
  );
@@ -835,7 +842,7 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
   // solo un piccolo guanto bianco alla fine dell'avambraccio, e gli
   // stivali sono gia' bianchi di suolo (pm.lowerLeg usa pal.boot).
   parts.push({mesh:pm.glove,mtx:mul(mat4.translate(.34,1.30+bob,0),mat4.rotX(rArmRot),mat4.translate(0,-.66,rArmFwd*1.8),mat4.scale(.155,.14,.155))});
-  parts.push({mesh:pm.glove,mtx:mul(mat4.translate(-.34,1.30+bob,0),mat4.rotX(swingOpp*.8),mat4.translate(0,-.66,0),mat4.scale(.155,.14,.155))});
+  parts.push({mesh:pm.glove,mtx:mul(mat4.translate(-.34,1.30+bob,0),mat4.rotX(lArmRot),mat4.translate(0,-.66,lArmFwd*1.8),mat4.scale(.155,.14,.155))});
  }
  if(weaponOut){
   // lama energetica agganciata alla mano destra, inclinata in avanti come
@@ -848,8 +855,8 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
  }
  return parts;
 }
-function buildCharacterBuffers(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weaponOut){
- return bakeParts(buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weaponOut));
+function buildCharacterBuffers(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weaponOut,attackStyle){
+ return bakeParts(buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weaponOut,attackStyle));
 }
 
 // Squadra base da CINQUE Ranger. Zero e' il sesto membro speciale.
@@ -1120,6 +1127,7 @@ const giantCityBuf=makeBuffer(bakeParts(cityParts));
 // successiva, non ancora costruita).
 // ============================================================
 const PAL_SCAGNOZZO=makePalette([.22,.20,.18],[.42,.38,.30],[.55,.42,.30]);
+const PAL_SCAGNOZZO_ELITE=makePalette([.095,.11,.14],[.70,.72,.76],[.50,.39,.30]);
 // Il Raccoglitore: guerriero dorato, ma le placche sono volutamente
 // irregolari/asimmetriche — armature di vecchi Ranger fuse insieme,
 // non un'armatura di serie come quella della squadra.
@@ -1557,34 +1565,73 @@ function doColossoOutcomeContinue(){
 document.getElementById("colossoOutcomeBtn").addEventListener("click",doColossoOutcomeContinue);
 
 let enemies=[];
-let arenaWave=0,arenaWaveTransition=false;
+let arenaWave=0,arenaWaveTransition=false,wave4Batch2Pending=false;
 let arenaAllies=[];
+let supportDrops=[];
 const RACC_SEA_Z=ARENA_CZ-ARENA_D/2+2.8;
 const RACC_SHORE_Z=SEA_EDGE_Z+.85;
-function makeMook(x,z,cd){return {type:"scagnozzo",pal:PAL_SCAGNOZZO,x,z,yaw:0,hp:36,hpMax:36,state:"idle",cd:cd||0,scale:1,alpha:1,dead:false,walkPhaseE:0,hitFlash:0,attackFlashT:0};}
+const SUPPORT_COLORS={hp:[.20,.95,.42],energy:[.18,.88,1.0],power:[1.0,.72,.12]};
+function makeMook(x,z,cd,elite){
+ const hp=elite?55:36;
+ return {type:"scagnozzo",elite:!!elite,pal:elite?PAL_SCAGNOZZO_ELITE:PAL_SCAGNOZZO,x,z,yaw:0,hp,hpMax:hp,state:"idle",cd:cd||0,scale:elite?1.10:1,alpha:1,dead:false,walkPhaseE:0,hitFlash:0,attackFlashT:0,windupT:0,telegraph:false,aggroPlayer:Math.random()<.58};
+}
 function initArenaAllies(){
  arenaAllies=[
-  {name:"ARCO",pal:PAL_ARCO,x:ARENA_CX-5.5,z:ARENA_CZ+6.5,yaw:Math.PI,cd:.2,attackT:0,hurtT:0,walk:0},
-  {name:"MERIDIANA",pal:PAL_MERIDIANA,x:ARENA_CX+5.5,z:ARENA_CZ+6.0,yaw:Math.PI,cd:.7,attackT:0,hurtT:0,walk:1},
-  {name:"JUN",pal:PAL_RANGER3,x:ARENA_CX-7.0,z:ARENA_CZ+3.0,yaw:Math.PI,cd:1.0,attackT:0,hurtT:0,walk:2},
-  {name:"VALE",pal:PAL_RANGER4,x:ARENA_CX+7.0,z:ARENA_CZ+3.0,yaw:Math.PI,cd:1.3,attackT:0,hurtT:0,walk:3},
-  {name:"DON",pal:PAL_DON,x:ARENA_CX,z:ARENA_CZ+7.4,yaw:Math.PI,cd:.9,attackT:0,hurtT:0,walk:4},
+  {name:"ARCO",pal:PAL_ARCO,x:ARENA_CX-5.5,z:ARENA_CZ+6.5,yaw:Math.PI,cd:.2,attackT:0,attackStyle:0,hurtT:0,walk:0},
+  {name:"MERIDIANA",pal:PAL_MERIDIANA,x:ARENA_CX+5.5,z:ARENA_CZ+6.0,yaw:Math.PI,cd:.7,attackT:0,attackStyle:1,hurtT:0,walk:1},
+  {name:"JUN",pal:PAL_RANGER3,x:ARENA_CX-7.0,z:ARENA_CZ+3.0,yaw:Math.PI,cd:1.0,attackT:0,attackStyle:2,hurtT:0,walk:2},
+  {name:"VALE",pal:PAL_RANGER4,x:ARENA_CX+7.0,z:ARENA_CZ+3.0,yaw:Math.PI,cd:1.3,attackT:0,attackStyle:0,hurtT:0,walk:3},
+  {name:"DON",pal:PAL_DON,x:ARENA_CX,z:ARENA_CZ+7.4,yaw:Math.PI,cd:.9,attackT:0,attackStyle:1,hurtT:0,walk:4},
  ];
 }
-function addWave(stage){
+function addWave(stage,batch){
  if(stage===1){
   enemies.push(makeMook(ARENA_CX-4.5,ARENA_CZ-3,.2),makeMook(ARENA_CX+4.0,ARENA_CZ-3,.7),makeMook(ARENA_CX,ARENA_CZ-7,1.1),makeMook(ARENA_CX+1.5,ARENA_CZ-5.5,1.35));
- }else{
-  // seconda ondata: arriva dai lati e piu' vicino alla battigia, cosi' e'
-  // visivamente distinta dalla prima e non sembra lo stesso fight ripetuto.
+ }else if(stage===2){
   enemies.push(makeMook(ARENA_CX-9,ARENA_CZ-5,.2),makeMook(ARENA_CX+9,ARENA_CZ-5,.5),makeMook(ARENA_CX-3,ARENA_CZ-9,.9),makeMook(ARENA_CX+3,ARENA_CZ-9,1.2),makeMook(ARENA_CX,ARENA_CZ-11,1.45));
+ }else if(stage===3){
+  enemies.push(makeMook(ARENA_CX-8,ARENA_CZ-4,.15),makeMook(ARENA_CX+8,ARENA_CZ-4,.4),makeMook(ARENA_CX-5,ARENA_CZ-8,.7),makeMook(ARENA_CX+5,ARENA_CZ-8,.95),makeMook(ARENA_CX-1.5,ARENA_CZ-10.5,1.2),makeMook(ARENA_CX+1.5,ARENA_CZ-10.5,1.4,true));
+ }else if(stage===4&&batch===1){
+  enemies.push(makeMook(ARENA_CX-9,ARENA_CZ-5,.15,true),makeMook(ARENA_CX+9,ARENA_CZ-5,.45),makeMook(ARENA_CX-4,ARENA_CZ-10,.8),makeMook(ARENA_CX+4,ARENA_CZ-10,1.05));
+ }else if(stage===4&&batch===2){
+  enemies.push(makeMook(ARENA_CX-7,ARENA_CZ-8,.15),makeMook(ARENA_CX+7,ARENA_CZ-8,.45,true),makeMook(ARENA_CX,ARENA_CZ-11.2,.8));
+ }
+}
+function spawnSupportDrop(kind){
+ if(zone!=="arena")return;
+ const a=Math.random()*Math.PI*2,r=2.7+Math.random()*3.8,b=zoneBounds();
+ let x=player.x+Math.cos(a)*r,z=player.z+Math.sin(a)*r;
+ x=Math.max(b.xmin+1,Math.min(b.xmax-1,x)); z=Math.max(b.zmin+1,Math.min(b.zmax-1,z));
+ supportDrops.push({kind,x,z,state:"telegraph",t:0,life:6,col:SUPPORT_COLORS[kind]});
+ const name=kind==="hp"?"VITALITA'":kind==="energy"?"ENERGIA":"SOVRACCARICO";
+ missionHintEl.textContent="TIC // SCARICA DI SUPPORTO — "+name;missionHintEl.classList.add("show");
+ afterGame(1200,()=>{if(zone==="arena"&&!emergeCutscene)missionHintEl.classList.remove("show");});
+}
+function chooseDirectorSupport(){
+ if(player.hp<55)return "hp";
+ if(player.energy<35)return "energy";
+ return "power";
+}
+function updateSupportDrops(dt){
+ if(zone!=="arena")return;
+ for(let i=supportDrops.length-1;i>=0;i--){
+  const d=supportDrops[i];d.t+=dt;
+  if(d.state==="telegraph"&&d.t>=.62){d.state="active";d.t=0;sfx.teleport();specialFlashEl.style.opacity=.24;afterGame(100,()=>specialFlashEl.style.opacity=0);}
+  else if(d.state==="active"){
+   d.life-=dt;
+   if(Math.hypot(player.x-d.x,player.z-d.z)<.95){
+    if(d.kind==="hp"){const gain=Math.min(15,player.hpMax-player.hp);player.hp+=gain;missionHintEl.textContent="BONUS VITALITA' +"+gain+" HP";}
+    else if(d.kind==="energy"){const gain=Math.min(30,player.energyMax-player.energy);player.energy+=gain;missionHintEl.textContent="BONUS ENERGIA +"+gain;}
+    else{player.powerBuffT=Math.max(player.powerBuffT,6);missionHintEl.textContent="SOVRACCARICO // DANNI POTENZIATI 6s";}
+    missionHintEl.classList.add("show");sfx.special();supportDrops.splice(i,1);afterGame(950,()=>{if(zone==="arena"&&!emergeCutscene)missionHintEl.classList.remove("show");});continue;
+   }
+   if(d.life<=0){supportDrops.splice(i,1);continue;}
+  }
  }
 }
 function spawnWave(){
- enemies=[];arenaWave=1;arenaWaveTransition=false;initArenaAllies();addWave(1);
- // Il Raccoglitore nasce DAVVERO nel mare profondo. Non verra' clampato
- // sulla sabbia e solo dopo l'emersione avanzera' fino alla battigia.
- enemies.push({type:"raccoglitore",pal:PAL_RACCOGLITORE,x:ARENA_CX,z:RACC_SEA_Z,y:-2.8,yaw:0,hp:160,hpMax:160,state:"submerged",cd:2,scale:1.55,alpha:1,dead:false,retreated:false,walkPhaseE:0,hitFlash:0,attackFlashT:0,hidden:true,emerging:false,emerged:false});
+ enemies=[];supportDrops.length=0;arenaWave=1;arenaWaveTransition=false;wave4Batch2Pending=false;initArenaAllies();addWave(1);
+ enemies.push({type:"raccoglitore",pal:PAL_RACCOGLITORE,x:ARENA_CX,z:RACC_SEA_Z,y:-2.8,yaw:0,hp:160,hpMax:160,state:"submerged",cd:2,scale:1.55,alpha:1,dead:false,retreated:false,walkPhaseE:0,hitFlash:0,attackFlashT:0,hidden:true,emerging:false,emerged:false,aggroPlayer:true});
 }
 function aliveMooks(){return enemies.filter(e=>e.type==="scagnozzo"&&!e.dead);}
 function maybeAdvanceArenaWave(){
@@ -1592,13 +1639,34 @@ function maybeAdvanceArenaWave(){
  if(arenaWave===1&&aliveMooks().length===0){
   arenaWaveTransition=true;arenaWave=2;
   missionHintEl.textContent="ARCO // NON E' FINITA. SECONDA ONDATA!";missionHintEl.classList.add("show");
-  afterGame(1050,()=>{addWave(2);arenaWaveTransition=false;missionHintEl.textContent="SECONDA ONDATA // TENETE LA LINEA";});
+  afterGame(1150,()=>{
+   addWave(2);arenaWaveTransition=false;missionHintEl.textContent="SECONDA ONDATA // TENETE LA LINEA";
+   afterGame(1500,()=>{if(zone==="arena"&&arenaWave===2)spawnSupportDrop("energy");});
+  });
  }else if(arenaWave===2&&aliveMooks().length===0){
-  arenaWave=3;
-  const heal=Math.min(12,player.hpMax-player.hp);player.hp+=heal;
-  missionHintEl.textContent=heal>0?"TIC // TI PASSO UNA CARICA D'EMERGENZA +"+heal+" HP":"...SILENZIO";missionHintEl.classList.add("show");
-  if(heal>0){specialFlashEl.style.opacity=.35;afterGame(220,()=>specialFlashEl.style.opacity=0);sfx.dodge();}
-  afterGame(850,()=>{missionHintEl.textContent="...SILENZIO";maybeEmergeRaccoglitore();});
+  arenaWaveTransition=true;arenaWave=3;
+  missionHintEl.textContent="MERIDIANA // NE ARRIVANO ALTRI. FORMAZIONE!";missionHintEl.classList.add("show");
+  afterGame(1200,()=>{
+   addWave(3);arenaWaveTransition=false;missionHintEl.textContent="TERZA ONDATA // UNITA' GUARDIA RILEVATA";
+   if(player.hp<65)afterGame(900,()=>{if(zone==="arena"&&arenaWave===3)spawnSupportDrop("hp");});
+  });
+ }else if(arenaWave===3&&aliveMooks().length===0){
+  arenaWaveTransition=true;arenaWave=4;wave4Batch2Pending=true;
+  missionHintEl.textContent="JUN // QUESTA E' L'ULTIMA... VERO?!";missionHintEl.classList.add("show");
+  afterGame(1150,()=>{
+   addWave(4,1);arenaWaveTransition=false;missionHintEl.textContent="ULTIMA LINEA // NON CEDETE";
+   afterGame(1600,()=>{if(zone==="arena"&&arenaWave===4)spawnSupportDrop("power");});
+  });
+  afterGame(3900,()=>{
+   if(zone==="arena"&&arenaWave===4){
+    addWave(4,2);wave4Batch2Pending=false;missionHintEl.textContent="DON // SECONDO GRUPPO, A DESTRA!";missionHintEl.classList.add("show");
+    afterGame(1300,()=>{if(zone==="arena"&&arenaWave===4)spawnSupportDrop(chooseDirectorSupport());});
+   }
+  });
+ }else if(arenaWave===4&&aliveMooks().length===0&&!wave4Batch2Pending){
+  arenaWave=5;
+  missionHintEl.textContent="...SILENZIO";missionHintEl.classList.add("show");
+  afterGame(1800,()=>{missionHintEl.textContent="...SILENZIO";maybeEmergeRaccoglitore();});
  }
 }
 function updateArenaAllies(dt){
@@ -1609,40 +1677,30 @@ function updateArenaAllies(dt){
   const mooks=aliveMooks();
   const t=mooks.length?mooks[(i+arenaWave)%mooks.length]:racc;
   if(!t){
-   // Durante il reveal non restano congelati: si dispongono ai lati e guardano il mare.
-   const center=(arenaAllies.length-1)/2;const tx=ARENA_CX+(i-center)*1.9,tz=ARENA_CZ-1.0;const dx=tx-a.x,dz=tz-a.z,dist=Math.hypot(dx,dz)||.001;
+   const center=(arenaAllies.length-1)/2,tx=ARENA_CX+(i-center)*1.9,tz=ARENA_CZ-1.0,dx=tx-a.x,dz=tz-a.z,dist=Math.hypot(dx,dz)||.001;
    a.yaw=Math.atan2(ARENA_CX-a.x,RACC_SHORE_Z-a.z);
    if(dist>.35){a.x+=dx/dist*.8*dt;a.z+=dz/dist*.8*dt;a.walk+=dt*5;}
    continue;
   }
-  // Contro Il Raccoglitore si aprono sui fianchi: battaglia di squadra vera.
-  const center=(arenaAllies.length-1)/2;const flank=t.type==="raccoglitore"?(i-center)*.75:0;
-  const tx=t.x+flank,tz=t.z+(t.type==="raccoglitore"?1.25:0);
-  const dx=tx-a.x,dz=tz-a.z,dist=Math.hypot(dx,dz)||.001;a.yaw=Math.atan2(t.x-a.x,t.z-a.z);
+  const center=(arenaAllies.length-1)/2,flank=t.type==="raccoglitore"?(i-center)*.75:0;
+  const tx=t.x+flank,tz=t.z+(t.type==="raccoglitore"?1.25:0),dx=tx-a.x,dz=tz-a.z,dist=Math.hypot(dx,dz)||.001;a.yaw=Math.atan2(t.x-a.x,t.z-a.z);
   const want=t.type==="raccoglitore"?2.05:1.65;
   if(dist>want){const sp=(t.type==="raccoglitore"?1.10:1.02)*dt;a.x+=dx/dist*sp;a.z+=dz/dist*sp;a.walk+=dt*6.2;}
-  else if(a.cd<=0){a.cd=(t.type==="raccoglitore"?.95:.82)+i*.08;a.attackT=.38;
-   // Aiutano davvero ma NON possono dare il colpo finale.
-   const allyDmg=t.type==="raccoglitore"?2:4;t.hp=Math.max(1,t.hp-allyDmg);t.hitFlash=.08;
+  else if(a.cd<=0){a.cd=(t.type==="raccoglitore"?1.05:.95)+i*.08;a.attackT=.38;a.attackStyle=(a.attackStyle+1+i)%3;
+   if(t.type==="raccoglitore"){t.hp=Math.max(1,t.hp-2);t.hitFlash=.08;}
+   else{t.hp-=3;t.hitFlash=.08;if(t.hp<=0){t.dead=true;sfx.enemyDefeat();}}
   }
  }
- // Separazione vera: prima gli alleati non si spingevano mai via l'uno
- // dall'altro ne' dai nemici — quando piu' di uno convergeva sullo stesso
- // bersaglio (capita spesso col modulo su pochi scagnozzi) finivano
- // accavallati. Stessa tecnica gia' usata per il giocatore contro i
- // nemici, applicata qui tra alleati e tra alleati/nemici.
  const allyR=.34;
  for(let i=0;i<arenaAllies.length;i++){
   const a=arenaAllies[i];
   for(let j=i+1;j<arenaAllies.length;j++){
-   const b=arenaAllies[j];
-   const dx=b.x-a.x,dz=b.z-a.z,d=Math.hypot(dx,dz)||.001,minD=allyR*2;
+   const b=arenaAllies[j],dx=b.x-a.x,dz=b.z-a.z,d=Math.hypot(dx,dz)||.001,minD=allyR*2;
    if(d<minD){const push=(minD-d)*.5,nx=dx/d,nz=dz/d;a.x-=nx*push;a.z-=nz*push;b.x+=nx*push;b.z+=nz*push;}
   }
   for(const en of enemies){
    if(en.dead||en.hidden||en.state==="retreat")continue;
-   const er=(en.type==="raccoglitore"?.55:.40)*en.scale;
-   const dx=a.x-en.x,dz=a.z-en.z,d=Math.hypot(dx,dz)||.001,minD=allyR+er;
+   const er=(en.type==="raccoglitore"?.55:.40)*en.scale,dx=a.x-en.x,dz=a.z-en.z,d=Math.hypot(dx,dz)||.001,minD=allyR+er;
    if(d<minD){const push=minD-d,nx=dx/d,nz=dz/d;a.x+=nx*push;a.z+=nz*push;}
   }
  }
@@ -1651,7 +1709,7 @@ let emergeCutscene=null;
 let archiveEscortState=false;
 function maybeEmergeRaccoglitore(){
  const racc=enemies.find(e=>e.type==="raccoglitore");
- if(arenaWave<3||!racc||racc.emerging||racc.emerged||emergeCutscene)return;
+ if(arenaWave<5||!racc||racc.emerging||racc.emerged||emergeCutscene)return;
  racc.emerging=true;racc.emergeT=0;racc.state="emerging";
  emergeCutscene={t:0,phase:"buildup",racc};
  missionHintEl.textContent="QUALCOSA SI MUOVE NELL'ACQUA...";missionHintEl.classList.add("show");
@@ -1843,7 +1901,7 @@ DIALOGUE_FOCUS_POS.ARCH_OCULO=ARCH_OCULO_POS;
 // stato di gioco
 // ============================================================
 const player={x:0,z:4.0,yaw:Math.PI,speed:2.6,walkPhase:0,transformed:false,helmet:false,
- hp:100,hpMax:100,energy:0,energyMax:100,attackT:0,dodgeT:0,dodgeCd:0,invuln:0,hitFlashT:0,specialT:0};
+ hp:100,hpMax:100,energy:0,energyMax:100,attackT:0,attackStyle:0,attackCombo:0,powerBuffT:0,dodgeT:0,dodgeCd:0,invuln:0,hitFlashT:0,specialT:0};
 const camState={dist:4.2,height:2.1,yawOffset:0};
 const keys={};
 const flashEl=document.getElementById("flash");
@@ -1881,12 +1939,12 @@ function clearKeys(){for(const k of Object.keys(keys))keys[k]=false;}
 function clearTransientState(){
  clearKeys();gameTimers.length=0;gameOverActive=false;gameOverEl.classList.remove("show");colossoOutcomeEl.classList.remove("show","win");
  choiceScreenEl?.classList.remove("show");interactPromptEl.classList.remove("show");nearInteractable=null;
- transformState=null;emergeCutscene=null;archiveEscortState=false;specialBursts.length=0;splashBursts.length=0;dialogueActive=false;dialogueBoxEl?.classList.remove("show");document.body.classList.remove("dialogue-active");
+ transformState=null;emergeCutscene=null;archiveEscortState=false;specialBursts.length=0;splashBursts.length=0;supportDrops.length=0;dialogueActive=false;dialogueBoxEl?.classList.remove("show");document.body.classList.remove("dialogue-active");
 }
 function readCheckpoint(){try{return JSON.parse(localStorage.getItem(CHECKPOINT_KEY)||"null");}catch(e){return null;}}
 function refreshContinueButton(){if(!continueBtnEl)return;const cp=readCheckpoint();continueBtnEl.disabled=!cp;continueBtnEl.style.opacity=cp?1:.38;}
 function saveCheckpoint(id){
- currentCheckpoint=id;try{localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({id,ts:Date.now(),version:36,transformed:!!player.transformed,morphUnlocked:!!morphUnlocked}));}catch(e){}refreshContinueButton();
+ currentCheckpoint=id;try{localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({id,ts:Date.now(),version:51,transformed:!!player.transformed,morphUnlocked:!!morphUnlocked}));}catch(e){}refreshContinueButton();
 }
 function clearCheckpoint(){try{localStorage.removeItem(CHECKPOINT_KEY);}catch(e){}currentCheckpoint=null;refreshContinueButton();}
 function showRuntimeError(title,msg){
@@ -1926,7 +1984,7 @@ function zoneBounds(){
 }
 function enterArena(force){
  if(zone==="arena"&&!force)return;zone="arena";
- player.x=ZONES.arena.cx;player.z=ZONES.arena.cz+9;player.yaw=Math.PI;player.hp=player.hpMax;player.energy=0;
+ player.x=ZONES.arena.cx;player.z=ZONES.arena.cz+9;player.yaw=Math.PI;player.hp=player.hpMax;player.energy=0;player.powerBuffT=0;player.attackCombo=0;
  spawnWave();missionHintEl.textContent="MISSIONE: DIFENDI LA COSTA // PRIMA ONDATA";missionHintEl.classList.add("show");
  teleportFlash();playAmbient("arena");saveCheckpoint("arena");
 }
@@ -1937,7 +1995,7 @@ const ANOMALO_POS={x:-ROOM_W/2+.78,z:-2.2};
 function restoreCheckpoint(id,cpState){
  clearTransientState();paused=false;if(pauseScreenEl)pauseScreenEl.classList.remove("show");if(actx)try{actx.resume();}catch(e){}
  gameStarted=true;titleEl.style.display="none";hudEl.style.display="block";document.body.classList.add("started");
- player.hp=player.hpMax;player.energy=0;player.attackT=player.dodgeT=player.dodgeCd=player.invuln=player.hitFlashT=player.specialT=0;
+ player.hp=player.hpMax;player.energy=0;player.attackT=player.dodgeT=player.dodgeCd=player.invuln=player.hitFlashT=player.specialT=0;player.attackStyle=0;player.attackCombo=0;player.powerBuffT=0;
  colosso=null;colossoTeamPos=null;colossoHpWrapEl.classList.remove("show");postBossState=false;archiveState={terminalRead:false,capsuleRead:false,zeroRead:false,revealing:false,capsuleAwake:false};
  const savedForm=cpState&&typeof cpState.transformed==="boolean"?cpState.transformed:true;
  morphUnlocked=!!(cpState&&cpState.morphUnlocked);
@@ -2479,13 +2537,13 @@ function facingDot(fromX,fromZ,fromYaw,toX,toZ){
 }
 function tryAttack(){
  if(!player.transformed||transformState||player.attackT>0||player.dodgeT>0)return;
- player.attackT=.34;
+ player.attackT=.34;player.attackStyle=player.attackCombo%3;player.attackCombo=(player.attackCombo+1)%3;
  sfx.attack();
  for(const en of enemies){
   if(en.dead||en.hidden)continue;
   const f=facingDot(player.x,player.z,player.yaw,en.x,en.z);
   if(f.dist<1.7&&f.dot>.55){
-   damageEnemy(en,16);
+   damageEnemy(en,player.powerBuffT>0?22:16);
    player.energy=Math.min(player.energyMax,player.energy+9);
   }
  }
@@ -2494,7 +2552,7 @@ let specialBursts=[];
 let splashBursts=[];
 function trySpecial(){
  if(!player.transformed||transformState||player.energy<player.energyMax||player.attackT>0)return;
- player.attackT=.5;
+ player.attackT=.5;player.attackStyle=0;
  player.specialT=1.0;
  player.energy=0;
  sfx.special();
@@ -2539,11 +2597,11 @@ function damageEnemy(en,amt){
 
 function pickEnemyTarget(en){
  let tx=player.x,tz=player.z,kind="player",ref=player,best=Math.hypot(player.x-en.x,player.z-en.z);
- if(zone==="arena"&&!colossoTeamPos){
-  for(const a of arenaAllies){
-   const d=Math.hypot(a.x-en.x,a.z-en.z);
-   if(d<best-.18){best=d;tx=a.x;tz=a.z;kind="ally";ref=a;}
-  }
+ if(en.type==="raccoglitore"||en.aggroPlayer)return {x:tx,z:tz,kind,ref,dist:best};
+ if(zone==="arena"&&!colossoTeamPos&&arenaAllies.length){
+  let candidates=arenaAllies.slice().sort((a,b)=>Math.hypot(a.x-en.x,a.z-en.z)-Math.hypot(b.x-en.x,b.z-en.z));
+  const a=candidates[(Math.abs(Math.floor(en.x*7+en.z*3)))%Math.min(2,candidates.length)];
+  if(a){tx=a.x;tz=a.z;kind="ally";ref=a;best=Math.hypot(a.x-en.x,a.z-en.z);}
  }
  return {x:tx,z:tz,kind,ref,dist:best};
 }
@@ -2673,6 +2731,25 @@ window.addEventListener("unhandledrejection",e=>{if(gameStarted&&!runtimeOverlay
 // sparisce, riusata per ogni scoppio invece di ricostruire geometria nuova.
 const burstMesh=boxMesh([1,.92,.55]);
 const burstBuf=makeBuffer(burstMesh);
+const supportBoltBufs={hp:makeBuffer(boxMesh(SUPPORT_COLORS.hp)),energy:makeBuffer(boxMesh(SUPPORT_COLORS.energy)),power:makeBuffer(boxMesh(SUPPORT_COLORS.power))};
+const supportCoreBufs={hp:makeBuffer(octMesh(SUPPORT_COLORS.hp)),energy:makeBuffer(octMesh(SUPPORT_COLORS.energy)),power:makeBuffer(octMesh(SUPPORT_COLORS.power))};
+const supportRingBuf=makeBuffer(boxMesh([.65,.78,.92]));
+function drawSupportDrops(vp,now){
+ for(const d of supportDrops){
+  if(d.state==="telegraph"){
+   const p=Math.min(1,d.t/.62),pulse=.72+Math.sin(now/70)*.18;
+   drawBuffer(supportRingBuf,mul(mat4.translate(d.x,.035,d.z),mat4.rotY(now/700),mat4.scale(1.4*pulse,.025,1.4*pulse)),vp,.22+.28*p);
+   if(p>.55){
+    const h=5.5*(p-.55)/.45;
+    drawBuffer(supportBoltBufs[d.kind],mul(mat4.translate(d.x,2.8,d.z),mat4.rotZ(Math.sin(now/35)*.08),mat4.scale(.055,h,.055)),vp,.85);
+   }
+  }else{
+   const pulse=.85+Math.sin(now/110)*.12;
+   drawBuffer(supportCoreBufs[d.kind],mul(mat4.translate(d.x,.55+Math.sin(now/180)*.08,d.z),mat4.rotY(now/380),mat4.scale(.30*pulse,.30*pulse,.30*pulse)),vp,.95);
+   drawBuffer(supportRingBuf,mul(mat4.translate(d.x,.025,d.z),mat4.rotY(-now/900),mat4.scale(.75*pulse,.018,.75*pulse)),vp,.18);
+  }
+ }
+}
 
 // Punto esclamativo da fumetto per il preavviso d'attacco: prima il
 // windup si vedeva solo come un lieve rigonfiamento del nemico, troppo
@@ -2817,9 +2894,10 @@ function frame(now){
  player.invuln=Math.max(0,player.invuln-dt);
  player.hitFlashT=Math.max(0,player.hitFlashT-dt);
  player.specialT=Math.max(0,player.specialT-rawDtGlobal);
+ player.powerBuffT=Math.max(0,(player.powerBuffT||0)-rawDtGlobal);
  for(let i=specialBursts.length-1;i>=0;i--){specialBursts[i].t+=dt;if(specialBursts[i].t>.5)specialBursts.splice(i,1);}
  for(let i=splashBursts.length-1;i>=0;i--){splashBursts[i].t+=dt;if(splashBursts[i].t>.7)splashBursts.splice(i,1);}
- if(zone==="arena"&&gameStarted&&!transformState)updateEnemies(dt);
+ if(zone==="arena"&&gameStarted&&!transformState){updateEnemies(dt);updateSupportDrops(dt);}
  if(colosso)updateColosso(dt);
  if(zone==="arena")updateEmergeCutscene(dt);
  if(zone==="torre")updateTowerTeam(dt);
@@ -2847,7 +2925,7 @@ function frame(now){
  const zoomIn=transformState?Math.min(1,transformState.t/.35):0;
  const ATTACK_DUR=.34;
  const attackPhase=player.attackT>0?1-player.attackT/ATTACK_DUR:0;
- const charMesh=buildCharacterBuffers(pal,player.walkPhase,moving?1:0,player.helmet,"ranger",player.attackT>0?attackPhase:0,player.specialT>0);
+ const charMesh=buildCharacterBuffers(pal,player.walkPhase,moving?1:0,player.helmet,"ranger",player.attackT>0?attackPhase:0,player.specialT>0,player.attackStyle);
 
  let eye,target;
  if(emergeCutscene){
@@ -2970,13 +3048,14 @@ function frame(now){
   drawBuffer(arenaSeaBuf,mat4.identity(),vp);
   drawBuffer(arenaPropBuf,mat4.identity(),vp);
   drawBuffer(arenaEdgeBuf,mat4.identity(),vp);
+  drawSupportDrops(vp,now);
   // La squadra combatte con Zero: AI volutamente leggera, ma visivamente
   // presente per tutta la missione invece di sparire dopo il briefing.
   if(!colossoTeamPos){
    for(let ai=0;ai<arenaAllies.length;ai++){
     const a=arenaAllies[ai];drawShadow(a.x,a.z,.38,vp,.28);
     const ap=a.attackT>0?1-a.attackT/.38:0;
-    const am=buildCharacterBuffers(a.pal,a.walk,1,true,"ranger",ap);
+    const am=buildCharacterBuffers(a.pal,a.walk,1,true,"ranger",ap,false,a.attackStyle);
     drawDynamicMesh(am,mul(mat4.translate(a.x,0,a.z),mat4.rotY(a.yaw),mat4.scale(.96,.96,.96)),vp,.95);
    }
   }

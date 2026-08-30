@@ -1,3 +1,16 @@
+# RANGER ZERO v51 — WAVE ESCALATION / SUPPORT LIGHTNING
+
+## Nuovo in v51
+- 4 wave: 4, 5, 6, 7 scagnozzi complessivi per fase, con quarta wave in due gruppi.
+- Scagnozzo Guardia elite da 55 HP nelle ultime wave.
+- Gli alleati possono eliminare gli scagnozzi, ma non dare il colpo finale al Raccoglitore.
+- Aggro distribuito: circa il 58% degli scagnozzi punta Zero, gli altri impegnano la squadra.
+- Fulmini di supporto di TIC: verde +15 HP, ciano +30 energia, oro +6 s di danno potenziato.
+- Nessuna cura automatica: il bonus va raccolto fisicamente.
+- Support director: sceglie il bonus finale in base a vita/energia.
+- Attacco F cicla pugno destro, pugno sinistro e calcio senza nuovi tasti.
+- Alleati alternano anch'essi le animazioni di attacco.
+
 # RANGER ZERO v50 — moduli animali arrotondati
 
 ## Cambiato
