@@ -1,3 +1,83 @@
+# RANGER ZERO v46 — la citta' non e' piu' un'isola
+
+## Nota importante
+Lo screenshot che l'utente ha mandato era dalla build **v38**, non dalle correzioni v39-v45
+gia' consegnate (illuminazione Archivio, movimento Colosso/Raccoglitore, ecc. — quelle
+sono gia' risolte, verificare con questa versione).
+
+## Corretto: "si sta lottando su un'isola"
+Il terreno urbano era un rettangolo di 38x30 unita', con gli edifici concentrati in una
+fascia stretta di circa 28x27 — oltre quel confine si vedeva il vuoto/mare a vista libera,
+dando davvero l'impressione di una piccola piattaforma isolata invece di un vero complesso
+urbano.
+
+**Corretto**:
+- Terreno e mare estesi molto oltre (da 38x30 a 90x80 per il terreno, il mare da 56x11 a
+  110x40) — molto meno probabile vedere il bordo netto da qualunque angolazione di camera.
+- Aggiunto un anello di edifici di sfondo distribuiti in modo **circolare/radiale** (tre
+  fasce concentriche, raggio crescente, posizione con un po' di variazione casuale) invece
+  che nella griglia rettangolare stretta di prima — la citta' ora continua verso
+  l'orizzonte su tutti i lati, non solo nella fascia centrale del combattimento.
+  Geometria semplice (un box per edificio, niente dettaglio) perche' sono sagome di sfondo.
+
+## Sulla forma "tonda invece che quadrata"
+Non ho cambiato la forma della piattaforma di combattimento stessa (sarebbe un intervento
+piu' grosso, tocca la logica di movimento/telecamera) — ma la distribuzione circolare dei
+nuovi edifici di sfondo va in quella direzione: l'orizzonte ora legge tondo/continuo
+invece che con un bordo squadrato visibile.
+
+## Verificato
+Screenshot dal combattimento: decine di edifici distanti visibili su tutto il campo,
+strade/marciapiedi che si estendono, nessun bordo netto visibile in questa inquadratura.
+Nessun errore console, nessun calo di prestazioni osservato.
+
+---
+
+# RANGER ZERO v45 — titolo aggiornato (protagonista verde, logo vero, bottoni riposizionati)
+
+## Cambiato
+- `title_cover.png` sostituita: il vecchio sfondo mostrava il protagonista rosso/vecchio
+  design, ora mostra Zero verde (coerente con la v36+).
+- `title_logo.png` nuova: il testo "RANGER ZERO" e' ora un logo vero (immagine 3D
+  rosso/oro/ciano, stesso stile di `victory_logo.png`) invece di testo CSS semplice.
+- Bottoni NUOVA PARTITA / CONTINUA spostati nella banda nera a sinistra, impilati
+  verticalmente sotto il logo, invece di essere centrati su tutta la larghezza dello
+  schermo (dove finivano sovrapposti al personaggio).
+
+## Verificato
+Screenshot del titolo finale: logo e sfondo corretti, bottoni leggibili nella banda scura,
+nessun errore console.
+
+---
+
+# RANGER ZERO v44 — bug vero: il finale restava bloccato sul nero
+
+## Bug corretto
+Confermato esattamente come segnalato: dopo la sequenza del cliffhanger (schermo nero,
+occhio che appare e sparisce), non succedeva piu' NIENTE — nessun bottone, nessun tasto,
+vicolo cieco vero che richiedeva ricaricare la pagina a mano.
+
+**Corretto**: dopo che l'occhio si e' spento, con un ritardo di 1.2s (per non rompere il
+momento), compare un piccolo bottone "TORNA AL MENU" — sobrio, quasi invisibile, coerente
+col tono cupo del finale invece di essere un bottone allegro che stona. Risponde sia al
+click sia a SPAZIO (stesso pattern gia' usato per gli altri "continua" nel gioco). Ricarica
+la pagina, tornando pulito al menu principale.
+
+## Verificato
+- Bottone confermato visibile dopo la sequenza completa.
+- Click sul bottone → la pagina si ricarica e il menu titolo torna visibile
+  (`display:flex` confermato via CSS calcolato, non solo presenza nel DOM).
+- SPAZIO fa la stessa cosa.
+- Nessun errore console durante tutta la sequenza.
+
+## Sulle tre immagini di riferimento
+Bellissime, tenute a mente come direzione visiva per l'Archivio/il finale — non le ho
+integrate in questa risposta perche' la richiesta esplicita era il bug del vicolo cieco.
+Se le vuoi usare come sfondo per la schermata del finale (stessa tecnica di `victory_logo.png`,
+un'immagine invece di render 3D in tempo reale) fammelo sapere e le metto al posto giusto.
+
+---
+
 # RANGER ZERO v43 — solo grafica: Colosso smussato, capsule arrotondate
 
 ## Colosso

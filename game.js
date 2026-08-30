@@ -1048,9 +1048,9 @@ const arenaPanoramaMesh=buildArenaPanorama();
 // avviene su un vero quartiere costiero: terreno urbano sotto entrambi i
 // giganti, mare solo oltre la linea del porto. Niente piu' effetto "isola".
 const giantStageBuf=makeBuffer(bakeParts([
- {mesh:boxMesh([.16,.17,.18]),mtx:mul(mat4.translate(0,-.08,-59),mat4.scale(38,.16,30))}, // terreno urbano
+ {mesh:boxMesh([.16,.17,.18]),mtx:mul(mat4.translate(0,-.08,-59),mat4.scale(90,.16,80))}, // terreno urbano, molto piu' esteso di prima
  {mesh:boxMesh([.32,.30,.27]),mtx:mul(mat4.translate(0,.01,-72.0),mat4.scale(38,.04,3.0))}, // banchina
- {mesh:boxMesh([.13,.27,.34]),mtx:mul(mat4.translate(0,-.04,-79.0),mat4.scale(56,.04,11.0))}, // mare oltre il porto
+ {mesh:boxMesh([.13,.27,.34]),mtx:mul(mat4.translate(0,-.04,-79.0),mat4.scale(110,.04,40.0))}, // mare oltre il porto, esteso
  {mesh:boxMesh([.38,.39,.40]),mtx:mul(mat4.translate(0,.06,-70.6),mat4.scale(36,.12,.35))}, // muraglione costiero
 ]));
 const cityParts=[];
@@ -1077,6 +1077,27 @@ for(const sx of [-4.1,4.1])cityParts.push({mesh:boxMesh([.28,.28,.29]),mtx:mul(m
 for(const x of [-12,-8,8,12]){
  cityParts.push({mesh:boxMesh([.27,.25,.23]),mtx:mul(mat4.translate(x,.75,-72),mat4.scale(2.2,1.5,1.8))});
  cityParts.push({mesh:boxMesh([.45,.43,.38]),mtx:mul(mat4.translate(x+.5,1.8,-72),mat4.scale(.10,2.1,.10))});
+}
+// v46 — "si sta lottando su un'isola": il distretto centrale finiva di
+// netto in un rettangolo stretto (28x27), col resto a vista libera fino al
+// fondale — leggeva come una piattaforma isolata invece che come un vero
+// complesso urbano. Aggiunto un anello di edifici lontani distribuito in
+// TONDO (raggio, non griglia rettangolare) attorno al campo di battaglia:
+// una citta' che continua verso l'orizzonte invece di un blocco isolato
+// con lo spigolo visibile. Geometria semplice (un box per edificio) perche'
+// sono solo sagome di sfondo, non serve dettaglio a quella distanza.
+const farCityCols=[[.15,.17,.20],[.19,.19,.18],[.13,.16,.19],[.21,.18,.15]];
+let seed=42; function rnd(){ seed=(seed*1103515245+12345)&0x7fffffff; return (seed%10000)/10000; }
+for(let ring=0; ring<3; ring++){
+ const R=34+ring*16, count=18+ring*8;
+ for(let i=0;i<count;i++){
+  const a=(i/count)*Math.PI*2+rnd()*.3;
+  const x=Math.sin(a)*R*(0.85+rnd()*.3), z=-59+Math.cos(a)*R*(0.75+rnd()*.3)*.62;
+  if(Math.abs(x)<16&&z>-74&&z<-44)continue; // non invadere il viale di battaglia gia' costruito
+  if(z>-8)continue; // non spuntare dietro la telecamera
+  const w=1.3+rnd()*1.8, h=1.2+rnd()*(3.2-ring*.6), d=1.3+rnd()*1.8;
+  cityParts.push({mesh:boxMesh(farCityCols[i%farCityCols.length]),mtx:mul(mat4.translate(x,h/2,z),mat4.scale(w,h,d))});
+ }
 }
 const giantCityBuf=makeBuffer(bakeParts(cityParts));
 
@@ -2243,6 +2264,8 @@ const choiceRowEl=document.getElementById("choiceRow");
 const endingScreenEl=document.getElementById("endingScreen");
 const cliffFlashEl=document.getElementById("cliffFlash");
 const cliffEyeEl=document.getElementById("cliffEye");
+const cliffMenuBtnEl=document.getElementById("cliffMenuBtn");
+cliffMenuBtnEl.addEventListener("click",()=>location.reload());
 const ENDINGS={
  good:{cls:"good",title:"CICLO INTERROTTO",text:"Meridiana resta al terminale, TIC sblocca le capsule e Zero spezza il proprio legame con l'armatura. Le camere si aprono una dopo l'altra. Arco arriva troppo tardi per fermarvi — e sceglie di aiutarvi. Il ciclo, per ora, si ferma."},
  normal:{cls:"normal",title:"ARCHIVIO RICHIUSO",text:"Zero chiude il registro. Meridiana lo chiama per nome, ma lui si allontana. TIC abbassa l'occhio. Le capsule tornano silenziose e Vale attende fuori dalla porta. La missione continua."},
@@ -2279,7 +2302,13 @@ function triggerEnding(kind){
  setTimeout(()=>{
   const h1=endingScreenEl.querySelector("h1"),p=endingScreenEl.querySelector("p"),code=endingScreenEl.querySelector(".code");[h1,p,code].forEach(el=>{el.style.transition="opacity .8s ease";el.style.opacity=0;});
   cliffFlashEl.style.transition="opacity .04s linear";cliffFlashEl.style.opacity=1;sfx.alarm();
-  setTimeout(()=>{cliffFlashEl.style.transition="opacity 1.1s ease";cliffFlashEl.style.opacity=0;cliffEyeEl.classList.add("show");setTimeout(()=>{cliffEyeEl.style.transition="opacity 1.8s ease";cliffEyeEl.classList.remove("show");cliffEyeEl.style.opacity=0;},3400);},90);
+  setTimeout(()=>{cliffFlashEl.style.transition="opacity 1.1s ease";cliffFlashEl.style.opacity=0;cliffEyeEl.classList.add("show");setTimeout(()=>{cliffEyeEl.style.transition="opacity 1.8s ease";cliffEyeEl.classList.remove("show");cliffEyeEl.style.opacity=0;
+   // Prima la sequenza finiva qui e basta: schermo nero per sempre, nessun
+   // modo di proseguire senza ricaricare la pagina a mano. Ora, dopo che
+   // l'occhio si e' spento, compare (piano, per non rompere il momento)
+   // un modo per tornare al menu.
+   setTimeout(()=>{cliffMenuBtnEl.classList.add("show");},1200);
+  },3400);},90);
  },4200);
 }
 
@@ -2308,6 +2337,7 @@ window.addEventListener("keydown",e=>{
  if(e.code==="Space"&&dialogueActive){advanceDialogue();return;}
  if(e.code==="Space"&&zone==="colosso"&&colosso&&colosso.phase==="tutorial"){beginGiantBattle();return;}
  if(e.code==="Space"&&colossoOutcomeEl.classList.contains("show")){if(colosso&&colosso.phase==="lost")doColossoOutcomeContinue();return;}
+ if(e.code==="Space"&&cliffMenuBtnEl.classList.contains("show")){location.reload();return;}
  if(e.code==="Space"&&zone==="archivio"&&nearInteractable){doArchiveInteract();return;}
  if(e.code==="Space"&&zone==="torre"&&nearInteractable&&nearInteractable.startsWith("npc:")){doTowerNpcInteract(nearInteractable);return;}
  if(e.code==="Space"&&zone==="torre"&&nearInteractable==="anomaly"){doAnomalyInteract();return;}

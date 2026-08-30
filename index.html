@@ -101,6 +101,12 @@
     opacity:0;pointer-events:none;filter:drop-shadow(0 0 60px rgba(37,201,214,.7));
     transition:opacity 1.6s ease,transform 3s ease;z-index:101}
   #cliffEye.show{opacity:1;transform:translate(-50%,-50%) scale(1.05)}
+  #cliffMenuBtn{position:absolute;left:50%;bottom:14%;transform:translateX(-50%);
+    background:rgba(6,6,10,.7);color:#8fa0c0;border:1px solid rgba(120,140,180,.4);
+    font:700 12px "Rajdhani","Courier New",monospace;letter-spacing:1.5px;padding:10px 22px;
+    cursor:pointer;opacity:0;pointer-events:none;transition:opacity 1.6s ease;z-index:102}
+  #cliffMenuBtn.show{opacity:1;pointer-events:auto}
+  #cliffMenuBtn:hover{color:#c8d8f5;border-color:rgba(160,190,230,.7)}
   #interactPrompt{position:absolute;left:50%;bottom:22%;transform:translateX(-50%);color:#dfe8ff;
     font-size:12px;font-weight:700;letter-spacing:1px;background:rgba(6,6,10,.85);
     border:1px solid rgba(140,180,255,.5);padding:8px 16px;opacity:0;transition:opacity .2s ease;
@@ -111,8 +117,8 @@
     display:flex;align-items:flex-end;cursor:pointer;z-index:50}
   #titleScreen .prompt{width:100%;text-align:center;padding-bottom:9vh;color:#ffe27a;font-weight:700;
     font-size:20px;letter-spacing:3px;text-shadow:2px 2px 6px #000;animation:blink 1.4s infinite}
-  #titleScreen .titleLogo{position:absolute;left:5%;top:10%;color:#ff5a3c;font-size:44px;font-weight:900;
-    letter-spacing:2px;text-shadow:3px 3px 0 #000,0 0 22px rgba(255,90,60,.6)}
+  #titleScreen .titleLogo{position:absolute;left:5%;top:6%;width:32%;max-width:520px}
+  #titleScreen .titleLogo img{width:100%;display:block;filter:drop-shadow(0 6px 18px rgba(0,0,0,.6))}
   #titleScreen .titleSub{position:absolute;left:5%;top:19%;color:#bcd3ff;font-size:13px;letter-spacing:1px;max-width:34%}
   @keyframes blink{0%,55%{opacity:1}56%,100%{opacity:.15}}
 
@@ -144,7 +150,8 @@
   #titleScreen{cursor:default}
   #titleScreen .titleSub{display:none}
   #titleScreen .prompt{display:none}
-  #titleMenu{width:100%;padding-bottom:7vh;display:flex;gap:14px;justify-content:center;align-items:center}
+  #titleMenu{position:absolute;left:5%;bottom:9vh;width:34%;padding-bottom:0;
+    display:flex;flex-direction:column;gap:12px;align-items:stretch}
   .titleBtn,.pauseBtn,.runtimeBtn{background:rgba(4,8,14,.82);border:1px solid rgba(255,218,90,.72);color:#ffe27a;
     font:700 14px "Rajdhani","Courier New",monospace;letter-spacing:2px;padding:12px 24px;cursor:pointer;min-width:190px;
     box-shadow:0 0 18px rgba(0,0,0,.45)}
@@ -260,6 +267,7 @@ i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del 
 </div>
 <div id="cliffFlash"></div>
 <img id="cliffEye" src="oculo_eye.png">
+<button id="cliffMenuBtn" type="button">&gt; TORNA AL MENU</button>
 <div id="interactPrompt">SPAZIO — LEGGI</div>
 <div id="gameHud">
   <div id="energyTrack"><div id="energyFill"></div></div>
@@ -303,7 +311,7 @@ i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del 
   </div>
 </div>
 <div id="titleScreen">
-  <div class="titleLogo">RANGER ZERO</div>
+  <div class="titleLogo"><img src="title_logo.png" alt="RANGER ZERO"></div>
   <div id="titleMenu">
     <button id="newGameBtn" class="titleBtn" type="button">NUOVA PARTITA</button>
     <button id="continueBtn" class="titleBtn" type="button">CONTINUA</button>
