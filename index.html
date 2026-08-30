@@ -62,7 +62,9 @@
     justify-content:center;flex-direction:column;z-index:95}
   #colossoOutcome.show{display:flex}
   #colossoOutcome h1{color:#ff4a3a;font-size:48px;letter-spacing:6px;margin:0 0 14px;text-shadow:3px 3px #000}
-  #colossoOutcome.win h1{color:#ffd24a}
+  #victoryLogo{display:none;width:min(64vw,620px);margin:0 0 18px;filter:drop-shadow(0 8px 20px rgba(0,0,0,.6))}
+  #colossoOutcome.win h1{display:none}
+  #colossoOutcome.win #victoryLogo{display:block}
   #colossoOutcome p{color:#cdd8f0;font-size:14px;margin:0 0 26px}
   #colossoOutcome button{background:rgba(255,210,74,.15);border:1px solid rgba(255,210,74,.7);color:#fff2c8;
     font:700 15px "Rajdhani","Courier New",monospace;letter-spacing:1px;padding:10px 24px;cursor:pointer}
@@ -75,9 +77,9 @@
   #choiceScreen.show{display:flex}
   #choiceScreen h2{color:#ff8a6b;font-size:20px;letter-spacing:3px;margin:38vh 0 24px;text-shadow:2px 2px #000}
   #choiceRow{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
-  .choiceBtn{background:url('dialogue_frame.png') center/100% 100% no-repeat;color:#dfe8ff;
-    font:700 14px "Rajdhani","Courier New",monospace;letter-spacing:.5px;padding:26px 26px 20px;cursor:pointer;
-    border:none;max-width:230px;text-align:left;line-height:1.5;filter:drop-shadow(0 6px 16px rgba(0,0,0,.5))}
+  .choiceBtn{background:url('choice_frame_square.png') center/100% 100% no-repeat;color:#dfe8ff;
+    font:700 14px "Rajdhani","Courier New",monospace;letter-spacing:.5px;padding:34px 30px 26px;cursor:pointer;
+    border:none;width:230px;max-width:230px;text-align:left;line-height:1.5;filter:drop-shadow(0 6px 16px rgba(0,0,0,.5))}
   .choiceBtn:hover{filter:drop-shadow(0 6px 16px rgba(0,0,0,.5)) brightness(1.18)}
   .choiceBtn .lbl{display:block;color:#7fc4ff;font-size:11px;letter-spacing:1px;margin-bottom:8px}
 
@@ -120,6 +122,7 @@
   body.started #hud{display:none}
   body.started #tag{display:none}
   body.dialogue-active #hint{display:none}
+  body.touch-device #hint{display:none}
 
   #hpBar{position:absolute;left:14px;top:calc(14px + min(38vw,430px) * 360 / 1080 + 8px);width:min(38vw,430px);
     display:none;align-items:center;gap:8px}
@@ -146,8 +149,8 @@
   #pauseScreen,#runtimeOverlay{position:absolute;inset:0;display:none;z-index:110;background:rgba(1,3,7,.90);
     align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:24px}
   #pauseScreen.show,#runtimeOverlay.show{display:flex}
-  .hudPanel{background:url('dialogue_frame.png') center/100% 100% no-repeat;padding:56px 80px 44px;
-    display:flex;flex-direction:column;align-items:center;max-width:640px;filter:drop-shadow(0 8px 22px rgba(0,0,0,.55))}
+  .hudPanel{background:url('menu_frame_vertical.png') center/100% 100% no-repeat;padding:78px 64px 56px;
+    display:flex;flex-direction:column;align-items:center;max-width:520px;filter:drop-shadow(0 8px 22px rgba(0,0,0,.55))}
   .hudPanel h2{margin:0 0 10px;color:#ffe27a;font-size:26px;letter-spacing:5px;text-shadow:2px 2px #000}
   .hudPanel p{max-width:520px;color:#cfe0ff;font-size:13px;line-height:1.6;margin:0 0 20px}
   #pauseActions{display:flex;flex-direction:column;gap:10px;width:100%}
@@ -158,6 +161,26 @@
   #colossoGuardHelp{position:absolute;right:18px;bottom:18px;display:none;color:#d9f7ff;font-size:11px;
     background:rgba(5,12,18,.72);border:1px solid rgba(80,210,230,.35);padding:8px 11px;letter-spacing:1px}
   body.started #colossoGuardHelp{display:none}
+
+  #touchControls{position:absolute;inset:0;display:none;pointer-events:none;z-index:60}
+  body.touch-device.started #touchControls{display:block}
+  #touchPad{position:absolute;left:18px;bottom:18px;width:150px;height:150px;pointer-events:auto}
+  .tpadBtn{position:absolute;width:52px;height:52px;background:rgba(8,14,22,.62);
+    border:1px solid rgba(120,180,230,.55);color:#cfe6ff;font-size:18px;border-radius:8px;
+    touch-action:none;user-select:none;-webkit-user-select:none}
+  .tpadBtn:active{background:rgba(70,150,220,.55)}
+  #tpadUp{left:49px;top:0}
+  #tpadDown{left:49px;top:98px}
+  #tpadLeft{left:0;top:49px}
+  #tpadRight{left:98px;top:49px}
+  #touchActions{position:absolute;right:18px;bottom:18px;width:190px;height:150px;pointer-events:auto}
+  .tactBtn{position:absolute;border-radius:50%;background:rgba(8,14,22,.62);
+    border:1px solid rgba(255,210,74,.55);color:#ffe9b0;font:700 11px "Rajdhani","Courier New",monospace;
+    letter-spacing:.5px;touch-action:none;user-select:none;-webkit-user-select:none}
+  .tactBtn:active{background:rgba(255,170,60,.55)}
+  #tactAttack{width:76px;height:76px;right:0;bottom:38px;font-size:12px}
+  #tactSpecial{width:60px;height:60px;right:82px;bottom:0;border-color:rgba(120,210,255,.6);color:#cdeeff}
+  #tactGuard{width:56px;height:56px;right:0;bottom:126px;border-color:rgba(140,255,180,.55);color:#c9ffdd;font-size:10px}
 
 
   #giantTutorial{position:absolute;inset:0;z-index:105;display:none;align-items:center;justify-content:center;
@@ -216,7 +239,8 @@ i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del 
 </div>
 
 <div id="colossoOutcome">
-  <h1>VITTORIA</h1>
+  <h1>IL COLOSSO CROLLA</h1>
+  <img id="victoryLogo" src="victory_logo.png">
   <p>...</p>
   <button id="colossoOutcomeBtn" type="button">&gt; CONTINUA</button>
 </div>
@@ -260,6 +284,19 @@ i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del 
  </div>
 </div>
 <div id="colossoGuardHelp">COLOSSO 3/4: F ATTACCO · C SPECIALE · SHIFT GUARDIA</div>
+<div id="touchControls">
+  <div id="touchPad">
+    <button class="tpadBtn" id="tpadUp" data-key="KeyW">▲</button>
+    <button class="tpadBtn" id="tpadLeft" data-key="KeyA">◀</button>
+    <button class="tpadBtn" id="tpadRight" data-key="KeyD">▶</button>
+    <button class="tpadBtn" id="tpadDown" data-key="KeyS">▼</button>
+  </div>
+  <div id="touchActions">
+    <button class="tactBtn" id="tactGuard" data-key="ShiftLeft">SCHIVA</button>
+    <button class="tactBtn tactMain" id="tactAttack" data-key="KeyF">ATTACCA</button>
+    <button class="tactBtn tactSpecial" id="tactSpecial" data-key="KeyC">SPECIALE</button>
+  </div>
+</div>
 <div id="titleScreen">
   <div class="titleLogo">RANGER ZERO</div>
   <div id="titleMenu">

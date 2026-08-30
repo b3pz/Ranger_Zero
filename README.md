@@ -1,3 +1,48 @@
+# RANGER ZERO v34 — fine sessione: bug vittoria, ciclo vittoria vero, cornici nuove, controlli touch
+
+## Bug corretto
+Il Raccoglitore "si rialzava" dopo la vittoria: il tilt di caduta (`finishTilt`) si applicava
+solo durante la fase `"finishing"`, azzerandosi di scatto appena la fase passava a `"won"`.
+Ora resta applicato anche durante `"won"` — il gigante rimane a terra per davvero.
+
+## Ciclo vittoria ricostruito
+- Raffica di esplosioni sparse (`finishBoomT`/`finishBoomNext`) invece di un'unica bolla che
+  si gonfia — riusa lo stesso sistema di scoppi randomizzati dei pugni.
+- Il Colosso si gira davvero verso la telecamera durante la fase "won" (interpolazione
+  `winT` su ~1.1s dall'angolo di combattimento verso `atan2(eye-robotPos)`), invece di
+  restare voltato verso il nemico a terra.
+- "VITTORIA" ora e' l'immagine fornita dall'utente (`victory_logo.png`), non piu' testo in
+  un balloon — mostrata/nascosta via CSS in base alla classe `.win`.
+- Il bottone CONTINUA ora risponde anche a SPAZIO (`doColossoOutcomeContinue`, richiamata
+  sia dal click che da un handler keydown dedicato), non solo al mouse.
+
+## Cornici immagine nuove
+Sostituita la cornice larga (pensata per i dialoghi) usata per forza sui menu — ora:
+- `menu_frame_vertical.png` per pausa/errore di sessione (proporzioni verticali vere,
+  titolo+testo+bottoni ci stanno senza schiacciarsi).
+- `choice_frame_square.png` per le tre carte di scelta finale (quadrata, meno stiracchiata).
+
+## Controlli touch (nuovi da zero)
+Non esisteva alcun supporto touch prima. Aggiunto:
+- Rilevamento automatico dispositivo touch (`'ontouchstart' in window`), classe
+  `body.touch-device` che mostra i controlli solo quando serve.
+- Tastierino direzionale (mappato sullo stesso oggetto `keys{}` della tastiera).
+- Tre bottoni azione (schiva/attacca/speciale) che lanciano un vero `KeyboardEvent`
+  sintetico con lo stesso `code` del tasto fisico — passano dal listener della tastiera
+  gia' esistente invece di duplicare la logica di attacco/Colosso in parallelo.
+- **Verificato con un tocco vero**: premendo ATTACCA su un nemico a distanza di combattimento,
+  la vita e' scesa da 30 a 14 (16 danni, lo stesso di un pugno da tastiera) — non e' solo
+  estetica, il touch controlla davvero il gioco.
+
+## Non rifinito
+- E' un tastierino direzionale a bottoni, non un vero joystick analogico scorrevole — per
+  un gioco con movimento a "tank controls" gia' esistente e' coerente, ma se in futuro si
+  vuole un vero stick trascinabile serve un'implementazione diversa.
+- Non ho verificato il touch su TUTTE le schermate (Colosso, Archivio) per limiti di tempo
+  — solo sul combattimento base in spiaggia.
+
+---
+
 # RANGER ZERO v33 — collo aggiunto (nuca non più vuota)
 
 ## Cosa ho cambiato

@@ -1229,20 +1229,30 @@ function colossoGuard(){
 }
 function startColossoFinish(){
  if(!colosso||colosso.phase==="finishing"||colosso.phase==="won")return;
- colosso.phase="finishing";colosso.finishT=0;colosso.finishZoom=0;colosso.finishTilt=0;
+ colosso.phase="finishing";colosso.finishT=0;colosso.finishZoom=0;colosso.finishTilt=0;colosso.finishBoomT=0;colosso.finishBoomNext=.15;
  missionHintEl.textContent="COLPO FINALE // IMPATTO";missionHintEl.classList.add("show");
  triggerSlowMo(2.2,.22);sfx.alarm();
 }
 function updateColossoFinish(dt){
  colosso.finishT+=dt;const p=Math.min(1,colosso.finishT/2.0);colosso.finishZoom=p;colosso.finishTilt=p*p*1.1;
+ // Piu' di un'esplosione: raffica di scoppi sparsi sul gigante mentre cade,
+ // invece di un'unica bolla che si gonfia — molto piu' cinematografico.
+ colosso.finishBoomT=(colosso.finishBoomT||0)+dt;
+ if(colosso.finishBoomT>=(colosso.finishBoomNext||.15)&&colosso.finishT<1.9){
+  colosso.finishBoomT=0;colosso.finishBoomNext=.12+Math.random()*.16;
+  colosso.beamBursts.push({t:0,kind:"punch",ox:(Math.random()-.5)*3.4,oy:(Math.random()-.5)*7.5});
+ }
  if(colosso.finishT>2.0)colossoWin();
 }
 function colossoWin(){
  if(giantTutorialEl)giantTutorialEl.classList.remove("show");
- colosso.phase="won";missionHintEl.textContent="IL RACCOGLITORE E' STATO RESPINTO";sfx.win();
- afterGame(900,()=>{colossoOutcomeEl.querySelector("h1").textContent="VITTORIA";
+ colosso.phase="won";colosso.winT=0;missionHintEl.textContent="IL RACCOGLITORE E' STATO RESPINTO";sfx.win();
+ // Il Colosso si gira verso la telecamera invece di restare voltato verso
+ // il nemico a terra — la posa "vittoria" che si vede negli episodi veri.
+ afterGame(1900,()=>{
   colossoOutcomeEl.querySelector("p").textContent="Il Colosso ha respinto Il Raccoglitore nel mare.";
-  colossoOutcomeEl.classList.add("show","win");});
+  colossoOutcomeEl.classList.add("show","win");
+ });
 }
 function colossoLose(){
  if(giantTutorialEl)giantTutorialEl.classList.remove("show");
@@ -1278,6 +1288,7 @@ function updateColosso(dt){
  }
  if(colosso.phase==="tutorial")return;
  if(colosso.phase==="finishing"){updateColossoFinish(dt);return;}
+ if(colosso.phase==="won"){colosso.winT=(colosso.winT||0)+dt;return;}
  if(colosso.phase!=="fight")return;
  colosso.punchT=Math.max(0,colosso.punchT-rawDtGlobal);colosso.punchCd=Math.max(0,(colosso.punchCd||0)-rawDtGlobal);colosso.beamT=Math.max(0,colosso.beamT-rawDtGlobal);
  colosso.giantAttackT=Math.max(0,(colosso.giantAttackT||0)-rawDtGlobal);
@@ -1311,7 +1322,8 @@ function updateColosso(dt){
  }
 }
 document.getElementById("giantTutorialBtn").addEventListener("click",beginGiantBattle);
-document.getElementById("colossoOutcomeBtn").addEventListener("click",()=>{
+function doColossoOutcomeContinue(){
+ if(!colossoOutcomeEl.classList.contains("show"))return;
  colossoOutcomeEl.classList.remove("show");
  if(colosso&&colosso.phase==="lost"){restoreCheckpoint("colosso");return;}
  colosso=null;missionHintEl.classList.remove("show");colossoHpWrapEl.classList.remove("show");
@@ -1319,7 +1331,8 @@ document.getElementById("colossoOutcomeBtn").addEventListener("click",()=>{
  afterGame(450,()=>playDialogue(postBossLines,()=>{
   missionHintEl.textContent="PARLA CON LA SQUADRA O CONTROLLA IL PANNELLO // R = ARMATURA";missionHintEl.classList.add("show");
  }));
-});
+}
+document.getElementById("colossoOutcomeBtn").addEventListener("click",doColossoOutcomeContinue);
 
 let enemies=[];
 let arenaWave=0,arenaWaveTransition=false;
@@ -1981,6 +1994,7 @@ window.addEventListener("keydown",e=>{
  if(paused)return;
  if(e.code==="Space"&&dialogueActive){advanceDialogue();return;}
  if(e.code==="Space"&&zone==="colosso"&&colosso&&colosso.phase==="tutorial"){beginGiantBattle();return;}
+ if(e.code==="Space"&&colossoOutcomeEl.classList.contains("show")){doColossoOutcomeContinue();return;}
  if(e.code==="Space"&&zone==="archivio"&&nearInteractable){doArchiveInteract();return;}
  if(e.code==="Space"&&zone==="torre"&&nearInteractable&&nearInteractable.startsWith("npc:")){doTowerNpcInteract(nearInteractable);return;}
  if(e.code==="Space"&&zone==="torre"&&nearInteractable==="anomaly"){doAnomalyInteract();return;}
@@ -1993,6 +2007,30 @@ window.addEventListener("keydown",e=>{
  if(e.code==="ShiftLeft"||e.code==="ShiftRight"){if(zone==="colosso")colossoGuard();else tryDodge();}
 });
 window.addEventListener("keyup",e=>{keys[e.code]=false;});
+
+// ------------------------------------------------------------
+// Controlli touch: solo un tastierino direzionale (mappato sullo stesso
+// oggetto keys{} usato dalla tastiera) + tre bottoni azione. I bottoni
+// azione non duplicano la logica di attacco/speciale/guardia — lanciano
+// un vero evento keydown sintetico con lo stesso "code" del tasto fisico,
+// cosi' passano dal listener della tastiera gia' esistente (che gestisce
+// gia' correttamente Colosso vs combattimento normale) invece di doverla
+// riscrivere qui in parallelo e rischiare che le due versioni divergano.
+// ------------------------------------------------------------
+if('ontouchstart' in window || navigator.maxTouchPoints>0)document.body.classList.add("touch-device");
+function touchKeyDown(code){ keys[code]=true; window.dispatchEvent(new KeyboardEvent("keydown",{code})); }
+function touchKeyUp(code){ keys[code]=false; }
+document.querySelectorAll(".tpadBtn,.tactBtn").forEach(btn=>{
+ const code=btn.dataset.key;
+ btn.addEventListener("touchstart",e=>{e.preventDefault();touchKeyDown(code);},{passive:false});
+ btn.addEventListener("touchend",e=>{e.preventDefault();touchKeyUp(code);},{passive:false});
+ btn.addEventListener("touchcancel",e=>{e.preventDefault();touchKeyUp(code);},{passive:false});
+ // anche il mouse, cosi' si puo' testare/usare da desktop con schermo touch o trackpad
+ btn.addEventListener("mousedown",e=>{e.preventDefault();touchKeyDown(code);});
+ btn.addEventListener("mouseup",e=>{e.preventDefault();touchKeyUp(code);});
+ btn.addEventListener("mouseleave",()=>{touchKeyUp(code);});
+});
+
 window.addEventListener("blur",()=>{clearKeys();if(gameStarted&&!paused&&!endingScreenEl.classList.contains("show"))setPaused(true);});
 document.addEventListener("visibilitychange",()=>{if(document.hidden){clearKeys();if(gameStarted&&!paused&&!endingScreenEl.classList.contains("show"))setPaused(true);}});
 document.getElementById("resumeBtn").addEventListener("click",()=>setPaused(false));
@@ -2514,7 +2552,7 @@ function frame(now){
   drawBuffer(giantStageBuf,mat4.identity(),vp);drawBuffer(giantCityBuf,mat4.identity(),vp,.98);
 
   const giantWobble=1+Math.sin(now/260)*.02;
-  const finishTilt=colosso.phase==="finishing"?(colosso.finishTilt||0):0;
+  const finishTilt=(colosso.phase==="finishing"||colosso.phase==="won")?(colosso.finishTilt||0):0;
   const gAtk=colosso.giantAttackT>0?1-colosso.giantAttackT/.58:0;
   const gLunge=Math.sin(Math.max(0,Math.min(1,gAtk))*Math.PI)*1.2;
   const gx=colosso.giantX, gz=colosso.giantZ+gLunge;
@@ -2526,7 +2564,16 @@ function frame(now){
 
   // Colosso sempre visibile: cutscene + fight 3/4 + finisher.
   const rp=colosso.phase==="combine"?Math.min(1,colosso.t/8):1;
-  const rYaw=Math.atan2(colosso.giantX-colosso.robotX,colosso.giantZ-colosso.robotZ);
+  const fightYaw=Math.atan2(colosso.giantX-colosso.robotX,colosso.giantZ-colosso.robotZ);
+  let rYaw=fightYaw;
+  if(colosso.phase==="won"){
+   // Si gira verso la telecamera invece di restare rivolto verso il nemico
+   // a terra — la posa "vittoria" vera, non solo un fermo immagine.
+   const camYaw=Math.atan2(eye[0]-colosso.robotX,eye[2]-colosso.robotZ);
+   const turnP=Math.min(1,(colosso.winT||0)/1.1),te=1-Math.pow(1-turnP,3);
+   let d=camYaw-fightYaw; while(d>Math.PI)d-=Math.PI*2; while(d<-Math.PI)d+=Math.PI*2;
+   rYaw=fightYaw+d*te;
+  }
   const rAtk=colosso.punchT>0?1-colosso.punchT/.48:0;
   const rGuard=colosso.guardT>0?Math.min(1,colosso.guardT/.58):0;
   drawColossoRobot(vp,rp,now,{x:colosso.robotX,z:colosso.robotZ,yaw:rYaw,targetX:gx,targetZ:gz,attack:rAtk,guard:rGuard});
