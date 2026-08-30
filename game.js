@@ -195,11 +195,19 @@ varying vec3 vColor;varying vec3 vNormal;
 uniform float uAlphaMain;
 void main(){
  vec3 n=normalize(vNormal);
- vec3 lightDir=normalize(vec3(.45,.85,.30));
- float diff=max(dot(n,lightDir),0.0);
- float ambient=.46;
- float shade=ambient+diff*.62;
- gl_FragColor=vec4(vColor*shade,uAlphaMain);
+ // luce principale (in alto/avanti-destra) + una di riempimento piu'
+ // debole e fredda dal lato opposto, cosi' i dettagli delle armature
+ // (spallacci, cinturone, trim del petto) restano leggibili anche visti
+ // di lato o alle spalle, invece di sparire nel nero — prima con una sola
+ // luce direzionale i pannelli si perdevano contro il resto della tuta.
+ vec3 keyDir=normalize(vec3(.45,.85,.30));
+ vec3 fillDir=normalize(vec3(-.5,.25,-.6));
+ float diffKey=max(dot(n,keyDir),0.0);
+ float diffFill=max(dot(n,fillDir),0.0);
+ float ambient=.40;
+ vec3 fillTint=vec3(.90,.94,1.02); // il fill e' leggermente freddo/bluastro, il key resta neutro
+ vec3 lit=vColor*(ambient+diffKey*.56)+vColor*fillTint*diffFill*.22;
+ gl_FragColor=vec4(lit,uAlphaMain);
 }`;
 const prog=gl.createProgram();
 gl.attachShader(prog,shader(gl.VERTEX_SHADER,vsSrc));
@@ -380,6 +388,78 @@ function boxMesh(col){
  }
  return {pos:new Float32Array(p),nrm:new Float32Array(n),col:new Float32Array(c),count:p.length/3};
 }
+// Prisma ottagonale (asse Y): stessa "ingombro" 1x1x1 di un boxMesh, ma con
+// gli 8 lati invece di 4 — da lontano/a media distanza legge come una forma
+// arrotondata invece che uno spigolo vivo da cubo. E' il pezzo che serve per
+// far sembrare elmi e piastroni "da tuta indossata" invece che "da robot":
+// il motore ha solo geometria flat-shaded, niente sfere vere, ma un ottagono
+// basta a rompere la lettura "scatola" senza aggiungere costo vero.
+function octMesh(col,capTop,capBottom){
+ if(capTop===undefined)capTop=true;
+ if(capBottom===undefined)capBottom=true;
+ const p=[],n=[],c=[];
+ const N=8, R=.5*1.0824; // raggio corretto cosi' le facce piatte toccano ancora il bordo 0.5 di un box equivalente
+ const ring=[];
+ for(let i=0;i<N;i++){
+  const a=(i/N)*Math.PI*2+Math.PI/N;
+  ring.push([Math.cos(a)*.5, Math.sin(a)*.5]);
+ }
+ for(let i=0;i<N;i++){
+  const a=ring[i], b=ring[(i+1)%N];
+  const mx=(a[0]+b[0])/2, mz=(a[1]+b[1])/2, len=Math.hypot(mx,mz)||1;
+  const nm=[mx/len,0,mz/len];
+  const quad=[[a[0],-.5,a[1]],[b[0],-.5,b[1]],[b[0],.5,b[1]],[a[0],.5,a[1]]];
+  const idx=[0,1,2,0,2,3];
+  for(const qi of idx){ p.push(...quad[qi]); n.push(...nm); c.push(...col); }
+ }
+ if(capTop){
+  for(let i=1;i<N-1;i++){
+   const tri=[[ring[0][0],.5,ring[0][1]],[ring[i][0],.5,ring[i][1]],[ring[i+1][0],.5,ring[i+1][1]]];
+   for(const v of tri){ p.push(...v); n.push(0,1,0); c.push(...col); }
+  }
+ }
+ if(capBottom){
+  for(let i=1;i<N-1;i++){
+   const tri=[[ring[0][0],-.5,ring[0][1]],[ring[i+1][0],-.5,ring[i+1][1]],[ring[i][0],-.5,ring[i][1]]];
+   for(const v of tri){ p.push(...v); n.push(0,-1,0); c.push(...col); }
+  }
+ }
+ return {pos:new Float32Array(p),nrm:new Float32Array(n),col:new Float32Array(c),count:p.length/3};
+}
+// Cupola bassa (mezza forma ottagonale schiacciata in alto): usata per la
+// calotta dell'elmo, cosi' la sommità è arrotondata invece che piatta come
+// il tetto di un cubo.
+function domeMesh(col){
+ const p=[],n=[],c=[];
+ const N=8;
+ const ring=[]; for(let i=0;i<N;i++){ const a=(i/N)*Math.PI*2+Math.PI/N; ring.push([Math.cos(a)*.5,Math.sin(a)*.5]); }
+ // un secondo anello piu' stretto appena sotto la cima, cosi' la calotta
+ // sale in due gradini invece di un unico cono ripido — legge molto piu'
+ // arrotondata, meno "cappuccio a punta".
+ const ring2=ring.map(v=>[v[0]*.55,v[1]*.55]);
+ const apex=[0,.40,0];
+ for(let i=0;i<N;i++){
+  const a=ring[i], b=ring[(i+1)%N];
+  const a2=ring2[i], b2=ring2[(i+1)%N];
+  const quad=[[a[0],.15,a[1]],[b[0],.15,b[1]],[b2[0],.30,b2[1]],[a2[0],.30,a2[1]]];
+  const e1=[quad[1][0]-quad[0][0],quad[1][1]-quad[0][1],quad[1][2]-quad[0][2]];
+  const e2=[quad[3][0]-quad[0][0],quad[3][1]-quad[0][1],quad[3][2]-quad[0][2]];
+  let nx=e1[1]*e2[2]-e1[2]*e2[1], ny=e1[2]*e2[0]-e1[0]*e2[2], nz=e1[0]*e2[1]-e1[1]*e2[0];
+  const l=Math.hypot(nx,ny,nz)||1; nx/=l;ny/=l;nz/=l;
+  const idx=[0,1,2,0,2,3];
+  for(const qi of idx){ p.push(...quad[qi]); n.push(nx,ny,nz); c.push(...col); }
+ }
+ for(let i=0;i<N;i++){
+  const a=ring2[i], b=ring2[(i+1)%N];
+  const tri=[[a[0],.30,a[1]],[b[0],.30,b[1]],apex];
+  const e1=[tri[1][0]-tri[0][0],tri[1][1]-tri[0][1],tri[1][2]-tri[0][2]];
+  const e2=[tri[2][0]-tri[0][0],tri[2][1]-tri[0][1],tri[2][2]-tri[0][2]];
+  let nx=e1[1]*e2[2]-e1[2]*e2[1], ny=e1[2]*e2[0]-e1[0]*e2[2], nz=e1[0]*e2[1]-e1[1]*e2[0];
+  const l=Math.hypot(nx,ny,nz)||1; nx/=l;ny/=l;nz/=l;
+  for(const v of tri){ p.push(...v); n.push(nx,ny,nz); c.push(...col); }
+ }
+ return {pos:new Float32Array(p),nrm:new Float32Array(n),col:new Float32Array(c),count:p.length/3};
+}
 // merge multiple box instances (each with a local transform) into one static buffer
 function bakeParts(parts){
  let pos=[],nrm=[],col=[];
@@ -554,7 +634,9 @@ const consoleBuf=makeBuffer(bakeParts([
 // ============================================================
 function makePalette(suit,accent,skin,hair){
  const under=suit.map(v=>Math.max(.035,v*.38));
- return {suit,accent,under,skin:skin||[.85,.63,.48],hair:hair||[.14,.11,.10],visor:[.08,.72,.82],boot:[.07,.075,.09],helmetShell:suit};
+ // visiera nera (con un pelo di riflesso bluastro scurissimo, non piatta)
+ // invece che ciano acceso — cosi' legge da protezione vera, non da schermo.
+ return {suit,accent,under,skin:skin||[.85,.63,.48],hair:hair||[.14,.11,.10],visor:[.035,.04,.055],boot:[.07,.075,.09],helmetShell:suit};
 }
 // Civili: outfit diversi e leggibili. Le armature usano invece una sottotuta
 // scura + placche colorate, cosi' non sembrano piu' mute da sommozzatore.
@@ -575,10 +657,10 @@ function partMeshFor(pal){
  if(meshCache[key])return meshCache[key];
  const m={
   torso:boxMesh(pal.suit), under:boxMesh(pal.under||pal.suit), belt:boxMesh([.08,.09,.11]), buckle:boxMesh(pal.accent),
-  chestPlate:boxMesh(pal.suit), chestTrim:boxMesh(pal.accent), shoulderPad:boxMesh(pal.suit),
+  chestPlate:boxMesh(pal.suit), chestTrim:boxMesh(pal.accent), shoulderPad:octMesh(pal.suit),
   head:boxMesh(pal.skin), visor:boxMesh(pal.visor),
   hair:boxMesh(pal.hair||[.14,.11,.10]), eye:boxMesh([.05,.05,.06]),
-  helmetShell:boxMesh(pal.helmetShell), helmetVisor:boxMesh([.025,.04,.055]), helmetCrest:boxMesh(pal.accent), jaw:boxMesh(pal.accent), helmetSide:boxMesh(pal.suit),
+  helmetShell:octMesh(pal.helmetShell,false,true), helmetDome:domeMesh(pal.helmetShell), helmetVisor:boxMesh([.025,.04,.055]), helmetCrest:boxMesh(pal.accent), jaw:boxMesh(pal.accent), helmetSide:boxMesh(pal.suit),
   horn:boxMesh(pal.accent),
   upperArm:boxMesh(pal.under||pal.suit), lowerArm:boxMesh(pal.skin), gauntlet:boxMesh(pal.accent), glove:boxMesh(pal.accent),
   upperLeg:boxMesh(pal.under||pal.suit), lowerLeg:boxMesh(pal.boot), bootArmor:boxMesh(pal.suit), knee:boxMesh(pal.accent),
@@ -610,13 +692,15 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
  if(armored){
   // vera corazza tokusatsu sopra la sottotuta: petto, spalle, fibbia e
   // dettagli geometrici. La silhouette diventa subito da Ranger.
-  // v26: piu' tuta tokusatsu, meno mini-mecha. Le placche restano come
-  // accenti rigidi sopra una sottotuta scura, ma non gonfiano la silhouette.
-  parts.push({mesh:pm.chestPlate,mtx:mul(mat4.translate(0,1.14+bob,.085),mat4.scale(.37,.24,.15))});
-  parts.push({mesh:pm.chestTrim,mtx:mul(mat4.translate(0,1.16+bob,.173),mat4.rotZ(Math.PI/4),mat4.scale(.045,.27,.022))});
-  parts.push({mesh:pm.chestTrim,mtx:mul(mat4.translate(0,1.16+bob,.174),mat4.rotZ(-Math.PI/4),mat4.scale(.045,.27,.022))});
-  parts.push({mesh:pm.shoulderPad,mtx:mul(mat4.translate(.37,1.37+bob,0),mat4.scale(.13,.075,.18))});
-  parts.push({mesh:pm.shoulderPad,mtx:mul(mat4.translate(-.37,1.37+bob,0),mat4.scale(.13,.075,.18))});
+  // v27: pettorale rimpicciolito a "scudo" centrale invece di piastra piena
+  // (leggeva troppo da armatura mecha), spallacci ottagonali piu' piccoli e
+  // arrotondati invece di blocchi squadrati — l'obiettivo e' persona in
+  // costume, non piccolo robot.
+  parts.push({mesh:pm.chestPlate,mtx:mul(mat4.translate(0,1.15+bob,.095),mat4.scale(.28,.19,.13))});
+  parts.push({mesh:pm.chestTrim,mtx:mul(mat4.translate(0,1.16+bob,.175),mat4.rotZ(Math.PI/4),mat4.scale(.040,.22,.020))});
+  parts.push({mesh:pm.chestTrim,mtx:mul(mat4.translate(0,1.16+bob,.176),mat4.rotZ(-Math.PI/4),mat4.scale(.040,.22,.020))});
+  parts.push({mesh:pm.shoulderPad,mtx:mul(mat4.translate(.36,1.36+bob,0),mat4.scale(.115,.10,.145))});
+  parts.push({mesh:pm.shoulderPad,mtx:mul(mat4.translate(-.36,1.36+bob,0),mat4.scale(.115,.10,.145))});
   parts.push({mesh:pm.buckle,mtx:mul(mat4.translate(0,.77+bob,.17),mat4.scale(.12,.085,.035))});
  }
  if(kind==="raccoglitore"){
@@ -626,7 +710,10 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
   parts.push({mesh:pm.shoulderPad, mtx:mul(mat4.translate(-.38,1.38+bob,0),mat4.scale(.15,.11,.17))});
  }
  if(helmet&&kind==="ranger"){
-  parts.push({mesh:pm.helmetShell, mtx:mul(mat4.translate(0,1.59+bob,0),mat4.scale(.325,.335,.325))});
+  // Calotta arrotondata vera (ottagono + cupola), non piu' un cubo con
+  // sopra una cresta — legge subito da casco da motociclista/tokusatsu.
+  parts.push({mesh:pm.helmetShell, mtx:mul(mat4.translate(0,1.565+bob,0),mat4.scale(.315,.30,.315))});
+  parts.push({mesh:pm.helmetDome, mtx:mul(mat4.translate(0,1.565+bob,0),mat4.scale(.315,.29,.315))});
   // Visiera grande e casco eroico restano il tratto piu' tokusatsu; i pezzi
   // laterali e la mandibola sono stati alleggeriti per non sembrare un robot.
   parts.push({mesh:pm.helmetVisor, mtx:mul(mat4.translate(0,1.60+bob,.160),mat4.scale(.278,.128,.042))});

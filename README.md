@@ -1,8 +1,66 @@
-# RANGER ZERO v26 — FINAL ACT / NPC DIRECTING / CITY STAGE
+# RANGER ZERO v28 — REDESIGN TUTA (meno robot, più sentai)
 
-Base cumulativa: v25 CHARACTER ARC / SUIT REWORK.
+Base cumulativa: v27 LUCE DI RIEMPIMENTO (di seguito), a sua volta su v26 dell'utente.
 
-## Obiettivo
+## Cosa ho cambiato (richiesta: "sembra più robot che sentai power rangers")
+- **Visiera nera** invece di ciano acceso (`makePalette`, campo `visor`) — legge da vera
+  protezione, non da schermo/occhio robotico.
+- **Nuova geometria arrotondata**: il motore aveva solo `boxMesh` (cubi), che è la causa
+  principale dell'effetto "mecha" — ogni pezzo era uno spigolo vivo. Aggiunte due funzioni
+  nuove: `octMesh` (prisma ottagonale, stesso ingombro di un box ma 8 lati invece di 4) e
+  `domeMesh` (calotta a due gradini + punta, per una cima arrotondata invece che piatta).
+  Usate su: calotta dell'elmo (`helmetShell`+`helmetDome`), spallacci (`shoulderPad`).
+- **Pettorale rimpicciolito**: da piastra piena (.37×.24×.15) a scudo centrale più piccolo
+  (.28×.19×.13) — copriva troppo torso e leggeva da armatura mecha invece che da costume.
+- **Spallacci più piccoli e arrotondati** (ottagonali invece di blocchi squadrati).
+- Le "teste" nell'Archivio (capsule) usano la stessa funzione `buildBodyParts` del
+  giocatore — la correzione dell'elmo si applica automaticamente anche lì, non serviva
+  toccare il codice delle capsule separatamente.
+
+## Onestà su cosa NON ho ancora sistemato
+- La cima dell'elmo, anche ammorbidita, resta un po' più "a punta/cappuccio" che
+  "cupola arrotondata vera" — il motore non ha geometria curva reale (niente sfere), solo
+  poligoni piatti a 8 lati. Per una vera cupola liscia servirebbe una mesh con più segmenti
+  (16+) e shading più morbido, che however aumenta il costo — da valutare se vale la pena.
+- Non ho toccato le proporzioni del busto/gambe (restano dritte, senza vita stretta) né
+  aggiunto un vero effetto "tessuto" sulla sottotuta — se il problema "sembra ancora
+  robot" persiste anche dopo questo passaggio, il prossimo punto da guardare è la
+  silhouette generale del busto, non solo elmo/petto/spalle.
+- Non ho girato intorno al personaggio con tutti gli angoli possibili per verificare —
+  solo fronte e un lato, per limiti di tempo in questa risposta.
+
+---
+
+
+## Cosa ho cambiato (Claude, dopo aver ripreso il progetto da v26)
+Ripreso il progetto dallo zip v26 caricato dall'utente — molto piu' avanti di dove l'avevo
+lasciato io (coreografia NPC vera, combinazione Colosso con formazione/chiamata moduli,
+stage cittadino costiero per il boss gigante, Archivio con 8 capsule + Frame Zero, tute
+Ranger riviste con pettorale/spallacci/cinturone/guanti). Buon lavoro, non l'ho toccato.
+
+**Unico problema trovato**: con una sola luce direzionale (ambient .46, diffuse .62), i lati
+e il retro dei personaggi — dove stanno la maggior parte dei dettagli nuovi delle tute
+(spallacci, trim del petto, cinturone) — restavano troppo scuri per leggersi, anche da
+vicino. Il lavoro di modellazione c'era gia' ed era buono, semplicemente non si vedeva.
+
+**Corretto**: aggiunta una seconda luce di riempimento (`fillDir`), piu' debole (.22 contro
+.56 della luce principale) e leggermente fredda/bluastra per contrasto cromatico con quella
+principale neutra, nel fragment shader (`fsSrc`, cerca `keyDir`/`fillDir`). Ambient abbassato
+leggermente (.46→.40) perche' con due luci non serve piu' cosi' alto per evitare il nero
+totale. Verificato sia nella Torre (luce ambientale scura, lo scenario piu' punitivo) sia
+in spiaggia (con `arena_sky.png` gia' presente e funzionante, molto bello) — bordi tra
+spallacci/busto/cinturone ora visibili in entrambi i casi.
+
+**Nota per chi riprende**: se si vogliono ulteriori miglioramenti di "modellazione", le
+strade piu' immediate sono (1) un leggero smusso/bevel su elmo e pettorale invece degli
+spigoli vivi da cubo puro, e (2) un rim-light view-dependent vero (richiede passare la
+posizione camera come uniform al fragment shader, non presente ora) per un contorno luminoso
+da "eroe" sul bordo delle sagome. Nessuna delle due e' stata implementata in questo passaggio
+per mancanza di tempo — la luce di riempimento da sola era il fix a maggior impatto/minor
+rischio disponibile subito.
+
+---
+
 Questa build non aggiunge nuovi boss o nuove mappe principali. Rifinisce regia, coreografia NPC, scena di combinazione, stage gigante e Archivio finale, mantenendo il loop completo gia' stabile.
 
 ## NPC: coreografia vera nella Torre
