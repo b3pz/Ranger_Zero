@@ -648,7 +648,11 @@ function makePalette(suit,accent,skin,hair){
 }
 // Civili: outfit diversi e leggibili. Le armature usano invece una sottotuta
 // scura + placche colorate, cosi' non sembrano piu' mute da sommozzatore.
-const PAL_CIVILE=makePalette([.18,.19,.22],[.58,.30,.11],[.85,.63,.48],[.12,.09,.07]);
+// v39: la maglia civile di Zero era rimasta grigia con l'accento
+// ruggine/bronzo di prima della v36 (quando divenne verde) — mai
+// aggiornata insieme al resto della squadra. Ora segue la stessa regola
+// degli altri: maglia del colore della tuta da Ranger.
+const PAL_CIVILE=makePalette([.06,.34,.17],[.82,.68,.20],[.85,.63,.48],[.12,.09,.07]);
 // v36: formazione tokusatsu classica da CINQUE membri + sesto Ranger.
 // Arco rosso, Meridiana blu, Jun giallo, Vale rosa, DON nero. Zero e' il
 // SESTO RANGER VERDE: distinto dalla squadra base ma finalmente leggibile
@@ -1117,6 +1121,22 @@ const COLOSSO_BOX={
  dark:makeBuffer(boxMesh([.08,.09,.12])), cyan:makeBuffer(boxMesh([.22,.92,1.0])),
  gold:makeBuffer(boxMesh([.86,.65,.18]))
 };
+// v43 — solo grafica: prima ogni pezzo del Colosso era un box puro, motivo
+// principale per cui leggeva da "ammasso di cubi che si muove". Stessa
+// tecnica gia' usata per i caschi dei Ranger (ottagono + cupola invece di
+// spigoli vivi), applicata qui ai pezzi piu' grandi e piu' visibili
+// (testa, petto, spalle, gambe) — non tutto, per non appesantire la
+// costruzione ne' perdere la leggibilita' "a moduli" gia' funzionante.
+const COLOSSO_OCT={
+ zero:makeBuffer(octMesh(PAL_ZERO.suit)), red:makeBuffer(octMesh(PAL_ARCO.suit)),
+ blue:makeBuffer(octMesh(PAL_MERIDIANA.suit)), yellow:makeBuffer(octMesh(PAL_RANGER3.suit)),
+ pink:makeBuffer(octMesh(PAL_RANGER4.suit)), black:makeBuffer(octMesh([.07,.075,.09])),
+ dark:makeBuffer(octMesh([.08,.09,.12])),
+};
+const COLOSSO_DOME={
+ pink:makeBuffer(domeMesh(PAL_RANGER4.suit)), red:makeBuffer(domeMesh(PAL_ARCO.suit)),
+ black:makeBuffer(domeMesh([.07,.075,.09])),
+};
 function partProgress(p,a,b){return Math.max(0,Math.min(1,(p-a)/(b-a)));}
 function easeOut3(t){return 1-Math.pow(1-t,3);}
 function drawColossoRobot(vp,p,now,opts){
@@ -1142,14 +1162,14 @@ function drawColossoRobot(vp,p,now,opts){
   drawBuffer(buf,mul(base,mat4.translate(x,y,z),mat4.rotZ(rz*(1-q)),mat4.scale(sx,sy,sz)),vp);
  };
  // GAMBE — Gatto Giallo / Cane Blu.
- drawPart(COLOSSO_BOX.yellow,-.92,2.0,0,1.25,3.6,1.35,.00,-8,-1,3,.5);
- drawPart(COLOSSO_BOX.blue, .92,2.0,0,1.25,3.6,1.35,.05, 8,-1,3,-.5);
+ drawPart(COLOSSO_OCT.yellow,-.92,2.0,0,1.25,3.6,1.35,.00,-8,-1,3,.5);
+ drawPart(COLOSSO_OCT.blue, .92,2.0,0,1.25,3.6,1.35,.05, 8,-1,3,-.5);
  drawPart(COLOSSO_BOX.dark,-.92,.35,.28,1.45,.65,1.9,.04,-8,-2,5,.3);
  drawPart(COLOSSO_BOX.dark, .92,.35,.28,1.45,.65,1.9,.09, 8,-2,5,-.3);
  // PETTO — Dragone Rosso.
- drawPart(COLOSSO_BOX.red,0,5.0,0,3.25,3.0,1.75,.20,0,-5,8,0);
+ drawPart(COLOSSO_OCT.red,0,5.0,0,3.25,3.0,1.75,.20,0,-5,8,0);
  // BRACCIA — Gorilla Nero. Il destro viene animato per spada/posa vittoria.
- drawPart(COLOSSO_BOX.black,-2.25,5.0,0,1.25,3.1,1.25,.37,-10,7,2,.7);
+ drawPart(COLOSSO_OCT.black,-2.25,5.0,0,1.25,3.1,1.25,.37,-10,7,2,.7);
  drawPart(COLOSSO_BOX.dark,-2.25,3.15,.15,1.05,1.15,1.15,.41,-11,5,4,.4);
  const armQ=easeOut3(partProgress(p,.43,.67));
  if(armQ>0){
@@ -1157,11 +1177,16 @@ function drawColossoRobot(vp,p,now,opts){
   const lift=Math.max(victory, swordDrop>.82?Math.min(1,(swordDrop-.82)/.18):0);
   if(lift>0){ux=2.10;uy=5.0+1.05*lift;ur=-.42*lift;lx=2.65;ly=3.15+3.55*lift;lr=-.18*lift;}
   if(slash>0){ux=2.10-1.1*slash;uy=6.0-.65*slash;ur=-.42-1.0*slash;lx=2.65-2.0*slash;ly=6.7-1.25*slash;lr=-.18-1.2*slash;}
-  drawBuffer(COLOSSO_BOX.black,mul(base,mat4.translate(ux,uy,uz),mat4.rotZ(ur),mat4.scale(1.25,3.1,1.25)),vp,armQ);
+  drawBuffer(COLOSSO_OCT.black,mul(base,mat4.translate(ux,uy,uz),mat4.rotZ(ur),mat4.scale(1.25,3.1,1.25)),vp,armQ);
   drawBuffer(COLOSSO_BOX.dark,mul(base,mat4.translate(lx,ly,lz),mat4.rotZ(lr),mat4.scale(1.05,1.15,1.15)),vp,armQ);
  }
- // TESTA — Uccello Rosa, sagoma pulita SENZA cresta.
- drawPart(COLOSSO_BOX.pink,0,7.35,0,1.65,1.45,1.55,.60,0,14,2,0);
+ // TESTA — Uccello Rosa, sagoma pulita SENZA cresta. Ottagono + cupola per
+ // una calotta arrotondata invece di un cubo, stessa idea del casco Ranger.
+ drawPart(COLOSSO_OCT.pink,0,7.35,0,1.65,1.45,1.55,.60,0,14,2,0);
+ {
+  const hq=easeOut3(partProgress(p,.60,.84));
+  if(hq>0)drawBuffer(COLOSSO_DOME.pink,mul(base,mat4.translate(0,7.35,0),mat4.scale(1.65,1.40,1.55)),vp,hq);
+ }
  drawPart(COLOSSO_BOX.cyan,0,7.45,.79,1.20,.43,.08,.68,0,14,2,0);
  // ALI / MODULO ZERO — Drago Verde, sesto Ranger.
  drawPart(COLOSSO_BOX.zero,0,5.25,-1.30,1.55,2.05,.45,.52,0,10,-5,0);
@@ -1331,9 +1356,14 @@ function colossoPunch(){
 function colossoSpecial(){
  if(!colosso||colosso.phase!=="fight"||colosso.beamT>0||colosso.punchT>0)return;
  if(colosso.finisherReady){
+  // Bug vero, trovato dopo segnalazione: qui c'era ANCHE un
+  // `colosso.beamBursts.push({t:0,kind:"beam"})` — un raggio istantaneo
+  // lasciato da prima che la sequenza della spada esistesse. Scattava
+  // insieme a startColossoFinish(), quindi premendo C si vedeva subito il
+  // raggio E POI, sopra, la sequenza vera (fulmini/spada/fendente) —
+  // il "raggio che parte subito invece della spada" che si vedeva era
+  // esattamente questo. Rimosso: ora parte SOLO la sequenza vera.
   colosso.beamT=.8;player.energy=0;colosso.giantHp=0;
-  colosso.beamBursts.push({t:0,kind:"beam"});
-  specialFlashEl.style.opacity=1;setTimeout(()=>specialFlashEl.style.opacity=0,190);
   sfx.special();startColossoFinish();return;
  }
  if(player.energy<player.energyMax)return;
@@ -1440,9 +1470,15 @@ function updateColosso(dt){
  colosso.punchT=Math.max(0,colosso.punchT-rawDtGlobal);colosso.punchCd=Math.max(0,(colosso.punchCd||0)-rawDtGlobal);colosso.beamT=Math.max(0,colosso.beamT-rawDtGlobal);
  colosso.giantAttackT=Math.max(0,(colosso.giantAttackT||0)-rawDtGlobal);
  colosso.shakeT=Math.max(0,colosso.shakeT-dt);colosso.guardT=Math.max(0,colosso.guardT-rawDtGlobal);colosso.guardCd=Math.max(0,(colosso.guardCd||0)-rawDtGlobal);
- // Piccolo footwork automatico: non sono piu' due statue.
- colosso.robotX=-5.0+Math.sin(colosso.t*.55)*.65;
- colosso.giantX=5.0+Math.sin(colosso.t*.43+1.6)*.72;
+ // Footwork vero: prima oscillavano solo in X, la profondita' (Z) restava
+ // fissa per tutto il combattimento (confermato testando: zero variazione
+ // in 5s di combattimento normale) — leggeva davvero come "due sagome
+ // ferme che si toccano". Ora si muovono anche avanti/indietro, con
+ // frequenze diverse tra i due cosi' non sembrano sincronizzati a specchio.
+ colosso.robotX=-5.0+Math.sin(colosso.t*.55)*.85;
+ colosso.robotZ=ARENA_CZ+2.0+Math.sin(colosso.t*.37+.4)*1.15;
+ colosso.giantX=5.0+Math.sin(colosso.t*.43+1.6)*.95;
+ colosso.giantZ=ARENA_CZ-5.0+Math.sin(colosso.t*.51+2.3)*1.30;
  if(colosso.messageT>0){colosso.messageT-=rawDtGlobal;if(colosso.messageT<=0&&!colosso.finisherReady&&!colosso.attackTelegraph)missionHintEl.classList.remove("show");}
  for(let i=colosso.beamBursts.length-1;i>=0;i--){colosso.beamBursts[i].t+=dt;if(colosso.beamBursts[i].t>.70)colosso.beamBursts.splice(i,1);}
  if(colosso.finisherReady)return;
@@ -1591,7 +1627,7 @@ for(let z=ARCHIVIO_CZ+10;z>ARCHIVIO_CZ-12;z-=2.2){
  archivioFloorParts.push({mesh:boxMesh([.18,.70,.72]),mtx:mul(mat4.translate(ARCHIVIO_CX+.72,.035,z),mat4.scale(.07,.035,.25))});
 }
 const archivioFloorBuf=makeBuffer(bakeParts(archivioFloorParts));
-const archivioWallCol=[.12,.125,.15], capsuleWallCol=[.065,.085,.105];
+const archivioWallCol=[.17,.18,.21], capsuleWallCol=[.10,.125,.155];
 const archivioWallParts=[
  {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX-3.4,2.5,ARCHIVIO_CZ+ARCHIVIO_D/2),mat4.scale(4.2,5.0,.35))},
  {mesh:boxMesh(archivioWallCol),mtx:mul(mat4.translate(ARCHIVIO_CX+3.4,2.5,ARCHIVIO_CZ+ARCHIVIO_D/2),mat4.scale(4.2,5.0,.35))},
@@ -1667,10 +1703,36 @@ archiveSystemParts.push({mesh:boxMesh([.18,.78,.76]),mtx:mul(mat4.translate(ARCH
 archiveSystemParts.push({mesh:boxMesh([.82,.50,.12]),mtx:mul(mat4.translate(ARCHIVIO_CX,1.35,ARCHIVIO_CZ-9.82),mat4.scale(.82,.12,.05))});
 archiveSystemParts.push({mesh:boxMesh([.70,.12,.10]),mtx:mul(mat4.translate(ARCHIVIO_CX,1.00,ARCHIVIO_CZ-9.82),mat4.scale(.48,.10,.05))});
 const archivioSystemBuf=makeBuffer(bakeParts(archiveSystemParts));
+// v39: tra l'ingresso e le capsule c'erano ~15 unita' di corridoio
+// completamente vuoto (su un totale di 26 di profondita') — la stanza
+// "sembra vuota" non perche' manchi il contenuto vero (le capsule ci sono),
+// ma perche' e' proporzionata molto piu' grande di quanto serva. Invece di
+// rifare la stanza, riempita quella tratta con condotti a parete e casse a
+// intervalli regolari: costa poco, non serve nessuna nuova interazione.
+const archiveFillerParts=[];
+for(const fz of [9.5,6.2,2.9,-.4,-3.1]){
+ for(const side of [-1,1]){
+  const fx=ARCHIVIO_CX+side*(ARCHIVIO_W/2-.22);
+  archiveFillerParts.push({mesh:boxMesh([.09,.10,.13]),mtx:mul(mat4.translate(fx,2.6,fz),mat4.scale(.14,3.6,.14))});
+  archiveFillerParts.push({mesh:boxMesh([.14,.55,.60]),mtx:mul(mat4.translate(fx-side*.14,1.55,fz),mat4.scale(.10,.32,.32))});
+ }
+}
+const archiveCrateCol=[.13,.12,.11], archiveCrateCol2=[.10,.11,.13];
+const crateSpots=[{x:ARCHIVIO_CX-3.3,z:8.2},{x:ARCHIVIO_CX+3.5,z:4.6},{x:ARCHIVIO_CX-3.6,z:.8},{x:ARCHIVIO_CX+3.2,z:-2.3}];
+for(let i=0;i<crateSpots.length;i++){
+ const s=crateSpots[i];
+ archiveFillerParts.push({mesh:boxMesh(i%2?archiveCrateCol:archiveCrateCol2),mtx:mul(mat4.translate(s.x,.32,s.z),mat4.rotY(i*.6),mat4.scale(.62,.62,.62))});
+}
+const archivioFillerBuf=makeBuffer(bakeParts(archiveFillerParts));
 const capsuleFrameParts=[];
+const capsuleDomeMesh=domeMesh([.16,.18,.21]);
 for(const p of CAPSULE_POS){
  capsuleFrameParts.push({mesh:boxMesh([.14,.16,.19]),mtx:mul(mat4.translate(p.x,1.18,p.z),mat4.scale(1.05,2.36,.16))});
  capsuleFrameParts.push({mesh:boxMesh([.10,.12,.15]),mtx:mul(mat4.translate(p.x,.06,p.z+.39),mat4.scale(1.10,.12,.90))});
+ // Cima arrotondata invece di un tetto piatto — un tocco solo grafico,
+ // stessa tecnica dell'elmo dei Ranger, per non far leggere OGNI cosa
+ // nella stanza come uno spigolo vivo.
+ capsuleFrameParts.push({mesh:capsuleDomeMesh,mtx:mul(mat4.translate(p.x,2.34,p.z),mat4.scale(1.05,.32,.16))});
 }
 const capsuleFrameBuf=makeBuffer(bakeParts(capsuleFrameParts));
 const zeroCapsuleBuf=makeBuffer(bakeParts([
@@ -2435,27 +2497,45 @@ function updateEnemies(dt){
   }
   const target=pickEnemyTarget(en);
   const wantRange=en.type==="raccoglitore"?1.9:1.5;
-  en.yaw=Math.atan2(target.x-en.x,target.z-en.z);
   if(en.cd>0)en.cd-=rawDtGlobal;
-  if(target.dist>wantRange+.15){
+  if(!(en.windupT>0)) en.yaw=Math.atan2(target.x-en.x,target.z-en.z);
+  if(en.windupT>0){
+   // Preavviso vero prima del colpo: prima i nemici colpivano di scatto
+   // appena il cooldown scadeva, senza nessun segnale — la squadra del
+   // Colosso ha gia' un telegraph leggibile, la spiaggia no. Ora il nemico
+   // resta fermo, "carica" per un attimo (visibile via en.telegraph nel
+   // render, un lampo/pulsazione), e SOLO alla fine controlla di nuovo la
+   // distanza prima di infliggere danno — cosi' schivare all'ultimo
+   // istante funziona davvero, non e' solo estetica.
+   en.windupT=Math.max(0,en.windupT-rawDtGlobal);
+   if(en.windupT<=0){
+    en.telegraph=false;
+    en.cd=en.type==="raccoglitore"?1.7:2.05;
+    en.attackFlashT=.5;
+    const t2=pickEnemyTarget(en);
+    if(t2.dist<=wantRange+.30){
+     if(t2.kind==="player"){
+      if(player.invuln<=0){
+       const dmg=en.type==="raccoglitore"?14:7;
+       player.hp=Math.max(0,player.hp-dmg);
+       player.hitFlashT=.3;
+       sfx.hitPlayer();
+      }
+     }else if(t2.ref){
+      t2.ref.hurtT=.32;
+      t2.ref.attackT=Math.max(t2.ref.attackT,.18);
+      sfx.hitPlayer();
+     }
+    }
+   }
+  }else if(target.dist>wantRange+.15){
    const spd=(en.type==="raccoglitore"?1.45:1.8)*dt;
    en.x+=Math.sin(en.yaw)*spd; en.z+=Math.cos(en.yaw)*spd;
    en.walkPhaseE+=dt*7.5;
   }else if(en.cd<=0){
-   en.cd=en.type==="raccoglitore"?1.7:2.05;
-   en.attackFlashT=.5;
-   if(target.kind==="player"){
-    if(player.invuln<=0){
-     const dmg=en.type==="raccoglitore"?14:7;
-     player.hp=Math.max(0,player.hp-dmg);
-     player.hitFlashT=.3;
-     sfx.hitPlayer();
-    }
-   }else if(target.ref){
-    target.ref.hurtT=.32;
-    target.ref.attackT=Math.max(target.ref.attackT,.18);
-    sfx.hitPlayer();
-   }
+   en.windupT=en.type==="raccoglitore"?.55:.42;
+   en.telegraph=true;
+   sfx.uiBlip();
   }
   if(en.attackFlashT>0)en.attackFlashT-=dt;
  }
@@ -2511,6 +2591,14 @@ window.addEventListener("unhandledrejection",e=>{if(gameStarted&&!runtimeOverlay
 // sparisce, riusata per ogni scoppio invece di ricostruire geometria nuova.
 const burstMesh=boxMesh([1,.92,.55]);
 const burstBuf=makeBuffer(burstMesh);
+
+// Punto esclamativo da fumetto per il preavviso d'attacco: prima il
+// windup si vedeva solo come un lieve rigonfiamento del nemico, troppo
+// sottile da notare mentre si gioca davvero (si vedeva solo rileggendo il
+// popup di testo). Un vero "!" che compare di scatto sopra la testa e
+// rimbalza e' molto piu' leggibile a colpo d'occhio.
+const exclaimBarBuf=makeBuffer(boxMesh([1.0,.85,.15]));
+const exclaimDotBuf=makeBuffer(boxMesh([1.0,.85,.15]));
 
 // ombra a terra condivisa: un box scuro schiacciato, riusato sotto ogni
 // personaggio invece di costruirne una per ciascuno. Senza, tutti
@@ -2744,7 +2832,7 @@ function frame(now){
  const vp=mat4.multiply(proj,view);
 
  if(zone==="arena"||zone==="colosso")gl.clearColor(.08,.10,.20,1);
- else if(zone==="archivio")gl.clearColor(.02,.02,.03,1);
+ else if(zone==="archivio")gl.clearColor(.045,.05,.075,1);
  else gl.clearColor(.035,.04,.055,1);
  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
 
@@ -2807,12 +2895,32 @@ function frame(now){
    if(en.dead||en.hidden)continue;
    drawShadow(en.x,en.z,.40*en.scale,vp,.35*(en.alpha!==undefined?en.alpha:1));
    const hitPulse=en.hitFlash>0?1+en.hitFlash*1.6:1;
-   const s=en.scale*hitPulse;
+   // Il preavviso ora si vede: il nemico pulsa un po' piu' grande mentre
+   // carica il colpo, crescendo man mano che si avvicina il rilascio —
+   // senza questo la finestra di windup sarebbe comunque invisibile e
+   // schivare resterebbe solo fortuna.
+   const windupDur=en.type==="raccoglitore"?.55:.42;
+   const windupPulse=en.windupT>0?1+(1-en.windupT/windupDur)*.22*(1+Math.sin(now/55)*.15):1;
+   const s=en.scale*hitPulse*windupPulse;
    const enAttackPhase=en.attackFlashT>0?1-en.attackFlashT/.5:0;
    const enMoving=en.state!=="retreat"&&facingDot(en.x,en.z,en.yaw,player.x,player.z).dist>(en.type==="raccoglitore"?2.05:1.65);
    const enMesh=buildCharacterBuffers(en.pal,en.walkPhaseE,enMoving?1:0,true,en.type,en.attackFlashT>0?enAttackPhase:0);
    const enModel=mul(mat4.translate(en.x,en.y||0,en.z),mat4.rotY(en.yaw),mat4.scale(s,s,s));
    drawDynamicMesh(enMesh,enModel,vp,en.alpha);
+   if(en.windupT>0){
+    // Pop del "!": scatta subito a dimensione piena (niente crescita lenta,
+    // deve saltare all'occhio) poi rimbalza leggermente mentre il windup
+    // prosegue — billboard vero verso la camera, sempre leggibile.
+    const wp=1-en.windupT/windupDur;
+    const popIn=Math.min(1,wp/.18);
+    const bounce=1+Math.sin(wp*Math.PI*3.2)*.10*(1-wp*.5);
+    const exSize=(en.type==="raccoglitore"?.62:.46)*popIn*bounce;
+    const exYaw=Math.atan2(eye[0]-en.x,eye[2]-en.z);
+    const exY=(en.y||0)+(en.type==="raccoglitore"?2.75*en.scale:2.15*s);
+    const exBase=mul(mat4.translate(en.x,exY,en.z),mat4.rotY(exYaw));
+    drawBuffer(exclaimBarBuf,mul(exBase,mat4.translate(0,exSize*.30,0),mat4.scale(exSize*.16,exSize*.62,.02)),vp,popIn);
+    drawBuffer(exclaimDotBuf,mul(exBase,mat4.translate(0,-exSize*.16,0),mat4.scale(exSize*.16,exSize*.16,.02)),vp,popIn);
+   }
    if(en.state!=="retreat"){
     const barYaw=Math.atan2(eye[0]-en.x,eye[2]-en.z);
     const barY=(en.y||0)+(en.type==="raccoglitore"?2.55*en.scale:1.95*s);
@@ -2901,7 +3009,7 @@ function frame(now){
    }
   }
  }else if(zone==="archivio"){
-  drawBuffer(archivioFloorBuf,mat4.identity(),vp);drawBuffer(archivioWallBuf,mat4.identity(),vp);drawBuffer(archivioHelmetBuf,mat4.identity(),vp);drawBuffer(archivioTerminalBuf,mat4.identity(),vp);drawBuffer(archivioSystemBuf,mat4.identity(),vp);drawBuffer(archivioOculoFrameBuf,mat4.identity(),vp);
+  drawBuffer(archivioFloorBuf,mat4.identity(),vp);drawBuffer(archivioWallBuf,mat4.identity(),vp);drawBuffer(archivioHelmetBuf,mat4.identity(),vp);drawBuffer(archivioTerminalBuf,mat4.identity(),vp);drawBuffer(archivioSystemBuf,mat4.identity(),vp);drawBuffer(archivioOculoFrameBuf,mat4.identity(),vp);drawBuffer(archivioFillerBuf,mat4.identity(),vp);
   drawTexturedQuad(oculoTex,mul(mat4.translate(ARCH_OCULO_POS.x,ARCH_OCULO_POS.y,ARCH_OCULO_POS.z+.02),mat4.scale(archiveState.revealing?5.05:4.35,archiveState.revealing?2.85:2.45,1)),vp,archiveState.revealing?.96:.42);
   // Solo Meridiana e TIC entrano nell'Archivio. Gli altri membri non vengono
   // neppure renderizzati in questa zona, quindi non possono seguirti per bug.

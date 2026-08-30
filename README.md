@@ -1,3 +1,171 @@
+# RANGER ZERO v43 — solo grafica: Colosso smussato, capsule arrotondate
+
+## Colosso
+Prima ogni pezzo era un `boxMesh` puro — motivo principale del "sembra un ammasso di cubi".
+Aggiunte varianti arrotondate (ottagono + cupola, stessa tecnica gia' usata per i caschi dei
+Ranger) e applicate ai pezzi piu' grandi e piu' visibili: **gambe, petto, spalle/braccia,
+testa** (con cupola vera sopra invece di un tetto piatto). Lasciati come box i pezzi piccoli
+o strutturali (piedi, placche sottili, spada, accenti) dove smussare non avrebbe aggiunto
+niente. Verificato visivamente: gambe e petto ora mostrano sfaccettature/angoli invece di
+spigoli puri.
+
+## Il Raccoglitore
+Gia' beneficiava del lavoro fatto sui caschi Ranger (elmo e spallacci sono `octMesh`,
+condivisi tramite la stessa funzione `buildBodyParts`) — non serviva toccare altro li'.
+
+## Archivio (richiesto esplicitamente di ricordarlo)
+Aggiunta una cupola arrotondata sopra ogni capsula (`capsuleDomeMesh`, stessa tecnica),
+invece del tetto piatto di prima. Combinato con la luce e il riempimento gia' fatti nelle
+sessioni precedenti, ora la fila di capsule si vede bene: occupanti diversi, monitor con
+barre colorate sopra ognuna, cupole non piu' a spigolo vivo.
+
+## Onesta' sui limiti
+Il motore ha SOLO geometria piatta (box e ottagoni), niente sfere o curve vere — quello che
+ho fatto e' il massimo ottenibile con questa tecnica senza riscrivere il motore di render.
+Non ho toccato: gli edifici della citta' nello scontro col Colosso, i moduli animali durante
+la chiamata, gli scagnozzi/civili di base. Se dopo aver visto questa versione altre parti
+saltano all'occhio come "troppo a cubi", dimmele in ordine di importanza e procedo da li'.
+
+---
+
+# RANGER ZERO v42 — bug spada, movimento Colosso/Raccoglitore, pop del windup
+
+## Bug corretto: "clicco C e parte subito il raggio"
+Trovato nel codice: dentro `colossoSpecial()`, quando il colpo finale e' pronto
+(`finisherReady`), c'era ANCORA un `colosso.beamBursts.push({t:0,kind:"beam"})` — un
+raggio istantaneo lasciato da PRIMA che la sequenza della spada venisse costruita. Scattava
+insieme a `startColossoFinish()`, quindi premendo C si vedevano contemporaneamente: il
+raggio immediato E, sopra, la sequenza vera (fulmini → spada dal cielo → fendente →
+Raccoglitore scagliato indietro). Rimosso il raggio istantaneo — ora parte SOLO la
+sequenza vera. **Verificato**: controllato lo stato `beamBursts` 50ms dopo aver premuto C,
+nessun burst di tipo "beam" presente immediatamente.
+
+## Corretto: Colosso e Raccoglitore fermi sul posto
+Testato con dati veri: durante 5 secondi di combattimento normale, la profondita' (Z) di
+entrambi restava **esattamente fissa** (nessuna variazione), oscillavano solo un po' in
+orizzontale (X) — leggeva davvero come "due sagome ferme che si toccano". Aggiunto
+movimento vero anche in profondita', con frequenze diverse tra Colosso e Raccoglitore cosi'
+non sembrano sincronizzati a specchio. **Verificato**: la Z ora varia visibilmente nel
+tempo (es. Raccoglitore da -64.28 a -65.69 in 3 secondi).
+
+## Migliorato: preavviso d'attacco troppo sottile
+Il rigonfiamento del nemico durante il windup (aggiunto nella sessione precedente) era
+leggibile solo guardando con attenzione o leggendo il testo — non abbastanza per giocare
+d'istinto. Aggiunto un vero punto esclamativo da fumetto che scatta di colpo sopra la testa
+del nemico (non cresce lentamente, appare quasi subito) e rimbalza leggermente per tutta la
+durata del windup — pensato per essere letto a colpo d'occhio, non solo dal popup di testo.
+
+## Da verificare di persona
+Il "!" funziona ed e' visibile nei miei test, ma nel mio ultimo screenshot appariva un po'
+piccolo e posizionato in alto rispetto alla testa del nemico — probabile conseguenza
+dell'angolazione di telecamera del mio test piu' che un problema del posizionamento reale
+(la formula usa l'altezza della testa del nemico specifico). Guardalo tu in condizioni di
+gioco normali e dimmi se la dimensione/posizione va aggiustata.
+
+---
+
+# RANGER ZERO v41 — combattimento: preavviso vero sui colpi nemici
+
+## Cosa ho trovato testando (non a memoria, con un vero playtest)
+Prima di cambiare qualcosa a caso ho giocato il combattimento a ritmo umano realistico:
+**10.2 secondi per ripulire 3 scagnozzi base, 21 danni subiti su 100 (21% della vita)**.
+Numero interessante ma non allarmante di per se' — il problema vero emerso testando e'
+qualitativo: **gli scagnozzi e Il Raccoglitore colpivano di scatto**, danno applicato nello
+stesso istante in cui il cooldown scadeva, senza NESSUN segnale prima. Il combattimento del
+Colosso invece ha gia' un vero telegraph ("LEGGI L'ATTACCO // SHIFT AL MOMENTO GIUSTO") —
+un'asimmetria vera tra le due meta' del gioco.
+
+## Corretto
+Aggiunto un preavviso vero prima di ogni colpo nemico in spiaggia (`en.windupT`,
+`en.telegraph`): quando il nemico e' a portata e il cooldown e' scaduto, invece di colpire
+subito **carica per 0.42s (scagnozzi) o 0.55s (Il Raccoglitore)**, restando fermo e
+pulsando visibilmente piu' grande (`windupPulse` nel render, cresce avvicinandosi al
+rilascio). Solo alla FINE del windup ricontrolla la distanza e infligge danno — se il
+giocatore si e' allontanato nel frattempo, il colpo semplicemente non arriva.
+
+## Verificato con test veri
+- Tracciato `windupT` frame per frame: scende da 0.42 a 0 in ~500ms, poi (e solo allora)
+  la vita del giocatore scende di 7 (danno scagnozzo) — il preavviso non e' decorativo, il
+  danno arriva davvero solo dopo.
+- Test di schivata: allontanarsi APPENA il windup inizia evita il colpo del tutto — vita
+  rimasta a 100 invece di scendere a 93. Il preavviso e' reagibile per davvero, non solo
+  estetico.
+- Nessun errore console, nessuna regressione al ritmo generale del combattimento.
+
+## Perche' questo e non altro
+"Il combattimento va migliorato" era generico — ho scelto di partire da qui perche' era
+l'unica cosa emersa da un playtest vero (non da supposizioni) e perche' avvicina la
+spiaggia allo standard di leggibilita' gia' stabilito nel combattimento del Colosso, invece
+di introdurre un sistema nuovo scollegato dal resto. Se il bilanciamento numerico
+(danno/vita/tempi) va ancora rivisto dopo aver provato questa versione, fammi sapere cosa
+senti esattamente — troppo facile, troppo lento, i nemici sembrano tutti uguali — e
+procedo da li'.
+
+---
+
+# RANGER ZERO v40 — maglia civile di Zero verde + corridoio Archivio riempito
+
+## Corretto: maglia civile di Zero
+La palette civile (`PAL_CIVILE`) era rimasta grigia con l'accento ruggine/bronzo di prima
+della v36 (quando Zero divenne verde) — non era mai stata aggiornata insieme al resto
+della squadra. Ora segue la stessa regola degli altri: maglia del colore della tuta da
+Ranger (verde smeraldo scuro, accento oro). Verificato visivamente.
+
+## Corretto: Archivio "grande ma con poche cose"
+Chiarito dall'utente: non e' che manchi contenuto (tubi/monitor/capsule ci sono davvero),
+e' che la stanza e' proporzionata molto piu' grande di quanto serva — circa 15 unita' di
+corridoio completamente vuoto tra l'ingresso e l'area delle capsule, su un totale di 26.
+Invece di rifare la stanza da zero, riempito quel tratto con condotti a parete a intervalli
+regolari (5 punti su entrambi i lati) e casse a terra (4 posizioni) — costa poco, non serve
+nessuna nuova interazione, ma la sensazione di corridoio vuoto sparisce. Verificato
+visivamente: ora si vedono elementi lungo tutto il tragitto invece di un vuoto lungo prima
+di arrivare alle capsule.
+
+---
+
+# RANGER ZERO v39 — controllo scrupoloso v38 + luce Archivio
+
+## Cosa ho controllato (playtest vero, non a memoria)
+- Titolo → intro → "conosci la squadra" (5 membri: Arco/Meridiana/Jun/Vale/DON) → allarme →
+  trasformazione → spiaggia: tutto pulito, zero errori console.
+- **Falso allarme sulla cinematica di chiamata moduli**: il primo test mostrava un
+  riquadro minuscolo invece della scena — ho pensato fosse un bug vero e ho indagato a
+  fondo (controllato FOV, canvas, coordinate camera). Era un errore MIO: avevo richiamato
+  `startColossoSequence()` direttamente dalla Torre invece che dalla spiaggia, e la camera
+  di quella scena usa le coordinate dell'arena — fuori contesto, guarda nel vuoto. Rifatto
+  il test partendo dal punto giusto: **la scena è bella davvero** — tutta la squadra in
+  posa con i diamanti sul petto, poi ogni modulo (Dragone Rosso, Gatto Giallo, Gorilla
+  Nero...) entra in scena uno alla volta con il proprio testo di chiamata. Nessuna
+  correzione necessaria qui.
+- **Archivio: non è vuoto, ma è troppo buio per vedersi**. Andando avanti nel corridoio si
+  vedono chiaramente: condotti che convergono al soffitto, capsule con occupanti diversi,
+  monitor con barre colorate sopra ogni capsula. Tutto quello descritto nel changelog della
+  v36 c'è davvero. Il problema è la luce: colori delle pareti troppo scuri + colore di
+  sfondo quasi nero facevano sparire i dettagli, specialmente vicino all'ingresso.
+
+## Corretto
+- **Luce dell'Archivio alzata**: colore di sfondo da quasi-nero (.02,.02,.03) a un blu
+  scuro piu' percepibile (.045,.05,.075); pareti da (.12,.125,.15)/(.065,.085,.105) a
+  (.17,.18,.21)/(.10,.125,.155). L'atmosfera resta cupa (non e' diventata una stanza
+  illuminata a giorno), ma i dettagli che gia' c'erano ora si vedono, specialmente vicino
+  all'ingresso che prima era quasi completamente nero.
+
+## Prompt per le tre immagini dei finali
+Scritti nella chat (non nel codice) — tre scene illustrate, stesso stile rosso/oro/ciano
+delle altre immagini gia' fatte, una per ogni finale (buono/normale/oscuro). Da generare e
+poi mandare per l'inserimento.
+
+## NON affrontato in questa sessione (grandi, confermati a se')
+- **Ridisegno vero di Colosso e Il Raccoglitore**: il Colosso ha gia' pannelli colorati per
+  modulo (rosso/nero/giallo/blu/rosa/verde) ma resta comunque costruito solo da box — un
+  vero ridisegno con forme piu' definite e' un lavoro a se'.
+- **Ingresso nella Torre**: attualmente il gioco comincia gia' dentro la Torre, senza una
+  vera scena di arrivo — non toccato in questa sessione.
+- **Archivio come "impianto" ancora piu' scenico** oltre alla sola luce (es. animazioni sui
+  monitor, effetti sui tubi) — non fatto, solo la visibilita' di base e' stata corretta.
+
+---
+
 RANGER ZERO v38 LAST FIX
 
 # RANGER ZERO v37 — MODULE SUMMON / FINAL ATTACK / VICTORY POSE
