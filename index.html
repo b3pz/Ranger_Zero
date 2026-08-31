@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>RANGER ZERO — v56.1 STORYBOX DIALOGUE</title>
+<title>RANGER ZERO — v57 STORY LOCK</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -117,6 +117,10 @@
   #endingScreen.good h1{color:#7fe0a0}
   #endingScreen.normal h1{color:#e0c060}
   #endingScreen.evil h1{color:#ff5a5a}
+  #sessionStats{display:none;position:relative;z-index:2;width:min(82vw,680px);background:rgba(3,7,12,.82);border:1px solid rgba(120,190,230,.45);padding:18px 22px;text-align:left;box-shadow:0 0 32px rgba(0,0,0,.55)}
+  #sessionStats.show{display:block}
+  #sessionStats h2{margin:0 0 12px;color:#9edfff;letter-spacing:2px;font-size:18px}
+  #sessionStats pre{margin:0;color:#dbe6f5;font:600 13px/1.65 "Rajdhani","Courier New",monospace;white-space:pre-wrap}
   #cliffFlash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:100}
   #cliffEye{position:absolute;left:50%;top:50%;width:70vh;max-width:90vw;transform:translate(-50%,-50%) scale(.85);
     opacity:0;pointer-events:none;filter:drop-shadow(0 0 60px rgba(37,201,214,.7));
@@ -264,6 +268,8 @@
     body.touch-device #storyCueBox{height:110px}
     body.touch-device #endingScreen{padding:24px 16px}
     body.touch-device #endingScreen h1{font-size:28px;letter-spacing:3px}
+    body.touch-device #sessionStats{width:90vw;padding:14px 16px}
+    body.touch-device #sessionStats pre{font-size:11px;line-height:1.5}
   }
 
 
@@ -311,7 +317,7 @@ i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del 
   <div id="storyCueText">...</div>
 </div>
 <div id="colossoHpWrap">
-  <div id="colossoHpLabel">IL RACCOGLITORE</div>
+  <div id="colossoHpLabel">SCAVENGOR</div>
   <div id="colossoHpTrack"><div id="colossoHpFill"></div></div>
 </div>
 
@@ -342,6 +348,7 @@ i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del 
 <div id="endingScreen">
   <h1>...</h1>
   <p>...</p>
+  <div id="sessionStats"><h2>SESSIONE LMN_02</h2><pre id="sessionStatsText"></pre></div>
   <div class="code">LMN_02 // SESSIONE REGISTRATA</div>
 </div>
 <div id="cliffFlash"></div>

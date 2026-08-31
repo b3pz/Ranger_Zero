@@ -993,3 +993,18 @@ Il playtest browser resta necessario per valutare soprattutto coreografia, silho
 - Le battute brevi di regia e personaggi (es. JUN, DON, SILENZIO, IL RACCOGLITORE, chiamata moduli) non usano piu' testo sciolto in alto: compaiono in un balloon compatto basato sul dialogue_frame.
 - Il box compatto puo' mostrare portrait per i personaggi o una versione senza portrait per la regia/scena.
 - Gli obiettivi e i tutorial rapidi restano nel missionHint HUD.
+
+
+# RANGER ZERO v57 — STORY LOCK
+- Squadra aggiornata: Arco rosso uomo, Ciusky blu uomo, Jun gialla donna, Vale rosa donna bionda, DON nero uomo, Zero verde.
+- Archivio: entrano Zero + DON + TIC; Ciusky resta alla Torre a tenere aperto il canale.
+- SCAVENGOR e' il nome toku del mostro; COLLECTOR/Raccoglitore e' il suo vero ruolo di sistema.
+- La firma e' spiegata come impronta energetica del Frame usata dalla Torre per identificare/localizzare/autorizzare i Ranger.
+- Al PULSE Scavengor cerca fisicamente il Prisma Zero. Toccare il Prisma non chiude piu' subito la scena: l'ordine Kim/Tommy/Prisma viene registrato.
+- 5/5 Ranger conosciuti al PULSE aggiunge un piccolo segnale di ribellione; 3/5 restano il requisito per liberare Tommy.
+- Nuovo Hidden Fate: priorita' PULSE, risultato salvataggi, prima scelta post-boss, prima scelta Archivio e uso reale della tuta nelle zone sicure. I pareggi portano al finale NORMAL.
+- La tuta/Frame registra il tempo collegato; Oculo rivela 2 scelte palesi + la percentuale nascosta di utilizzo del Frame.
+- Statistiche LMN_02 mostrate a fine partita per favorire la rigiocabilita'.
+- Fix Colosso: Scavengor resta a 1 HP fino al vero impatto della spada; solo il fendente porta HP a 0. Camera vittoria arretrata per mostrare la spada intera.
+- PULSE arricchito con sgabelli, bottiglie, bicchieri, blender, cassa, pesi, panca, bilanciere e porta d'ingresso; passaggio scale piu' largo e waypoint cliente corretto.
+- Storybox compatto ripulito: viene cancellato sui checkpoint e nasconde temporaneamente l'HUD missione per evitare sovrapposizioni mobile.
