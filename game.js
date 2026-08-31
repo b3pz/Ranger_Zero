@@ -1755,10 +1755,13 @@ function doColossoOutcomeContinue(){
  colossoOutcomeEl.classList.remove("show");
  if(colosso&&colosso.phase==="lost"){restoreCheckpoint("colosso");return;}
  colosso=null;missionHintEl.classList.remove("show");colossoHpWrapEl.classList.remove("show");
- archivioUnlocked=true;postBossState=true;morphUnlocked=true;enterTorre();setupPostBossTeam();saveCheckpoint("postboss");
- afterGame(450,()=>playDialogue(postBossLines,()=>{
-  missionHintEl.textContent="PARLA CON LA SQUADRA O CONTROLLA IL PANNELLO // R = ARMATURA";missionHintEl.classList.add("show");
- }));
+ archivioUnlocked=true;morphUnlocked=true;
+ startPulseReturnScene(()=>{
+  postBossState=true;enterTorre();setupPostBossTeam();saveCheckpoint("postboss");
+  afterGame(450,()=>playDialogue(postBossLines,()=>{
+   missionHintEl.textContent="PARLA CON LA SQUADRA O CONTROLLA IL PANNELLO // R = ARMATURA";missionHintEl.classList.add("show");
+  }));
+ });
 }
 document.getElementById("colossoOutcomeBtn").addEventListener("click",doColossoOutcomeContinue);
 
@@ -2536,6 +2539,42 @@ function maybeTriggerIntroAlert(){
   });
  }));
 }
+// v58 — dopo la vittoria si tornava dritti alla Torre: dall'eroe che ha
+// appena sconfitto un gigante si saltava subito al debriefing, senza un
+// solo momento umano nel mezzo. Aggiunta una breve tappa al PULSE, in
+// borghese, prima del resto — non una rigiocata del prologo (niente crisi,
+// niente meccaniche sociali), solo Kim e Tommy che notano che qualcosa e'
+// cambiato, con un paio di righe diverse a seconda di cosa e' successo
+// davvero durante la crisi (chi hai salvato, se hai conosciuto tutti).
+let pulseEpilogueActive=false;
+function buildPulseReturnLines(){
+ const lines=[];
+ if(sessionStats.kimSaved){
+  lines.push({speaker:"KIM",text:"Eccoti. Dove sei sparito? Ho sentito il botto e poi... niente, sei scomparso."});
+  lines.push({speaker:"KIM",text:"Sto bene, non ti preoccupare. Qualcuno mi ha tirata fuori giusto in tempo."});
+ }else{
+  lines.push({speaker:"KIM",text:"Eccoti finalmente. Mi sono cavata da sola quella sera, sai? Ho pensato il peggio, per un attimo."});
+ }
+ lines.push({speaker:"KIM",text:"Sei... diverso. Non saprei dire come. Va tutto bene davvero?"});
+ if(sessionStats.tommySaved){
+  lines.push({speaker:"TOMMY IL BARISTA",text:"Il solito, campione? Offre la casa, dopo quella sera. Ci sono ancora, grazie a chiunque sia stato."});
+ }else{
+  lines.push({speaker:"TOMMY IL BARISTA",text:"Bar ancora in piedi, come vedi. Ce l'abbiamo fatta lo stesso, alla fine."});
+ }
+ lines.push({speaker:"KIM",text:"Qualunque cosa sia, dovunque tu sia stato... sono contenta che tu sia qui adesso."});
+ return lines;
+}
+function startPulseReturnScene(onDone){
+ pulseEpilogueActive=true;
+ player.transformed=false;player.helmet=false;
+ zone="bar";player.x=BAR_CX-2.0;player.z=BAR_CZ+2.4;player.yaw=Math.PI;
+ barCustomer.x=BAR_BARTENDER_POS.x+.9;barCustomer.z=BAR_BARTENDER_POS.z+.4;
+ playAmbient("bar");teleportFlash();
+ afterGame(700,()=>playDialogue(buildPulseReturnLines(),()=>{
+  pulseEpilogueActive=false;
+  if(onDone)onDone();
+ }));
+}
 const postBossLines=[
  {speaker:"OCULO",text:"Scavengor neutralizzato. Settore urbano salvo. Rientro autorizzato."},
  {speaker:"ARCO",text:"Prima missione e gia' Colosso. Cerca di non farci l'abitudine, Zero."},
@@ -2763,10 +2802,24 @@ let enteringTorre=false, enterTorreT=0;
 const ENTER_TORRE_DUR=2.3, ENTER_TORRE_FROM_Z=ROOM_D/2-1.4, ENTER_TORRE_TO_Z=4.0;
 cliffMenuBtnEl.addEventListener("click",()=>location.reload());
 const ENDINGS={
- good:{cls:"good",title:"CICLO INTERROTTO",text:"Ciusky resta al terminale, TIC sblocca le capsule e Zero spezza il proprio legame con l'armatura. Le camere si aprono una dopo l'altra. Arco arriva troppo tardi per fermarvi — e sceglie di aiutarvi. Il ciclo, per ora, si ferma."},
- normal:{cls:"normal",title:"ARCHIVIO RICHIUSO",text:"Zero chiude il registro. Ciusky lo chiama per nome, ma lui si allontana. TIC abbassa l'occhio. Le capsule tornano silenziose e Vale attende fuori dalla porta. La missione continua."},
- evil:{cls:"evil",title:"SUPERVISORE AUTORIZZATO",text:"Zero assume il nodo. L'occhio di Oculo si spegne e si riaccende con la sua firma. Ciusky guarda il monitor. La nuova voce ordina: 'Unita' Ciusky. Torna alla postazione.' Le capsule restano da amministrare."},
+ good:{cls:"good",title:"CICLO INTERROTTO",text:"Ciusky resta al terminale a coprire le tracce, TIC forza i sigilli uno per uno. Zero non aspetta l'autorizzazione: stacca il proprio Frame prima ancora che l'ultima capsula si apra, e lo lascia cadere sul pavimento come un peso che non vuole più portare. Le camere si sbloccano in fila, la luce fredda dentro ognuna vacilla e si spegne. Arco arriva di corsa, la mano già sull'arma — vede cosa sta succedendo, vede chi c'è dentro quelle capsule, e abbassa il braccio. Non dice niente. Si mette semplicemente ad aiutare. Il ciclo che teneva in piedi la Torre da generazioni, per la prima volta, si interrompe."},
+ normal:{cls:"normal",title:"ARCHIVIO RICHIUSO",text:"Zero chiude il registro con un gesto secco, come se chiuderlo bastasse a chiudere anche quello che ha appena letto. Ciusky lo chiama per nome — una volta, poi un'altra, più piano — ma lui è già a metà corridoio e non si volta. TIC abbassa l'occhio, in silenzio, e resta lì. Le capsule tornano al loro ronzio basso, indifferenti a chi le ha guardate. Fuori dalla porta, Vale aspetta senza fare domande: ha visto la faccia di chi esce da lì dentro abbastanza volte da sapere quando è meglio non chiedere. La missione continua. Domani ci sarà un'altra chiamata, un'altra emergenza, un'altra ragione per non pensarci."},
+ evil:{cls:"evil",title:"SUPERVISORE AUTORIZZATO",text:"Zero non esita quando il nodo si apre davanti a lui — è quasi un sollievo, dopo tutto quello che ha visto, smettere di fare domande e cominciare a dare risposte. L'occhio di Oculo si spegne per un istante e si riaccende con una firma nuova, la sua. Ciusky guarda il monitor cambiare colore senza capire cosa significhi davvero. La voce che esce dai diffusori è ancora quella di Zero, ma più piatta, più sicura di sé in un modo che non gli somiglia: \"Unità Ciusky. Torna alla postazione.\" Le capsule restano esattamente dove sono sempre state. Qualcuno deve pur amministrarle."},
 };
+function buildEndingText(kind){
+ const base=ENDINGS[kind].text;
+ const pct=frameUsagePct();
+ let coda="";
+ if(kind==="good"){
+  if(sessionStats.kimSaved&&sessionStats.tommySaved)coda=" Zero pensa a Kim, a Tommy, a quella sera al PULSE che sembra già lontanissima — forse è per questo che non ha esitato.";
+  else coda=" Zero pensa a quella sera al PULSE, a chi non è riuscito a raggiungere in tempo — e stavolta non lascia che succeda di nuovo.";
+ }else if(kind==="evil"){
+  coda=pct>70?" Il Frame, ormai, è più una seconda pelle che un'armatura — forse è per questo che indossare anche questo nuovo ruolo non gli è costato niente.":" Anche senza indossarlo spesso, il Frame ha lasciato il segno che contava.";
+ }else{
+  coda=" Da qualche parte, Kim sta ancora aspettando che Zero le dica cosa gli è successo davvero quella sera.";
+ }
+ return base+coda;
+}
 function resolveAutomaticEnding(){
  const kind=fateEnding();missionHintEl.textContent="PROFILO COMPORTAMENTALE // SESSIONE CHIUSA";missionHintEl.classList.add("show");afterGame(950,()=>triggerEnding(kind));
 }
@@ -2787,7 +2840,7 @@ function recordLimenEnding(kind){
 }
 function triggerEnding(kind){
  choiceScreenEl.classList.remove("show");recordLimenEnding(kind);clearCheckpoint();
- const e=ENDINGS[kind];endingScreenEl.className=e.cls;endingScreenEl.style.backgroundImage=`url('ending_${kind}.png')`;endingScreenEl.querySelector("h1").style.opacity=1;endingScreenEl.querySelector("p").style.opacity=1;endingScreenEl.querySelector(".code").style.opacity=1;endingScreenEl.querySelector("h1").textContent=e.title;endingScreenEl.querySelector("p").textContent=e.text;endingScreenEl.classList.add("show");
+ const e=ENDINGS[kind];endingScreenEl.className=e.cls;endingScreenEl.style.backgroundImage=`url('ending_${kind}.png')`;endingScreenEl.querySelector("h1").style.opacity=1;endingScreenEl.querySelector("p").style.opacity=1;endingScreenEl.querySelector(".code").style.opacity=1;endingScreenEl.querySelector("h1").textContent=e.title;endingScreenEl.querySelector("p").textContent=buildEndingText(kind);endingScreenEl.classList.add("show");
  stopAmbient(3.5);sfx.win();
  setTimeout(()=>{
   const h1=endingScreenEl.querySelector("h1"),p=endingScreenEl.querySelector("p"),code=endingScreenEl.querySelector(".code");[h1,p,code].forEach(el=>{el.style.transition="opacity .8s ease";el.style.opacity=0;});
@@ -3250,7 +3303,7 @@ function frame(now){
  let dt=rawDt;
  if(slowMoT>0){ dt=rawDt*slowMoFactor; slowMoT-=rawDt; }
  updateTransformation(dt);
- const inputLocked=paused||!!transformState||!gameStarted||dialogueActive||gameOverActive||archiveEscortState||enteringTorre||zone==="colosso"||(colosso&&colosso.phase==="pose")||choiceScreenEl.classList.contains("show")||endingScreenEl.classList.contains("show")||!!emergeCutscene;
+ const inputLocked=paused||!!transformState||!gameStarted||dialogueActive||gameOverActive||archiveEscortState||enteringTorre||pulseEpilogueActive||zone==="colosso"||(colosso&&colosso.phase==="pose")||choiceScreenEl.classList.contains("show")||endingScreenEl.classList.contains("show")||!!emergeCutscene;
  if(enteringTorre){
   enterTorreT=Math.min(ENTER_TORRE_DUR,enterTorreT+dt);
   const q=1-Math.pow(1-Math.min(1,enterTorreT/ENTER_TORRE_DUR),2);

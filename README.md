@@ -1,3 +1,41 @@
+# RANGER ZERO v58 — scena di ritorno al PULSE + finali allungati e personalizzati
+
+## Nuovo: ritorno al PULSE dopo la vittoria
+Prima si saltava direttamente dalla vittoria sul Colosso al debriefing in Torre — dall'eroe
+che ha appena sconfitto un gigante si andava dritti al rapporto tattico, senza un momento
+umano nel mezzo. Aggiunta una breve tappa scriptata al PULSE, Zero tornato in borghese,
+PRIMA del resto:
+- Kim nota che "sei diverso" senza sapere perché — mantiene il segreto dell'identità, tocco
+  classico da tokusatsu.
+- Le battute cambiano in base a cosa e' successo davvero durante la crisi del prologo (se
+  Kim e Tommy sono stati salvati o si sono cavati da soli).
+- Non e' una rigiocata del prologo: niente crisi, niente meccaniche sociali, solo un paio di
+  battute scriptate — sicura da inserire senza toccare il sistema Hidden Fate (che ha gia'
+  registrato l'esito della crisi molto prima).
+- **Verificato end-to-end**: Colosso → PULSE (zona "bar", Zero non trasformato, dialogo di
+  Kim visibile) → Torre (debriefing originale, tutta la squadra presente) — nessun errore.
+
+## Finali allungati e personalizzati
+Segnalato nella sessione precedente come il punto debole vero: il sistema di punteggio
+nascosto e' sofisticato, il testo dei tre finali era troppo corto per reggerne il peso
+(circa 200 caratteri ciascuno). Ora:
+- Ogni finale e' riscritto, quasi triplicato in lunghezza, con dettagli piu' specifici
+  (Arco che abbassa l'arma nel finale buono, Vale che aspetta senza fare domande nel
+  normale, la voce di Zero che cambia timbro nel finale cattivo).
+- Aggiunta una **chiusa personalizzata**, agganciata a cosa e' successo davvero nella
+  partita (se Kim/Tommy sono stati salvati, quanto tempo il giocatore e' rimasto
+  trasformato) — il finale ora riflette concretamente le scelte tracciate dal sistema
+  nascosto, non solo genericamente.
+- **Verificato**: testo finale letto direttamente dallo schermo di gioco, 715 caratteri
+  (da ~200), chiusa personalizzata su Kim presente e corretta per il caso testato.
+
+## Nota per chi riprende
+Ho aggiunto e poi rimosso un'esposizione temporanea (`fate`, `barState`, `sessionStats`,
+ecc. su `window.__rz`) solo per testare — il file consegnato NON la contiene, il gioco
+resta esattamente come doveva essere prima, solo con le due aggiunte sopra.
+
+---
+
 # RANGER ZERO v56 — MOBILE COMPLETE
 
 ## Mobile pass
