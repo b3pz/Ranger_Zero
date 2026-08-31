@@ -1008,3 +1008,11 @@ Il playtest browser resta necessario per valutare soprattutto coreografia, silho
 - Fix Colosso: Scavengor resta a 1 HP fino al vero impatto della spada; solo il fendente porta HP a 0. Camera vittoria arretrata per mostrare la spada intera.
 - PULSE arricchito con sgabelli, bottiglie, bicchieri, blender, cassa, pesi, panca, bilanciere e porta d'ingresso; passaggio scale piu' largo e waypoint cliente corretto.
 - Storybox compatto ripulito: viene cancellato sui checkpoint e nasconde temporaneamente l'HUD missione per evitare sovrapposizioni mobile.
+
+
+# v57.1 — PULSE FLOW + ARCADE
+- Fix camera iniziale PULSE: spawn piu' interno e camera ravvicinata che torna gradualmente alla distanza normale, evitando il muro all'avvio.
+- Collisioni NPC PULSE rese morbide e piu' piccole; ridotti anche alcuni collider dei tavoli per eliminare impuntamenti e spinte multiple durante il cammino.
+- Tommy spiega esplicitamente che, mentre serve il cliente, Zero puo' fare due chiacchiere con i ragazzi della palestra; nessun contatore 0/3 viene mostrato.
+- Dopo tre Ranger il cliente si allontana e Tommy richiama Zero con un cue chiaro.
+- Easter egg LIMEN aggiunto al PULSE: due cabinati fisici aprono in nuova scheda IT SHIFT 2D e IT SHIFT 3D sulle rispettive GitHub Pages. Non contano per Hidden Fate e non bloccano il prologo.

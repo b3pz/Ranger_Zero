@@ -731,6 +731,21 @@ for(const x of [4.55,7.05])barProps.push({mesh:boxMesh([.40,.20,.20]),mtx:mul(ma
 // porta d'ingresso frontale con telaio crema/rosa
 barProps.push({mesh:boxMesh([.60,.52,.36]),mtx:mul(mat4.translate(BAR_CX,1.45,BAR_CZ+8.62),mat4.scale(2.7,2.9,.14))});
 barProps.push({mesh:boxMesh([.10,.48,.52]),mtx:mul(mat4.translate(BAR_CX,1.45,BAR_CZ+8.48),mat4.scale(1.85,2.45,.10))});
+// easter egg LIMEN: due cabinati giocabili che aprono i capitoli IT SHIFT pubblicati su GitHub Pages.
+const BAR_ARCADE_2D_POS={x:BAR_CX-7.65,z:BAR_CZ+6.65};
+const BAR_ARCADE_3D_POS={x:BAR_CX-6.15,z:BAR_CZ+6.65};
+const BAR_ARCADES=[
+ {id:"2d",name:"IT SHIFT 1.0 // A DAY IN IT SUPPORT",url:"https://b3pz.github.io/it-nightmare/",pos:BAR_ARCADE_2D_POS},
+ {id:"3d",name:"IT SHIFT",url:"https://b3pz.github.io/Itshit/",pos:BAR_ARCADE_3D_POS},
+];
+for(const a of BAR_ARCADES){
+ const x=a.pos.x,z=a.pos.z;
+ barProps.push({mesh:boxMesh([.10,.12,.18]),mtx:mul(mat4.translate(x,.92,z),mat4.scale(1.06,1.84,.72))});
+ barProps.push({mesh:boxMesh([.12,.14,.20]),mtx:mul(mat4.translate(x,1.77,z-.06),mat4.scale(1.02,.36,.74))});
+ barProps.push({mesh:boxMesh(a.id==="2d"?[.25,.75,.80]:[.72,.22,.22]),mtx:mul(mat4.translate(x,1.28,z-.39),mat4.scale(.72,.48,.035))});
+ barProps.push({mesh:boxMesh([.22,.24,.30]),mtx:mul(mat4.translate(x,.72,z-.42),mat4.rotX(-.20),mat4.scale(.86,.18,.38))});
+ barProps.push({mesh:boxMesh([.82,.68,.20]),mtx:mul(mat4.translate(x-.16,.78,z-.61),mat4.scale(.08,.08,.08))});
+}
 // pannello/nucleo nascosto che verra' esposto dall'esplosione
 barProps.push({mesh:boxMesh([.08,.10,.12]),mtx:mul(mat4.translate(BAR_CX+1.0,1.25,BAR_CZ-7.92),mat4.scale(1.05,1.55,.10))});
 const barPropsBuf=makeBuffer(bakeParts(barProps));
@@ -1025,12 +1040,21 @@ const BAR_COLLIDERS=[
  {x:BAR_CX,z:BAR_CZ-7.15,hx:4.05,hz:.58},
  {x:BAR_CX-6.8,z:BAR_CZ-7.65,hx:.70,hz:.50},
  {x:BAR_CX+6.8,z:BAR_CZ-7.65,hx:.70,hz:.50},
- ...[-5.0,-2.4,2.4,5.0].map(x=>({x:BAR_CX+x,z:BAR_CZ-4.4,hx:.52,hz:.52})),
- {x:BAR_BAG_POS.x,z:BAR_BAG_POS.z,hx:.48,hz:.48},
+ ...[-5.0,-2.4,2.4,5.0].map(x=>({x:BAR_CX+x,z:BAR_CZ-4.4,hx:.42,hz:.42})),
+ {x:BAR_BAG_POS.x,z:BAR_BAG_POS.z,hx:.44,hz:.44},
+ {x:BAR_ARCADE_2D_POS.x,z:BAR_ARCADE_2D_POS.z,hx:.52,hz:.40},
+ {x:BAR_ARCADE_3D_POS.x,z:BAR_ARCADE_3D_POS.z,hx:.52,hz:.40},
 ];
-function pushPlayerFromCircle(cx,cz,r){const dx=player.x-cx,dz=player.z-cz,d=Math.hypot(dx,dz)||.001,min=.34+r;if(d<min){const q=min-d;player.x+=dx/d*q;player.z+=dz/d*q;}}
+function pushPlayerFromCircle(cx,cz,r,soft){const dx=player.x-cx,dz=player.z-cz,d=Math.hypot(dx,dz)||.001,min=.34+r;if(d<min){let q=min-d;if(soft)q=Math.min(q,.055);player.x+=dx/d*q;player.z+=dz/d*q;}}
 function pushPlayerFromAABB(o){const r=.34,minX=o.x-o.hx,maxX=o.x+o.hx,minZ=o.z-o.hz,maxZ=o.z+o.hz;const qx=Math.max(minX,Math.min(maxX,player.x)),qz=Math.max(minZ,Math.min(maxZ,player.z));let dx=player.x-qx,dz=player.z-qz,d=Math.hypot(dx,dz);if(d>0&&d<r){const q=r-d;player.x+=dx/d*q;player.z+=dz/d*q;return;}if(d===0&&player.x>minX&&player.x<maxX&&player.z>minZ&&player.z<maxZ){const l=player.x-minX,rr=maxX-player.x,t=player.z-minZ,b=maxZ-player.z,m=Math.min(l,rr,t,b);if(m===l)player.x=minX-r;else if(m===rr)player.x=maxX+r;else if(m===t)player.z=minZ-r;else player.z=maxZ+r;}}
-function resolveBarCollisions(){if(zone!=="bar")return;for(const o of BAR_COLLIDERS)pushPlayerFromAABB(o);for(const b of barTeam)pushPlayerFromCircle(b.x,b.z,.35);for(const e of barExtras)pushPlayerFromCircle(e.x,e.z,.34);if(!barState.customerGone&&(barState.phase==="intro"||barState.phase==="free"))pushPlayerFromCircle(barCustomer.x,barCustomer.z,.33);if(barState.phase!=="after"){if(!barState.friendSaved)pushPlayerFromCircle(BAR_FRIEND_POS.x,BAR_FRIEND_POS.z,.34);if(!barState.bartenderSaved)pushPlayerFromCircle(BAR_BARTENDER_POS.x,BAR_BARTENDER_POS.z,.32);}}
+function resolveBarCollisions(){if(zone!=="bar")return;for(const o of BAR_COLLIDERS)pushPlayerFromAABB(o);
+ // NPC: collider piccolo e morbido. Prima ogni NPC mobile applicava un push pieno,
+ // quindi passando tra due persone/tavoli il PG riceveva piu' spinte nello stesso frame e "saltellava".
+ for(const b of barTeam)pushPlayerFromCircle(b.x,b.z,.16,true);
+ for(const e of barExtras)pushPlayerFromCircle(e.x,e.z,.13,true);
+ if(!barState.customerGone&&(barState.phase==="intro"||barState.phase==="free"))pushPlayerFromCircle(barCustomer.x,barCustomer.z,.14,true);
+ if(barState.phase!=="after"){if(!barState.friendSaved)pushPlayerFromCircle(BAR_FRIEND_POS.x,BAR_FRIEND_POS.z,.16,true);if(!barState.bartenderSaved)pushPlayerFromCircle(BAR_BARTENDER_POS.x,BAR_BARTENDER_POS.z,.14,true);}
+}
 function updateBarAmbientActors(dt){if(zone!=="bar"||!(barState.phase==="intro"||barState.phase==="free"))return;for(const b of barTeam){
  if(b.activity==="karateTeacher"||b.activity==="karateStudent"){
   // restano faccia a faccia e animano la lezione invece di vagare.
@@ -1041,7 +1065,7 @@ function updateBarAmbientActors(dt){if(zone!=="bar"||!(barState.phase==="intro"|
  const route=BAR_AMBIENT_ROUTES[b.name]||[[b.x,b.z]],t=route[b.routeIndex%route.length];b.targetX=t[0];b.targetZ=t[1];const dx=b.targetX-b.x,dz=b.targetZ-b.z,d=Math.hypot(dx,dz)||.001;if(d>.12){b.x+=dx/d*Math.min(d,dt*.52);b.z+=dz/d*Math.min(d,dt*.52);b.yaw=Math.atan2(dx,dz);b.walk+=dt*5.2;}else{b.waitT-=dt;if(b.waitT<=0){b.routeIndex=(b.routeIndex+1)%route.length;b.waitT=1.1+((b.routeIndex+b.name.length)%3)*.55;}}}for(let i=0;i<barExtras.length;i++){const e=barExtras[i],route=BAR_EXTRA_ROUTES[i];if(e.workout){e.walk+=dt*2;continue;}const t=route[e.routeIndex%route.length],dx=t[0]-e.x,dz=t[1]-e.z,d=Math.hypot(dx,dz)||.001;if(d>.12){e.x+=dx/d*Math.min(d,dt*.42);e.z+=dz/d*Math.min(d,dt*.42);e.yaw=Math.atan2(dx,dz);e.walk+=dt*4.5;}else{e.waitT-=dt;if(e.waitT<=0){e.routeIndex=(e.routeIndex+1)%route.length;e.waitT=1.3;}}}
  // Tommy resta occupato finche' Zero non ha davvero parlato con almeno tre persone.
  // Solo allora il cliente prende la bevanda e si allontana fisicamente dal bancone.
- if(barState.customerLeaving&&!barState.customerGone){const dx=BAR_CUSTOMER_EXIT.x-barCustomer.x,dz=BAR_CUSTOMER_EXIT.z-barCustomer.z,d=Math.hypot(dx,dz)||.001;if(d>.14){barCustomer.x+=dx/d*Math.min(d,dt*.86);barCustomer.z+=dz/d*Math.min(d,dt*.86);barCustomer.yaw=Math.atan2(dx,dz);barCustomer.walk+=dt*6;}else{barState.customerGone=true;barState.bartenderReady=true;missionHintEl.textContent="PULSE // PRENDI DA BERE DA TOMMY";missionHintEl.classList.add("show");}}
+ if(barState.customerLeaving&&!barState.customerGone){const dx=BAR_CUSTOMER_EXIT.x-barCustomer.x,dz=BAR_CUSTOMER_EXIT.z-barCustomer.z,d=Math.hypot(dx,dz)||.001;if(d>.14){barCustomer.x+=dx/d*Math.min(d,dt*.86);barCustomer.z+=dz/d*Math.min(d,dt*.86);barCustomer.yaw=Math.atan2(dx,dz);barCustomer.walk+=dt*6;}else{barState.customerGone=true;barState.bartenderReady=true;missionHintEl.textContent="TOMMY SI E' LIBERATO // PRENDI DA BERE";missionHintEl.classList.add("show");showStoryCue("TOMMY IL BARISTA","Ehi! Tocca a te.",{duration:1250});}}
 }
 // Waypoint manuali e sicuri: nessuno attraversa monitor, Oculo o il pannello
 // anomalo. L'illusione e' quella di una sala viva, non di NPC che vagano.
@@ -2140,7 +2164,7 @@ function fateEnding(){
 function readCheckpoint(){try{return JSON.parse(localStorage.getItem(CHECKPOINT_KEY)||"null");}catch(e){return null;}}
 function refreshContinueButton(){if(!continueBtnEl)return;const cp=readCheckpoint();continueBtnEl.disabled=!cp;continueBtnEl.style.opacity=cp?1:.38;}
 function saveCheckpoint(id){
- currentCheckpoint=id;try{localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({id,ts:Date.now(),version:57,transformed:!!player.transformed,morphUnlocked:!!morphUnlocked,fate:JSON.parse(JSON.stringify(fate)),stats:JSON.parse(JSON.stringify(sessionStats))}));}catch(e){}refreshContinueButton();
+ currentCheckpoint=id;try{localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({id,ts:Date.now(),version:57.1,transformed:!!player.transformed,morphUnlocked:!!morphUnlocked,fate:JSON.parse(JSON.stringify(fate)),stats:JSON.parse(JSON.stringify(sessionStats))}));}catch(e){}refreshContinueButton();
 }
 function clearCheckpoint(){try{localStorage.removeItem(CHECKPOINT_KEY);}catch(e){}currentCheckpoint=null;refreshContinueButton();}
 function showRuntimeError(title,msg){
@@ -2180,8 +2204,9 @@ function zoneBounds(){
  return b;
 }
 
-let barState={phase:"idle",timer:0,lastSec:-1,deadlineExpired:false,friendSaved:false,bartenderSaved:false,deviceUsed:false,monsterX:BAR_CX+7.8,monsterZ:BAR_CZ-1.0,monsterT:0,crisisElapsed:0,actionOrder:[],socialCount:0,socialFlags:{},ambientFlags:{},bagUsed:false,bartenderReady:false,customerLeaving:false,customerGone:false,orderStarted:false,freeT:0,resolved:false};
-function resetBarState(){barState={phase:"idle",timer:0,lastSec:-1,deadlineExpired:false,friendSaved:false,bartenderSaved:false,deviceUsed:false,monsterX:BAR_CX+7.8,monsterZ:BAR_CZ-1.0,monsterT:0,crisisElapsed:0,actionOrder:[],socialCount:0,socialFlags:{},ambientFlags:{},bagUsed:false,bartenderReady:false,customerLeaving:false,customerGone:false,orderStarted:false,freeT:0,resolved:false};barCustomer.x=BAR_CUSTOMER_START.x;barCustomer.z=BAR_CUSTOMER_START.z;barCustomer.yaw=Math.PI;barCustomer.walk=0;for(const b of barTeam){const q=BAR_TEAM_START[b.name];if(q){b.x=q[0];b.z=q[1];b.yaw=q[2];b.targetX=b.x;b.targetZ=b.z;b.routeIndex=0;b.waitT=.25;b.walk=0;}}}
+let barIntroCamT=0;
+let barState={phase:"idle",timer:0,lastSec:-1,deadlineExpired:false,friendSaved:false,bartenderSaved:false,deviceUsed:false,monsterX:BAR_CX+7.8,monsterZ:BAR_CZ-1.0,monsterT:0,crisisElapsed:0,actionOrder:[],socialCount:0,socialFlags:{},ambientFlags:{},bagUsed:false,bartenderReady:false,customerLeaving:false,customerGone:false,orderStarted:false,freeT:0,resolved:false,tommyHintSeen:false};
+function resetBarState(){barState={phase:"idle",timer:0,lastSec:-1,deadlineExpired:false,friendSaved:false,bartenderSaved:false,deviceUsed:false,monsterX:BAR_CX+7.8,monsterZ:BAR_CZ-1.0,monsterT:0,crisisElapsed:0,actionOrder:[],socialCount:0,socialFlags:{},ambientFlags:{},bagUsed:false,bartenderReady:false,customerLeaving:false,customerGone:false,orderStarted:false,freeT:0,resolved:false,tommyHintSeen:false};barCustomer.x=BAR_CUSTOMER_START.x;barCustomer.z=BAR_CUSTOMER_START.z;barCustomer.yaw=Math.PI;barCustomer.walk=0;for(const b of barTeam){const q=BAR_TEAM_START[b.name];if(q){b.x=q[0];b.z=q[1];b.yaw=q[2];b.targetX=b.x;b.targetZ=b.z;b.routeIndex=0;b.waitT=.25;b.walk=0;}}}
 const barIntroLines=[
  {speaker:"KIM",text:"Finalmente. Pensavo mi avresti dato buca."},
  {speaker:"ZERO",text:"E perdermi una serata tranquilla al Pulse? Mai."},
@@ -2205,8 +2230,16 @@ const barRecruitLines=[
  {speaker:"ZERO",text:"Aspetta. Io non sono un Ranger."},
  {speaker:"OCULO",text:"Non ancora."}
 ];
-function enterBar(){zone="bar";player.x=BAR_CX;player.z=BAR_CZ+6.4;player.yaw=Math.PI;player.transformed=false;player.helmet=false;morphUnlocked=false;resetBarState();playAmbient("bar");missionHintEl.classList.remove("show");}
-function barSocialProgress(){barState.socialCount=BAR_RANGER_NAMES.filter(n=>!!barState.socialFlags[n]).length;if(barState.socialCount>=3&&!barState.customerLeaving&&!barState.customerGone){barState.customerLeaving=true;missionHintEl.textContent="PULSE // PRENDI DA BERE AL BAR";missionHintEl.classList.add("show");}else if(barState.socialCount<3){missionHintEl.textContent="PULSE // PRENDI DA BERE PER KIM";missionHintEl.classList.add("show");}}
+function enterBar(){zone="bar";player.x=BAR_CX;player.z=BAR_CZ+4.9;player.yaw=Math.PI;barIntroCamT=2.4;camState.yawOffset=0;player.transformed=false;player.helmet=false;morphUnlocked=false;resetBarState();playAmbient("bar");missionHintEl.classList.remove("show");}
+function barSocialProgress(){
+ barState.socialCount=BAR_RANGER_NAMES.filter(n=>!!barState.socialFlags[n]).length;
+ if(barState.socialCount>=3&&!barState.customerLeaving&&!barState.customerGone){
+  barState.customerLeaving=true;missionHintEl.textContent="PULSE // ASPETTA CHE TOMMY FINISCA";missionHintEl.classList.add("show");
+ }else if(barState.socialCount<3){
+  missionHintEl.textContent=barState.tommyHintSeen?"TOMMY E' OCCUPATO // FAI DUE CHIACCHIERE CON I RAGAZZI":"PULSE // PRENDI DA BERE PER KIM";
+  missionHintEl.classList.add("show");
+ }
+}
 function startBarPrologue(){resetBarState();barState.phase="intro";missionHintEl.textContent="PULSE // BAR & PALESTRA";missionHintEl.classList.add("show");afterGame(550,()=>playDialogue(barIntroLines,()=>{barState.phase="free";barSocialProgress();}));}
 function startBarOrder(){if(zone!=="bar"||barState.phase!=="free"||!barState.bartenderReady||barState.orderStarted)return;barState.orderStarted=true;barState.phase="order";nearInteractable=null;interactPromptEl.classList.remove("show");clearKeys();playDialogue([
  {speaker:"TOMMY IL BARISTA",text:"Eccomi. Che ti preparo?"},
@@ -2248,9 +2281,18 @@ function markBarSocialInteraction(key,lines){if(barState.socialFlags[key])return
 function doBarInteract(){if(zone!=="bar")return;if(barState.phase==="free"){
  if(nearInteractable==="barKimTalk")return markBarSocialInteraction("KIM",barFreeTalk.KIM);
  if(nearInteractable&&nearInteractable.startsWith("barTeamTalk:")){const name=nearInteractable.split(":")[1];return markBarSocialInteraction(name,barFreeTalk[name]||[{speaker:name,text:"Ci vediamo in giro."}]);}
- if(nearInteractable==="barBartenderBusy")return playDialogue([{speaker:"TOMMY IL BARISTA",text:"Un secondo, sto finendo di servire. Ti chiamo io."}]);
+ if(nearInteractable==="barBartenderBusy"){
+  barState.tommyHintSeen=true;
+  return playDialogue([
+   {speaker:"TOMMY IL BARISTA",text:"Un secondo, sto finendo di servire."},
+   {speaker:"TOMMY IL BARISTA",text:"Kim e' con quei ragazzi della palestra. Fai due chiacchiere, ti chiamo io."}
+  ],barSocialProgress);
+ }
  if(nearInteractable==="barCustomerTalk"){barState.ambientFlags.customer=true;return playDialogue([{speaker:"CLIENTE AL BANCONE",text:"Tommy sta finendo il mio. Tocca a te dopo."}]);}
  if(nearInteractable&&nearInteractable.startsWith("barExtraTalk:")){const i=+nearInteractable.split(":")[1],e=barExtras[i];if(e){barState.ambientFlags["extra"+i]=true;return playDialogue([{speaker:e.label||"CLIENTE",text:e.line||"Bella serata."}]);}}
+ if(nearInteractable&&nearInteractable.startsWith("barArcade:")){
+  const id=nearInteractable.split(":")[1],a=BAR_ARCADES.find(q=>q.id===id);if(a){window.open(a.url,"_blank","noopener");showStoryCue("CABINATO",a.name+" // LMN_01",{portrait:false,duration:1600});}return;
+ }
  if(nearInteractable==="barBartenderOrder")return startBarOrder();
  if(nearInteractable==="barBag"&&!barState.bagUsed){barState.bagUsed=true;sfx.uiBlip();return playDialogue(barFreeTalk.SACCO);}
  return;
@@ -3203,6 +3245,7 @@ function frame(now){
  const rawDt=Math.min(.05,(now-last)/1000);last=now;
  if(paused){rawDtGlobal=0;requestAnimationFrame(frame);return;}
  rawDtGlobal=rawDt;updateGameTimers(rawDt);
+ if(barIntroCamT>0)barIntroCamT=Math.max(0,barIntroCamT-rawDt);
  if(gameStarted&&morphUnlocked&&(zone==="torre"||zone==="archivio")){sessionStats.frameTotal+=rawDt;if(player.transformed)sessionStats.frameActive+=rawDt;}
  let dt=rawDt;
  if(slowMoT>0){ dt=rawDt*slowMoFactor; slowMoT-=rawDt; }
@@ -3316,8 +3359,12 @@ function frame(now){
     else if(ambientI>=0){nearInteractable="barExtraTalk:"+ambientI;interactPromptEl.textContent="SPAZIO — PARLA";interactPromptEl.classList.add("show");}
     else if(db<2.15&&!barState.bartenderReady){nearInteractable="barBartenderBusy";interactPromptEl.textContent="SPAZIO — PARLA CON TOMMY";interactPromptEl.classList.add("show");}
     else if(db<2.15&&barState.bartenderReady){nearInteractable="barBartenderOrder";interactPromptEl.textContent="SPAZIO — ORDINA DA BERE";interactPromptEl.classList.add("show");}
-    else if(dg<1.45&&!barState.bagUsed){nearInteractable="barBag";interactPromptEl.textContent="SPAZIO — PROVA IL SACCO";interactPromptEl.classList.add("show");}
-    else{nearInteractable=null;interactPromptEl.classList.remove("show");}
+    else{
+     let arcade=null,arcadeD=1.35;for(const a of BAR_ARCADES){const d=Math.hypot(player.x-a.pos.x,player.z-a.pos.z);if(d<arcadeD){arcade=a;arcadeD=d;}}
+     if(arcade){nearInteractable="barArcade:"+arcade.id;interactPromptEl.textContent="SPAZIO — GIOCA "+(arcade.id==="2d"?"IT SHIFT 2D":"IT SHIFT 3D");interactPromptEl.classList.add("show");}
+     else if(dg<1.45&&!barState.bagUsed){nearInteractable="barBag";interactPromptEl.textContent="SPAZIO — PROVA IL SACCO";interactPromptEl.classList.add("show");}
+     else{nearInteractable=null;interactPromptEl.classList.remove("show");}
+    }
    }
   }else{
    const df=Math.hypot(player.x-BAR_FRIEND_POS.x,player.z-BAR_FRIEND_POS.z),db=Math.hypot(player.x-BAR_BARTENDER_POS.x,player.z-BAR_BARTENDER_POS.z),dc=Math.hypot(player.x-BAR_CORE_POS.x,player.z-BAR_CORE_POS.z);
@@ -3399,7 +3446,8 @@ function frame(now){
  // a una parete. Ora la posizione ideale viene bloccata dentro i bordi
  // della zona attuale con un margine, cosi' l'occhio non entra mai nel muro.
  const camYaw=player.yaw+camState.yawOffset;
- const dist=camState.dist*(1-zoomIn*.72);
+ const introCamScale=(zone==="bar"&&barIntroCamT>0)?(.62+(1-barIntroCamT/2.4)*.38):1;
+ const dist=camState.dist*(1-zoomIn*.72)*introCamScale;
  let eyeX=player.x - Math.sin(camYaw)*dist;
  let eyeZ=player.z - Math.cos(camYaw)*dist;
  eyeX=Math.max(zb.camXmin,Math.min(zb.camXmax,eyeX));
