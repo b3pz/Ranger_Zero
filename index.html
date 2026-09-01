@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>RANGER ZERO — v57.1 PULSE FLOW + ARCADE</title>
+<title>Project Ranger Zero</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -171,6 +171,18 @@
     padding:7px 16px;opacity:0;transition:opacity .3s ease;pointer-events:none}
   #missionHint.show{opacity:1}
 
+  /* Project Ranger Zero — feedback azione: separato dagli obiettivi. */
+  #actionCallout{position:absolute;left:50%;top:24%;transform:translate(-50%,-50%) scale(.88);display:flex;align-items:center;gap:12px;opacity:0;pointer-events:none;z-index:72;transition:opacity .12s ease,transform .16s ease}
+  #actionCallout.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  #actionCalloutIcon{width:54px;height:62px;position:relative;filter:drop-shadow(0 0 12px currentColor)}
+  #actionCallout.guard{color:#7dff9e}
+  #actionCallout.guard #actionCalloutIcon{background:linear-gradient(180deg,rgba(125,255,158,.95),rgba(18,90,54,.95));clip-path:polygon(50% 0,92% 16%,84% 70%,50% 100%,16% 70%,8% 16%);border:2px solid rgba(230,255,238,.8)}
+  #actionCallout.dodge{color:#7fdcff}
+  #actionCallout.dodge #actionCalloutIcon{width:68px;height:30px;background:linear-gradient(90deg,transparent,rgba(127,220,255,.95),transparent);clip-path:polygon(0 35%,64% 35%,64% 0,100% 50%,64% 100%,64% 65%,0 65%)}
+  #actionCallout.power{color:#ffe07a}
+  #actionCallout.power #actionCalloutIcon{background:linear-gradient(180deg,#fff5a5,#ff9b2f);clip-path:polygon(56% 0,22% 54%,47% 54%,36% 100%,82% 38%,56% 38%)}
+  #actionCalloutText{font-weight:700;letter-spacing:2px;font-size:20px;color:currentColor;text-shadow:0 2px 4px #000}
+
   /* v23 — release/safety UI */
   #titleScreen{cursor:default}
   #titleScreen .titleSub{display:none}
@@ -317,7 +329,7 @@ i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del 
   <div id="storyCueText">...</div>
 </div>
 <div id="colossoHpWrap">
-  <div id="colossoHpLabel">SCAVENGOR</div>
+  <div id="colossoHpLabel">GRINDER</div>
   <div id="colossoHpTrack"><div id="colossoHpFill"></div></div>
 </div>
 
@@ -330,7 +342,7 @@ i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del 
       <div class="key"><b>SHIFT</b>GUARDIA<br>usa il timing</div>
       <div class="key"><b>C</b>SPECIALE<br>solo a energia piena</div>
     </div>
-    <p class="tip">Guarda l'avviso dell'attacco del Raccoglitore. Premi SHIFT nella finestra giusta per una <b>GUARDIA PERFETTA</b>. Lo speciale C si attiva solo quando la barra energia e' piena.</p>
+    <p class="tip">Guarda l'avviso dell'attacco del Grinder. Premi SHIFT nella finestra giusta per una <b>GUARDIA PERFETTA</b>. Lo speciale C si attiva solo quando la barra energia e' piena.</p>
     <button id="giantTutorialBtn" type="button">SPAZIO / COMBATTI</button>
   </div>
 </div>
@@ -348,8 +360,8 @@ i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del 
 <div id="endingScreen">
   <h1>...</h1>
   <p>...</p>
-  <div id="sessionStats"><h2>SESSIONE LMN_02</h2><pre id="sessionStatsText"></pre></div>
-  <div class="code">LMN_02 // SESSIONE REGISTRATA</div>
+  <div id="sessionStats"><h2>SESSIONE RANGER ZERO</h2><pre id="sessionStatsText"></pre></div>
+  <div class="code">PROJECT RANGER ZERO · SESSIONE REGISTRATA</div>
 </div>
 <div id="cliffFlash"></div>
 <img id="cliffEye" src="oculo_eye.png">
@@ -361,6 +373,7 @@ i browser bloccano le texture WebGL cosi'. Apri un terminale nella cartella del 
 </div>
 <div id="hpBar"><div id="hpLabel">HP</div><div id="hpTrack"><div id="hpFill"></div></div></div>
 <div id="missionHint">MISSIONE</div>
+<div id="actionCallout"><div id="actionCalloutIcon"></div><div id="actionCalloutText"></div></div>
 <div id="hud">RANGER ZERO <span style="color:#7fa8ff">// v56 MOBILE COMPLETE</span></div>
 <div id="tag">LA TORRE — SALA DI COMANDO<br>test movimento + personaggio 3D vero</div>
 <div id="hint">W/S avanti-indietro · A/D ruota · Q/E telecamera · F attacco · SHIFT schivata/guardia · C speciale · P/ESC pausa</div>

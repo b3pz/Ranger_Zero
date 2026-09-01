@@ -830,7 +830,7 @@ function partMeshFor(pal){
 }
 // kind: "ranger" (default, eroico), "scagnozzo" (sagoma diversa: niente
 // cresta, visiera a fessura, un po' curvo — si legge subito come nemico
-// generico, non come "un altro Ranger"), "raccoglitore" (corna al posto
+// generico, non come "un altro Ranger"), "grinder" (corna al posto
 // della cresta, spallacci asimmetrici — armatura raccogliticcia, non di
 // serie). attackPhase (0..1, opzionale) fa scattare in avanti il braccio
 // destro per un pugno leggibile invece di restare fermo mentre "attacca".
@@ -838,21 +838,21 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
  kind=kind||"ranger";
  attackStyle=attackStyle||0;
  const pm=partMeshFor(pal);
- const swing=Math.sin(walkPhase)*.55*speedFactor;
- const swingOpp=Math.sin(walkPhase+Math.PI)*.55*speedFactor;
- const bob=Math.abs(Math.cos(walkPhase))*.045*speedFactor;
+ const swing=Math.sin(walkPhase)*.42*speedFactor;
+ const swingOpp=Math.sin(walkPhase+Math.PI)*.42*speedFactor;
+ const bob=Math.abs(Math.cos(walkPhase))*.028*speedFactor;
  const hunch=kind==="scagnozzo"?.10:0;
- const torsoW=kind==="raccoglitore"?.54:kind==="scagnozzo"?.50:.46;
+ const torsoW=kind==="grinder"?.54:kind==="scagnozzo"?.49:.44;
  const armored=helmet&&kind==="ranger";
  const parts=[
-  {mesh:armored?pm.under:pm.torso, mtx:mul(mat4.translate(0,1.05+bob-hunch*.3,0),mat4.rotX(hunch),mat4.scale(torsoW,.62,.28))},
+  {mesh:armored?pm.under:pm.torso, mtx:mul(mat4.translate(0,1.05+bob-hunch*.3,0),mat4.rotX(hunch),mat4.scale(torsoW,.60,.27))},
   {mesh:pm.belt,  mtx:mul(mat4.translate(0,.76+bob,0),mat4.scale(.49,.10,.31))},
  ];
  // Collo: prima non c'era nulla tra la cima del busto e il fondo di
  // testa/elmo — un vuoto sottile ma visibile, soprattutto da dietro (la
  // "nuca" sembrava non esistere). Un pezzo stretto colma lo spazio: colore
  // della tuta per chi e' vestito/armato, pelle per la forma civile.
- parts.push({mesh:armored||kind==="scagnozzo"||kind==="raccoglitore"?pm.under:pm.head,
+ parts.push({mesh:armored||kind==="scagnozzo"||kind==="grinder"?pm.under:pm.head,
   mtx:mul(mat4.translate(0,1.375+bob-hunch*.3,0),mat4.rotX(hunch),mat4.scale(.145,.11,.145))});
  if(armored){
   // v31: tuta vera, non armatura tattica sopra una sottotuta — un grande
@@ -872,9 +872,9 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
   // Nessun modulo mecha sulla schiena del Ranger Zero: il suo modulo speciale
   // viene richiamato solo nella sequenza del COLOSSO ed entra nel robot.
  }
- if(kind==="raccoglitore"){
+ if(kind==="grinder"){
   // spallacci asimmetrici: uno più grande dell'altro, come pezzi di
-  // armature diverse tenute insieme alla bell'e meglio. Scavengor
+  // armature diverse tenute insieme alla bell'e meglio. Grinder
   // resta l'eccezione "armatura vera", proprio perche' e' fatta di pezzi
   // raccogliticci — il contrasto con la tuta pulita dei Ranger e' voluto.
   parts.push({mesh:pm.shoulderPad, mtx:mul(mat4.translate(.40,1.42+bob,0),mat4.scale(.22,.16,.24))});
@@ -899,7 +899,7 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
   // deliberatamente meno "eroico", piu' anonimo/usa e getta.
   parts.push({mesh:pm.helmetShell, mtx:mul(mat4.translate(0,1.52+bob-hunch*.4,0),mat4.rotX(hunch*.6),mat4.scale(.30,.28,.30))});
   parts.push({mesh:pm.helmetVisor, mtx:mul(mat4.translate(0,1.51+bob-hunch*.4,.145),mat4.rotX(hunch*.6),mat4.scale(.22,.05,.05))});
- }else if(kind==="raccoglitore"){
+ }else if(kind==="grinder"){
   // corna al posto della cresta, elmo piu' squadrato/pesante, e due occhi
   // rossi che si vedono attraverso la visiera invece di una fessura piatta
   // e basta — gli dà un volto minaccioso vero senza dover ridisegnare tutto.
@@ -915,11 +915,11 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
   parts.push({mesh:RACC_SCRAP.tooth, mtx:mul(mat4.translate(.06,1.505+bob,.228),mat4.rotZ(-.18),mat4.scale(.025,.045,.012))});
   parts.push({mesh:pm.horn, mtx:mul(mat4.translate(-.18,1.88+bob,0),mat4.rotZ(.40),mat4.scale(.07,.24,.07))});
   parts.push({mesh:pm.horn, mtx:mul(mat4.translate(.18,1.88+bob,0),mat4.rotZ(-.40),mat4.scale(.07,.24,.07))});
-  // v24: Scavengor conserva volto, corna e armatura asimmetrica, ma
+  // v24: Grinder conserva volto, corna e armatura asimmetrica, ma
   // NON porta piu' placche colorate dei Ranger. Quei colori appartengono
   // chiaramente al Colosso combinato; l'Archivio spiega il riciclo del ciclo.
  }else{
-  parts.push({mesh:pm.head,  mtx:mul(mat4.translate(0,1.55+bob,0),mat4.scale(.30,.30,.30))});
+  parts.push({mesh:pm.head,  mtx:mul(mat4.translate(0,1.55+bob,0),mat4.scale(.285,.295,.285))});
   parts.push({mesh:pm.hair,  mtx:mul(mat4.translate(0,1.665+bob,-.01),mat4.scale(.305,.14,.30))});
   if(pal.female){
    // Coda di cavallo: un NPC donna deve leggersi diverso dagli altri anche
@@ -943,14 +943,14 @@ function buildBodyParts(pal,walkPhase,speedFactor,helmet,kind,attackPhase,weapon
  const kickFwd=attackPhase&&isKick? .42*punch : 0;
  const lowerArmMesh=armored?pm.upperArm:pm.lowerArm;
  parts.push(
-  {mesh:pm.upperArm, mtx:mul(mat4.translate(.34,1.30+bob,0),mat4.rotX(rArmRot),mat4.translate(0,-.20,rArmFwd),mat4.scale(.16,.40,.16))},
-  {mesh:lowerArmMesh, mtx:mul(mat4.translate(.34,1.30+bob,0),mat4.rotX(rArmRot),mat4.translate(0,-.46,rArmFwd*1.6),mat4.scale(.15,.31,.15))},
-  {mesh:pm.upperArm, mtx:mul(mat4.translate(-.34,1.30+bob,0),mat4.rotX(lArmRot),mat4.translate(0,-.20,lArmFwd),mat4.scale(.16,.40,.16))},
-  {mesh:lowerArmMesh, mtx:mul(mat4.translate(-.34,1.30+bob,0),mat4.rotX(lArmRot),mat4.translate(0,-.46,lArmFwd*1.6),mat4.scale(.15,.31,.15))},
-  {mesh:pm.upperLeg, mtx:mul(mat4.translate(.16,.74+bob,0),mat4.rotX(kickRot),mat4.translate(0,-.24,kickFwd),mat4.scale(.19,.48,.19))},
-  {mesh:pm.lowerLeg, mtx:mul(mat4.translate(.16,.74+bob,0),mat4.rotX(kickRot),mat4.translate(0,-.56,kickFwd*1.45),mat4.scale(.17,.34,.19))},
-  {mesh:pm.upperLeg, mtx:mul(mat4.translate(-.16,.74+bob,0),mat4.rotX(swing),mat4.translate(0,-.24,0),mat4.scale(.19,.48,.19))},
-  {mesh:pm.lowerLeg, mtx:mul(mat4.translate(-.16,.74+bob,0),mat4.rotX(swing),mat4.translate(0,-.56,0),mat4.scale(.17,.34,.19))},
+  {mesh:pm.upperArm, mtx:mul(mat4.translate(.34,1.30+bob,0),mat4.rotX(rArmRot),mat4.translate(0,-.20,rArmFwd),mat4.scale(.145,.40,.145))},
+  {mesh:lowerArmMesh, mtx:mul(mat4.translate(.34,1.30+bob,0),mat4.rotX(rArmRot),mat4.translate(0,-.46,rArmFwd*1.6),mat4.scale(.135,.31,.135))},
+  {mesh:pm.upperArm, mtx:mul(mat4.translate(-.34,1.30+bob,0),mat4.rotX(lArmRot),mat4.translate(0,-.20,lArmFwd),mat4.scale(.145,.40,.145))},
+  {mesh:lowerArmMesh, mtx:mul(mat4.translate(-.34,1.30+bob,0),mat4.rotX(lArmRot),mat4.translate(0,-.46,lArmFwd*1.6),mat4.scale(.135,.31,.135))},
+  {mesh:pm.upperLeg, mtx:mul(mat4.translate(.16,.74+bob,0),mat4.rotX(kickRot),mat4.translate(0,-.24,kickFwd),mat4.scale(.18,.48,.18))},
+  {mesh:pm.lowerLeg, mtx:mul(mat4.translate(.16,.74+bob,0),mat4.rotX(kickRot),mat4.translate(0,-.56,kickFwd*1.45),mat4.scale(.165,.35,.18))},
+  {mesh:pm.upperLeg, mtx:mul(mat4.translate(-.16,.74+bob,0),mat4.rotX(swing),mat4.translate(0,-.24,0),mat4.scale(.18,.48,.18))},
+  {mesh:pm.lowerLeg, mtx:mul(mat4.translate(-.16,.74+bob,0),mat4.rotX(swing),mat4.translate(0,-.56,0),mat4.scale(.165,.35,.18))},
  );
  if(armored){
   // v31: niente piu' polsini/ginocchiere/piastre agli stivali separate —
@@ -1055,7 +1055,7 @@ function resolveBarCollisions(){if(zone!=="bar")return;for(const o of BAR_COLLID
  if(!barState.customerGone&&(barState.phase==="intro"||barState.phase==="free"))pushPlayerFromCircle(barCustomer.x,barCustomer.z,.14,true);
  if(barState.phase!=="after"){if(!barState.friendSaved)pushPlayerFromCircle(BAR_FRIEND_POS.x,BAR_FRIEND_POS.z,.16,true);if(!barState.bartenderSaved)pushPlayerFromCircle(BAR_BARTENDER_POS.x,BAR_BARTENDER_POS.z,.14,true);}
 }
-function updateBarAmbientActors(dt){if(zone!=="bar"||!(barState.phase==="intro"||barState.phase==="free"))return;for(const b of barTeam){
+function updateBarAmbientActors(dt){if(zone!=="bar"||!(barState.phase==="intro"||barState.phase==="free"||barState.phase==="return"))return;for(const b of barTeam){
  if(b.activity==="karateTeacher"||b.activity==="karateStudent"){
   // restano faccia a faccia e animano la lezione invece di vagare.
   const other=barTeam.find(q=>q.name===(b.name==="ARCO"?"CIUSKY":"ARCO"));
@@ -1065,7 +1065,7 @@ function updateBarAmbientActors(dt){if(zone!=="bar"||!(barState.phase==="intro"|
  const route=BAR_AMBIENT_ROUTES[b.name]||[[b.x,b.z]],t=route[b.routeIndex%route.length];b.targetX=t[0];b.targetZ=t[1];const dx=b.targetX-b.x,dz=b.targetZ-b.z,d=Math.hypot(dx,dz)||.001;if(d>.12){b.x+=dx/d*Math.min(d,dt*.52);b.z+=dz/d*Math.min(d,dt*.52);b.yaw=Math.atan2(dx,dz);b.walk+=dt*5.2;}else{b.waitT-=dt;if(b.waitT<=0){b.routeIndex=(b.routeIndex+1)%route.length;b.waitT=1.1+((b.routeIndex+b.name.length)%3)*.55;}}}for(let i=0;i<barExtras.length;i++){const e=barExtras[i],route=BAR_EXTRA_ROUTES[i];if(e.workout){e.walk+=dt*2;continue;}const t=route[e.routeIndex%route.length],dx=t[0]-e.x,dz=t[1]-e.z,d=Math.hypot(dx,dz)||.001;if(d>.12){e.x+=dx/d*Math.min(d,dt*.42);e.z+=dz/d*Math.min(d,dt*.42);e.yaw=Math.atan2(dx,dz);e.walk+=dt*4.5;}else{e.waitT-=dt;if(e.waitT<=0){e.routeIndex=(e.routeIndex+1)%route.length;e.waitT=1.3;}}}
  // Tommy resta occupato finche' Zero non ha davvero parlato con almeno tre persone.
  // Solo allora il cliente prende la bevanda e si allontana fisicamente dal bancone.
- if(barState.customerLeaving&&!barState.customerGone){const dx=BAR_CUSTOMER_EXIT.x-barCustomer.x,dz=BAR_CUSTOMER_EXIT.z-barCustomer.z,d=Math.hypot(dx,dz)||.001;if(d>.14){barCustomer.x+=dx/d*Math.min(d,dt*.86);barCustomer.z+=dz/d*Math.min(d,dt*.86);barCustomer.yaw=Math.atan2(dx,dz);barCustomer.walk+=dt*6;}else{barState.customerGone=true;barState.bartenderReady=true;missionHintEl.textContent="TOMMY SI E' LIBERATO // PRENDI DA BERE";missionHintEl.classList.add("show");showStoryCue("TOMMY IL BARISTA","Ehi! Tocca a te.",{duration:1250});}}
+ if(barState.customerLeaving&&!barState.customerGone){const dx=BAR_CUSTOMER_EXIT.x-barCustomer.x,dz=BAR_CUSTOMER_EXIT.z-barCustomer.z,d=Math.hypot(dx,dz)||.001;if(d>.14){barCustomer.x+=dx/d*Math.min(d,dt*.86);barCustomer.z+=dz/d*Math.min(d,dt*.86);barCustomer.yaw=Math.atan2(dx,dz);barCustomer.walk+=dt*6;}else{barState.customerGone=true;barState.bartenderReady=true;missionHintEl.textContent="TOMMY SI E' LIBERATO — PRENDI DA BERE";missionHintEl.classList.add("show");showStoryCue("TOMMY IL BARISTA","Ehi! Tocca a te.",{duration:1250});}}
 }
 // Waypoint manuali e sicuri: nessuno attraversa monitor, Oculo o il pannello
 // anomalo. L'illusione e' quella di una sala viva, non di NPC che vagano.
@@ -1183,7 +1183,7 @@ function getTowerTicPosition(nowMs){
 // ARENA — spiaggia vicino al mare per il primo combattimento, separata da
 // La Torre (zona diversa, vedi ZONES piu' sotto). Pochi elementi apposta
 // (sabbia + mare + qualche scoglio), sia per restare leggera sia perche'
-// il mare serve gia' da ora: e' li' che Scavengor uscira' quando
+// il mare serve gia' da ora: e' li' che Grinder uscira' quando
 // costruiremo la fase 2, come nei tokusatsu veri.
 // ============================================================
 const ARENA_CX=0, ARENA_CZ=-60, ARENA_W=26, ARENA_D=26;
@@ -1243,13 +1243,13 @@ const arenaSkyBuf=makeBuffer(bakeParts([
 // Fondale vero (opzionale): se "arena_sky.png" e' presente nella cartella,
 // un grande pannello con l'immagine sostituisce/copre le bande di colore
 // procedurali sull'orizzonte nord (la direzione verso cui si guarda per la
-// maggior parte del combattimento, ed e' dove emerge Scavengor).
+// maggior parte del combattimento, ed e' dove emerge Grinder).
 // Se il file non c'e', drawTexturedQuad non disegna nulla — restano solo
 // le bande procedurali, nessun errore, nessun buco visivo.
 const arenaSkyTex=loadTexture("arena_sky.png");
 // Panorama equirettangolare 2:1 avvolto a 360 gradi. La cucitura U=0/1
 // viene posizionata dietro il punto di ingresso (+Z); il centro dell'immagine
-// (U=.5, mare/tramonto) guarda verso -Z, cioe' la direzione di Scavengor.
+// (U=.5, mare/tramonto) guarda verso -Z, cioe' la direzione di Grinder.
 function buildArenaPanorama(segments=32,radius=52,bottom=-5,top=30){
  const pos=[],uv=[];
  for(let i=0;i<segments;i++){
@@ -1276,7 +1276,7 @@ const giantStageBuf=makeBuffer(bakeParts([
 const cityParts=[];
 const cityCols=[[.24,.27,.31],[.30,.30,.29],[.20,.25,.29],[.34,.28,.24],[.26,.22,.20]];
 // Edifici soprattutto ai lati: il centro resta un viale di battaglia, cosi'
-// Colosso e Raccoglitore non sembrano compenetrati nei palazzi.
+// Colosso e Grinder non sembrano compenetrati nei palazzi.
 const cityLayout=[
  [-14,-69,2.0,2.2,1.6],[-10.5,-68,1.6,3.0,1.4],[10.5,-69,1.7,2.4,1.5],[14,-67,2.2,3.2,1.7],
  [-14,-63,2.4,3.5,1.8],[-10.5,-62,1.7,1.8,1.5],[10.5,-63,2.0,2.8,1.7],[14,-61,1.6,1.7,1.4],
@@ -1322,17 +1322,17 @@ for(let ring=0; ring<3; ring++){
 const giantCityBuf=makeBuffer(bakeParts(cityParts));
 
 // ============================================================
-// NEMICI — scagnozzi (deboli, in gruppo) e Scavengor (piu' forte,
+// NEMICI — scagnozzi (deboli, in gruppo) e Grinder (piu' forte,
 // scala umana per questo primo scontro; diventera' gigante in una fase
 // successiva, non ancora costruita).
 // ============================================================
 const PAL_SCAGNOZZO=makePalette([.22,.20,.18],[.42,.38,.30],[.55,.42,.30]);
 const PAL_SCAGNOZZO_ELITE=makePalette([.095,.11,.14],[.70,.72,.76],[.50,.39,.30]);
-// Scavengor: guerriero dorato, ma le placche sono volutamente
+// Grinder: guerriero dorato, ma le placche sono volutamente
 // irregolari/asimmetriche — armature di vecchi Ranger fuse insieme,
 // non un'armatura di serie come quella della squadra.
-const PAL_RACCOGLITORE=makePalette([.48,.36,.10],[.62,.48,.14],[.35,.28,.22]);
-const PAL_RACCOGLITORE_OVERLOAD=makePalette([.50,.18,.08],[.92,.32,.08],[.30,.20,.18]);
+const PAL_GRINDER=makePalette([.48,.36,.10],[.62,.48,.14],[.35,.28,.22]);
+const PAL_GRINDER_OVERLOAD=makePalette([.50,.18,.08],[.92,.32,.08],[.30,.20,.18]);
 const RACC_SCRAP={
  red:boxMesh([.68,.08,.07]), blue:boxMesh([.20,.48,.62]),
  violet:boxMesh([.38,.18,.48]), green:boxMesh([.12,.42,.26]),
@@ -1340,7 +1340,7 @@ const RACC_SCRAP={
 };
 
 const scagnozzoBuf=makeBuffer(buildCharacterBuffers(PAL_SCAGNOZZO,0,0,true,"scagnozzo"));
-const raccoglitoreBuf=makeBuffer(buildCharacterBuffers(PAL_RACCOGLITORE,0,0,true,"raccoglitore"));
+const grinderBuf=makeBuffer(buildCharacterBuffers(PAL_GRINDER,0,0,true,"grinder"));
 
 // ============================================================
 // FASE 2 — IL COLOSSO: payoff tokusatsu vero ma economico. I compagni
@@ -1457,34 +1457,35 @@ function drawColossoRobot(vp,p,now,opts){
  if(swordDrop>0||victory>0){
   let sx=2.88, sy=7.35, sz=.15, sr=-.04;
   if(swordDrop>0&&swordDrop<1){sy=14.0-(14.0-7.35)*easeOut3(swordDrop);}
-  if(slash>0){sx=2.88-2.35*slash;sy=7.35-.95*slash;sr=-1.55*slash;}
+  if(slash>0){sx=3.05-5.25*slash;sy=7.55-2.25*slash;sr=-1.82*slash;}
   if(victory>0){sx=3.05;sy=9.10;sr=-.05;}
   const sm=mul(base,mat4.translate(sx,sy,sz),mat4.rotZ(sr));
-  drawBuffer(COLOSSO_BOX.gold,mul(sm,mat4.translate(0,-1.15,0),mat4.scale(.18,.42,.18)),vp);
-  drawBuffer(COLOSSO_BOX.dark,mul(sm,mat4.translate(0,-.78,0),mat4.scale(.55,.09,.18)),vp);
-  drawBuffer(COLOSSO_BOX.silver,mul(sm,mat4.translate(0,.85,0),mat4.scale(.22,2.15,.10)),vp);
-  drawBuffer(COLOSSO_BOX.cyan,mul(sm,mat4.translate(0,.85,.11),mat4.scale(.065,1.88,.035)),vp,.92);
-  drawBuffer(COLOSSO_BOX.gold,mul(sm,mat4.translate(0,3.08,0),mat4.rotZ(Math.PI/4),mat4.scale(.20,.20,.10)),vp);
+  drawBuffer(COLOSSO_BOX.gold,mul(sm,mat4.translate(0,-1.55,0),mat4.scale(.28,.62,.25)),vp);
+  drawBuffer(COLOSSO_BOX.dark,mul(sm,mat4.translate(0,-1.02,0),mat4.scale(.82,.13,.25)),vp);
+  drawBuffer(COLOSSO_BOX.silver,mul(sm,mat4.translate(0,1.28,0),mat4.scale(.36,3.25,.16)),vp);
+  drawBuffer(COLOSSO_BOX.cyan,mul(sm,mat4.translate(0,1.28,.17),mat4.scale(.095,2.92,.045)),vp,.95);
+  drawBuffer(COLOSSO_BOX.gold,mul(sm,mat4.translate(0,4.60,0),mat4.rotZ(Math.PI/4),mat4.scale(.30,.30,.16)),vp);
  }
 }
 
 // v37 — i moduli non sono piu' soltanto "blocchi che compaiono" durante
 // l'assemblaggio: vengono chiamati UNO ALLA VOLTA davanti alla squadra.
 const MODULE_CALLS=[
- {speaker:"ARCO",line:"DRAGONE ROSSO, VIENI A ME!",kind:"redDragon",x:-5.5},
- {speaker:"JUN",line:"GATTO GIALLO, TI EVOCO!",kind:"yellowCat",x:-3.3},
- {speaker:"CIUSKY",line:"CANE BLU, RISPONDI ALLA CHIAMATA!",kind:"blueDog",x:-1.1},
- {speaker:"DON",line:"GORILLA NERO, ENTRA IN AZIONE!",kind:"blackGorilla",x:1.1},
- {speaker:"VALE",line:"UCCELLO ROSA, SPIEGATI NEL CIELO!",kind:"pinkBird",x:3.3},
- {speaker:"ZERO",line:"DRAGO VERDE... MODULO ZERO, ATTIVATI!",kind:"greenDragon",x:5.5},
+ {speaker:"ARCO",line:"DRAGO ROSSO!",kind:"redDragon",x:-5.5},
+ {speaker:"CIUSKY",line:"SEGUGIO BLU!",kind:"blueDog",x:-3.3},
+ {speaker:"JUN",line:"FELINO GIALLO!",kind:"yellowCat",x:-1.1},
+ {speaker:"DON",line:"GORILLA NERO!",kind:"blackGorilla",x:1.1},
+ {speaker:"VALE",line:"RAPACE ROSA!",kind:"pinkBird",x:3.3},
+ {speaker:"ZERO",line:"DRAGO VERDE!",kind:"greenDragon",x:5.5},
 ];
 const MODULE_SEG=1.12;
 function drawAnimalModule(vp,def,q,now){
  if(q<=0)return;
  q=easeOut3(Math.min(1,q));
  const flying=def.kind==="pinkBird"||def.kind==="greenDragon";
- const z0=ARENA_CZ-13.0, z1=ARENA_CZ-3.8;
- const z=z0+(z1-z0)*q, y=(flying?(3.1-(3.1-.75)*q):.30)+Math.sin(now/180+def.x)*.05;
+ // Durante la chiamata il modulo nasce ALLE SPALLE del Ranger: prima saliva
+ // dalla direzione della camera e sembrava attraversare la formazione.
+ const z=ARENA_CZ+6.2, y=(flying?(4.2-1.4*q):(.10+1.05*q))+Math.sin(now/180+def.x)*.05;
  const base=mul(mat4.translate(def.x,y,z),mat4.rotY(Math.PI));
  const P=(buf,x,y,z,sx,sy,sz,rz=0)=>drawBuffer(buf,mul(base,mat4.translate(x,y,z),mat4.rotZ(rz),mat4.scale(sx,sy,sz)),vp,q);
  // v49 — i moduli a terra prima della combinazione erano scatole pure,
@@ -1537,7 +1538,7 @@ function startColossoSequence(){
  clearKeys();
  colosso=newColossoState("pose");
  colosso.giantScale=1.55;
- showStoryCue("TIC","Massa energetica di Scavengor in aumento!",{duration:1250});afterGame(850,()=>showStoryCue("JUN","Certo. Perche' piccolo era troppo facile.",{duration:1300}));afterGame(1750,()=>showStoryCue("ARCO","Rangers! Chiamate i moduli!",{duration:1500}));
+ showStoryCue("TIC","Massa energetica di Grinder in aumento!",{duration:1250});afterGame(850,()=>showStoryCue("JUN","Certo. Perche' piccolo era troppo facile.",{duration:1300}));afterGame(1750,()=>showStoryCue("ARCO","Rangers! Chiamate i moduli!",{duration:1500}));
  colossoHpWrapEl.classList.add("show");
  sfx.teleport();
  // Non si fondono i corpi: i Ranger prendono posizione, fanno la posa toku
@@ -1554,7 +1555,7 @@ function beginGiantBattle(){
  if(!colosso||colosso.phase!=="tutorial")return;
  if(giantTutorialEl)giantTutorialEl.classList.remove("show");
  colosso.phase="fight";colosso.t=0;colosso.attackCd=4.0;colosso.attackTelegraph=false;
- missionHintEl.textContent="LEGGI L'ATTACCO // SHIFT AL MOMENTO GIUSTO";
+ missionHintEl.textContent="LEGGI L'ATTACCO — SHIFT AL MOMENTO GIUSTO";
  missionHintEl.classList.add("show");colosso.messageT=2.5;
 }
 function startColossoFightDirect(){
@@ -1574,7 +1575,7 @@ function updateColossoThresholds(){
   colosso.phase2=true;
   colosso.attackCd=Math.min(colosso.attackCd,1.25);
   colosso.shakeT=.5;
-  missionHintEl.textContent="RACCOGLITORE // SOVRACCARICO";
+  missionHintEl.textContent="GRINDER — SOVRACCARICO";
   missionHintEl.classList.add("show");
   colosso.messageT=1.6;
   sfx.alarm(); specialFlashEl.style.opacity=.65;setTimeout(()=>specialFlashEl.style.opacity=0,160);
@@ -1624,24 +1625,20 @@ function colossoGuard(){
  colosso.perfectGuard=!!colosso.attackTelegraph;
  if(colosso.perfectGuard){
   player.energy=Math.min(player.energyMax,player.energy+14);
-  missionHintEl.textContent="GUARDIA PERFETTA // ENERGIA +";missionHintEl.classList.add("show");colosso.messageT=.65;sfx.dodge();
+  showActionCallout("guard","GUARDIA PERFETTA",720);colosso.messageT=.65;sfx.dodge();
  }else{sfx.dodge();}
 }
 function startColossoFinish(){
  if(!colosso||colosso.phase==="finishing"||colosso.phase==="won")return;
  colosso.phase="finishing";colosso.finishT=0;colosso.finishZoom=0;colosso.finishTilt=0;colosso.finishBoomT=0;colosso.finishBoomNext=.15;colosso.finishHitTriggered=false;
- missionHintEl.textContent="ATTACCO SPECIALE // ENERGIA AL MASSIMO";missionHintEl.classList.add("show");
+ missionHintEl.classList.remove("show");showActionCallout("power","COLPO FINALE",900);
  triggerSlowMo(4.2,.28);sfx.alarm();
 }
 function updateColossoFinish(dt){
  colosso.finishT+=dt;
  const t=colosso.finishT;
  // 0–.65: chiamata; .65–1.55: fulmini + spada dal cielo; 1.55–2.35:
- // fendente; 2.35–3.75: Scavengor viene scagliato ALL'INDIETRO.
- if(t<.65)missionHintEl.textContent="ATTACCO SPECIALE!";
- else if(t<1.55)missionHintEl.textContent="COLPO FINALE // SPADA DEL COLOSSO!";
- else if(t<2.35)missionHintEl.textContent="COLPO FINALE // ORA!";
- else missionHintEl.textContent="IMPATTO!";
+ // fendente; 2.35–3.75: Grinder viene scagliato ALL'INDIETRO.
  colosso.finishZoom=Math.min(1,t/3.8);
  // Fulmini / scariche lungo il tragitto della spada prima dell'aggancio.
  colosso.finishBoomT=(colosso.finishBoomT||0)+dt;
@@ -1649,7 +1646,7 @@ function updateColossoFinish(dt){
   colosso.finishBoomT=0;colosso.finishBoomNext=.07+Math.random()*.09;
   colosso.beamBursts.push({t:0,kind:"swordLightning",ox:(Math.random()-.5)*1.1,oy:Math.random()*5.5});
  }
- if(t>1.95&&!colosso.finishHitTriggered){
+ if(t>2.12&&!colosso.finishHitTriggered){
   colosso.finishHitTriggered=true;colosso.giantHp=0;colosso.shakeT=.65;specialFlashEl.style.opacity=1;setTimeout(()=>specialFlashEl.style.opacity=0,180);sfx.giantHit();triggerSlowMo(.55,.08);
   for(let i=0;i<7;i++)colosso.beamBursts.push({t:-i*.035,kind:"punch",ox:(Math.random()-.5)*4.2,oy:(Math.random()-.5)*8.5});
  }
@@ -1657,7 +1654,7 @@ function updateColossoFinish(dt){
 }
 function colossoWin(){
  if(giantTutorialEl)giantTutorialEl.classList.remove("show");
- colosso.phase="won";colosso.winT=0;missionHintEl.textContent="VITTORIA";missionHintEl.classList.add("show");sfx.win();
+ colosso.phase="won";colosso.winT=0;missionHintEl.classList.remove("show");showActionCallout("power","VITTORIA",1200);sfx.win();
  // Il payoff resta in scena: il Colosso si gira verso camera e alza la
  // spada. Solo dopo compare il logo, SENZA pulsante CONTINUA; il rientro
  // alla Torre avviene automaticamente.
@@ -1691,16 +1688,12 @@ function updateColosso(dt){
   if(colosso.t>MODULE_CALLS.length*MODULE_SEG+.55){
    colosso.phase="combine";colosso.t=0;colossoTeamPos=null;zone="colosso";colosso.giantScale=2.2;
    flashEl.style.opacity=1;setTimeout(()=>flashEl.style.opacity=0,220);sfx.transform();playAmbient("colosso");
-   missionHintEl.textContent="COLOSSO // MODULI IN AGGANCIO";
+   missionHintEl.classList.remove("show");showActionCallout("power","MODULI IN AGGANCIO",1000);
   }
   return;
  }
  if(colosso.phase==="combine"){
   const p=Math.min(1,colosso.t/8.0);colosso.giantScale=2.2+p*4.95;
-  if(colosso.t>1.0&&colosso.t<3.0)missionHintEl.textContent="GATTO GIALLO + CANE BLU // GAMBE";
-  else if(colosso.t>=3.0&&colosso.t<4.7)missionHintEl.textContent="DRAGONE ROSSO // PETTO — GORILLA NERO // BRACCIA";
-  else if(colosso.t>=4.7&&colosso.t<6.3)missionHintEl.textContent="UCCELLO ROSA // TESTA";
-  else if(colosso.t>=6.3)missionHintEl.textContent="DRAGO VERDE // ALI — COLOSSO COMPLETO";
   if(colosso.t>8.0){colosso.phase="reveal";colosso.t=0;sfx.win();}
   return;
  }
@@ -1742,7 +1735,7 @@ function updateColosso(dt){
   if(colosso.attackKind==="beam")colosso.beamBursts.push({t:0,kind:"enemyBeam",oy:(Math.random()-.5)*3});
   else colosso.beamBursts.push({t:0,kind:"enemyHit",ox:(Math.random()-.5)*3.4,oy:(Math.random()-.5)*7.5});
   colosso.shakeT=guarded?.18:.44;colosso.playerHp=Math.max(0,colosso.playerHp-dmg);
-  if(guarded){missionHintEl.textContent=colosso.perfectGuard?"GUARDIA PERFETTA":"GUARDIA";missionHintEl.classList.add("show");colosso.messageT=.55;sfx.dodge();}
+  if(guarded){showActionCallout("guard",colosso.perfectGuard?"GUARDIA PERFETTA":"GUARDIA",620);colosso.messageT=.55;sfx.dodge();}
   else sfx.hitPlayer();
   const kinds=["punch","slam","beam"];colosso.attackKind=kinds[Math.floor(Math.random()*kinds.length)];
   colosso.attackCd=colosso.phase2?2.05:2.75;colosso.attackTelegraph=false;colosso.perfectGuard=false;
@@ -1755,13 +1748,7 @@ function doColossoOutcomeContinue(){
  colossoOutcomeEl.classList.remove("show");
  if(colosso&&colosso.phase==="lost"){restoreCheckpoint("colosso");return;}
  colosso=null;missionHintEl.classList.remove("show");colossoHpWrapEl.classList.remove("show");
- archivioUnlocked=true;morphUnlocked=true;
- startPulseReturnScene(()=>{
-  postBossState=true;enterTorre();setupPostBossTeam();saveCheckpoint("postboss");
-  afterGame(450,()=>playDialogue(postBossLines,()=>{
-   missionHintEl.textContent="PARLA CON LA SQUADRA O CONTROLLA IL PANNELLO // R = ARMATURA";missionHintEl.classList.add("show");
-  }));
- });
+ archivioUnlocked=true;postBossState=false;morphUnlocked=true;enterPulseReturn();
 }
 document.getElementById("colossoOutcomeBtn").addEventListener("click",doColossoOutcomeContinue);
 
@@ -1803,10 +1790,10 @@ function spawnSupportDrop(kind){
  const a=Math.random()*Math.PI*2,r=2.7+Math.random()*3.8,b=zoneBounds();
  let x=player.x+Math.cos(a)*r,z=player.z+Math.sin(a)*r;
  x=Math.max(b.xmin+1,Math.min(b.xmax-1,x)); z=Math.max(b.zmin+1,Math.min(b.zmax-1,z));
- const bossLive=enemies.some(e=>e.type==="raccoglitore"&&e.emerged&&!e.dead&&!e.retreated);
+ const bossLive=enemies.some(e=>e.type==="grinder"&&e.emerged&&!e.dead&&!e.retreated);
  supportDrops.push({kind,x,z,state:"telegraph",t:0,life:bossLive?8:6,col:SUPPORT_COLORS[kind]});
  const name=kind==="hp"?"VITALITA'":kind==="energy"?"ENERGIA":"SOVRACCARICO";
- missionHintEl.textContent="TIC // SCARICA DI SUPPORTO — "+name;missionHintEl.classList.add("show");
+ missionHintEl.textContent="TIC — SCARICA DI SUPPORTO · "+name;missionHintEl.classList.add("show");
  afterGame(1200,()=>{if(zone==="arena"&&!emergeCutscene)missionHintEl.classList.remove("show");});
 }
 function chooseDirectorSupport(){
@@ -1822,9 +1809,9 @@ function updateSupportDrops(dt){
   else if(d.state==="active"){
    d.life-=dt;
    if(Math.hypot(player.x-d.x,player.z-d.z)<.95){
-    if(d.kind==="hp"){const bossLive=enemies.some(e=>e.type==="raccoglitore"&&e.emerged&&!e.dead&&!e.retreated);const gain=Math.min(bossLive?20:15,player.hpMax-player.hp);player.hp+=gain;missionHintEl.textContent="BONUS VITALITA' +"+gain+" HP";}
+    if(d.kind==="hp"){const bossLive=enemies.some(e=>e.type==="grinder"&&e.emerged&&!e.dead&&!e.retreated);const gain=Math.min(bossLive?20:15,player.hpMax-player.hp);player.hp+=gain;missionHintEl.textContent="BONUS VITALITA' +"+gain+" HP";}
     else if(d.kind==="energy"){const gain=Math.min(30,player.energyMax-player.energy);player.energy+=gain;missionHintEl.textContent="BONUS ENERGIA +"+gain;}
-    else{player.powerBuffT=Math.max(player.powerBuffT,6);missionHintEl.textContent="SOVRACCARICO // DANNI POTENZIATI 6s";}
+    else{player.powerBuffT=Math.max(player.powerBuffT,6);missionHintEl.textContent="SOVRACCARICO — DANNI POTENZIATI 6s";}
     missionHintEl.classList.add("show");sfx.special();supportDrops.splice(i,1);afterGame(950,()=>{if(zone==="arena"&&!emergeCutscene)missionHintEl.classList.remove("show");});continue;
    }
    if(d.life<=0){supportDrops.splice(i,1);continue;}
@@ -1833,7 +1820,7 @@ function updateSupportDrops(dt){
 }
 function spawnWave(){
  enemies=[];supportDrops.length=0;arenaWave=1;arenaWaveTransition=false;wave4Batch2Pending=false;initArenaAllies();addWave(1);
- enemies.push({type:"raccoglitore",pal:PAL_RACCOGLITORE,x:ARENA_CX,z:RACC_SEA_Z,y:-2.8,yaw:0,hp:160,hpMax:160,state:"submerged",cd:2,scale:1.55,alpha:1,dead:false,retreated:false,walkPhaseE:0,hitFlash:0,attackFlashT:0,hidden:true,emerging:false,emerged:false,aggroPlayer:true,comboHits:0,recoverT:0,graceT:0,supportT:0,bossSupportStarted:false});
+ enemies.push({type:"grinder",pal:PAL_GRINDER,x:ARENA_CX,z:RACC_SEA_Z,y:-2.8,yaw:0,hp:160,hpMax:160,state:"submerged",cd:2,scale:1.55,alpha:1,dead:false,retreated:false,walkPhaseE:0,hitFlash:0,attackFlashT:0,hidden:true,emerging:false,emerged:false,aggroPlayer:true,comboHits:0,recoverT:0,graceT:0,supportT:0,bossSupportStarted:false});
 }
 function aliveMooks(){return enemies.filter(e=>e.type==="scagnozzo"&&!e.dead);}
 function maybeAdvanceArenaWave(){
@@ -1842,21 +1829,21 @@ function maybeAdvanceArenaWave(){
   arenaWaveTransition=true;arenaWave=2;
   showStoryCue("ARCO","Non e' finita. Seconda ondata!",{duration:1350});
   afterGame(1150,()=>{
-   addWave(2);arenaWaveTransition=false;missionHintEl.textContent="SECONDA ONDATA // TENETE LA LINEA";
+   addWave(2);arenaWaveTransition=false;missionHintEl.textContent="SECONDA ONDATA — TENETE LA LINEA";
    afterGame(1500,()=>{if(zone==="arena"&&arenaWave===2)spawnSupportDrop("energy");});
   });
  }else if(arenaWave===2&&aliveMooks().length===0){
   arenaWaveTransition=true;arenaWave=3;
   showStoryCue("CIUSKY","Ne arrivano altri. Formazione!",{duration:1400});
   afterGame(1200,()=>{
-   addWave(3);arenaWaveTransition=false;missionHintEl.textContent="TERZA ONDATA // UNITA' GUARDIA RILEVATA";
+   addWave(3);arenaWaveTransition=false;missionHintEl.textContent="TERZA ONDATA — UNITA' GUARDIA RILEVATA";
    if(player.hp<65)afterGame(900,()=>{if(zone==="arena"&&arenaWave===3)spawnSupportDrop("hp");});
   });
  }else if(arenaWave===3&&aliveMooks().length===0){
   arenaWaveTransition=true;arenaWave=4;wave4Batch2Pending=true;
   showStoryCue("JUN","Questa e' l'ultima... vero?!",{duration:1450});
   afterGame(1150,()=>{
-   addWave(4,1);arenaWaveTransition=false;missionHintEl.textContent="ULTIMA LINEA // NON CEDETE";
+   addWave(4,1);arenaWaveTransition=false;missionHintEl.textContent="ULTIMA LINEA — NON CEDETE";
    afterGame(1600,()=>{if(zone==="arena"&&arenaWave===4)spawnSupportDrop("power");});
   });
   afterGame(3900,()=>{
@@ -1868,12 +1855,12 @@ function maybeAdvanceArenaWave(){
  }else if(arenaWave===4&&aliveMooks().length===0&&!wave4Batch2Pending){
   arenaWave=5;
   showStoryCue("SCENA","...SILENZIO",{portrait:false,duration:1500});
-  afterGame(1800,()=>{maybeEmergeRaccoglitore();});
+  afterGame(1800,()=>{maybeEmergeGrinder();});
  }
 }
 function updateArenaAllies(dt){
  if(zone!=="arena"||colossoTeamPos)return;
- const racc=enemies.find(e=>e.type==="raccoglitore"&&!e.dead&&!e.hidden&&e.emerged&&e.state!=="retreat"&&e.state!=="submerged"&&e.state!=="emerging");
+ const racc=enemies.find(e=>e.type==="grinder"&&!e.dead&&!e.hidden&&e.emerged&&e.state!=="retreat"&&e.state!=="submerged"&&e.state!=="emerging");
  for(let i=0;i<arenaAllies.length;i++){
   const a=arenaAllies[i];a.cd-=rawDtGlobal;a.attackT=Math.max(0,a.attackT-rawDtGlobal);a.hurtT=Math.max(0,(a.hurtT||0)-rawDtGlobal);
   const mooks=aliveMooks();
@@ -1884,12 +1871,12 @@ function updateArenaAllies(dt){
    if(dist>.35){a.x+=dx/dist*.8*dt;a.z+=dz/dist*.8*dt;a.walk+=dt*5;}
    continue;
   }
-  const center=(arenaAllies.length-1)/2,flank=t.type==="raccoglitore"?(i-center)*.75:0;
-  const tx=t.x+flank,tz=t.z+(t.type==="raccoglitore"?1.25:0),dx=tx-a.x,dz=tz-a.z,dist=Math.hypot(dx,dz)||.001;a.yaw=Math.atan2(t.x-a.x,t.z-a.z);
-  const want=t.type==="raccoglitore"?2.05:1.65;
-  if(dist>want){const sp=(t.type==="raccoglitore"?1.10:1.02)*dt;a.x+=dx/dist*sp;a.z+=dz/dist*sp;a.walk+=dt*6.2;}
-  else if(a.cd<=0){a.cd=(t.type==="raccoglitore"?1.05:.95)+i*.08;a.attackT=.38;a.attackStyle=(a.attackStyle+1+i)%3;
-   if(t.type==="raccoglitore"){t.hp=Math.max(1,t.hp-2);t.hitFlash=.08;}
+  const center=(arenaAllies.length-1)/2,flank=t.type==="grinder"?(i-center)*.75:0;
+  const tx=t.x+flank,tz=t.z+(t.type==="grinder"?1.25:0),dx=tx-a.x,dz=tz-a.z,dist=Math.hypot(dx,dz)||.001;a.yaw=Math.atan2(t.x-a.x,t.z-a.z);
+  const want=t.type==="grinder"?2.05:1.65;
+  if(dist>want){const sp=(t.type==="grinder"?1.10:1.02)*dt;a.x+=dx/dist*sp;a.z+=dz/dist*sp;a.walk+=dt*6.2;}
+  else if(a.cd<=0){a.cd=(t.type==="grinder"?1.05:.95)+i*.08;a.attackT=.38;a.attackStyle=(a.attackStyle+1+i)%3;
+   if(t.type==="grinder"){t.hp=Math.max(1,t.hp-2);t.hitFlash=.08;}
    else{t.hp-=3;t.hitFlash=.08;if(t.hp<=0){t.dead=true;sfx.enemyDefeat();}}
   }
  }
@@ -1902,15 +1889,15 @@ function updateArenaAllies(dt){
   }
   for(const en of enemies){
    if(en.dead||en.hidden||en.state==="retreat")continue;
-   const er=(en.type==="raccoglitore"?.55:.40)*en.scale,dx=a.x-en.x,dz=a.z-en.z,d=Math.hypot(dx,dz)||.001,minD=allyR+er;
+   const er=(en.type==="grinder"?.55:.40)*en.scale,dx=a.x-en.x,dz=a.z-en.z,d=Math.hypot(dx,dz)||.001,minD=allyR+er;
    if(d<minD){const push=minD-d,nx=dx/d,nz=dz/d;a.x+=nx*push;a.z+=nz*push;}
   }
  }
 }
 let emergeCutscene=null;
 let archiveEscortState=false;
-function maybeEmergeRaccoglitore(){
- const racc=enemies.find(e=>e.type==="raccoglitore");
+function maybeEmergeGrinder(){
+ const racc=enemies.find(e=>e.type==="grinder");
  if(arenaWave<5||!racc||racc.emerging||racc.emerged||emergeCutscene)return;
  racc.emerging=true;racc.emergeT=0;racc.state="emerging";
  emergeCutscene={t:0,phase:"buildup",racc};
@@ -1920,7 +1907,7 @@ function updateEmergeCutscene(dt){
  if(!emergeCutscene)return;
  emergeCutscene.t+=dt;const racc=emergeCutscene.racc;
  if(emergeCutscene.phase==="buildup"&&emergeCutscene.t>2.0){
-  emergeCutscene.phase="rising";emergeCutscene.t=0;racc.hidden=false;sfx.alarm();triggerSlowMo(.6,.3);showStoryCue("SCENA","SCAVENGOR",{portrait:false,duration:1600});
+  emergeCutscene.phase="rising";emergeCutscene.t=0;racc.hidden=false;sfx.alarm();triggerSlowMo(.6,.3);showStoryCue("SCENA","GRINDER",{portrait:false,duration:1600});
  }else if(emergeCutscene.phase==="rising"&&racc.emerged){
   emergeCutscene.phase="advance";emergeCutscene.t=0;
  }else if(emergeCutscene.phase==="advance"&&racc.state!=="approach"){
@@ -2068,33 +2055,28 @@ const capsuleBeamBuf=makeBuffer(boxMesh([.55,.90,.98]));
 const zeroGlassBuf=makeBuffer(boxMesh([.88,.58,.15]));
 
 let archivioUnlocked=false;
-const archiveCompanion={donX:ARCHIVIO_CX-1.0,donZ:ARCHIVIO_CZ+ARCHIVIO_D/2-1.0,donTX:ARCHIVIO_CX-1.0,donTZ:ARCHIVIO_CZ+ARCHIVIO_D/2-1.0,donYaw:Math.PI,ticX:ARCHIVIO_CX+1.0,ticZ:ARCHIVIO_CZ+ARCHIVIO_D/2-1.0,ticTarget:0,ticWait:.4,t:0,ticPatrol:false};
-const ARCH_TIC_POINTS=[
- {x:ARCHIVIO_CX+1.7,z:ARCHIVIO_CZ+7.0},{x:ARCHIVIO_CX+1.7,z:ARCHIVIO_CZ+1.5},{x:ARCHIVIO_CX+1.6,z:-5.8},{x:ARCHIVIO_CX+1.2,z:-9.0},{x:ARCHIVIO_CX+1.4,z:ZERO_CAPSULE_POS.z+1.4}
-];
+let archivePartyNames=["DON","CIUSKY"];
+const archiveCompanion={aX:ARCHIVIO_CX-1.0,aZ:ARCHIVIO_CZ+ARCHIVIO_D/2-1.0,aTX:ARCHIVIO_CX-1.0,aTZ:ARCHIVIO_CZ+ARCHIVIO_D/2-1.0,aYaw:Math.PI,bX:ARCHIVIO_CX+1.0,bZ:ARCHIVIO_CZ+ARCHIVIO_D/2-1.0,bTX:ARCHIVIO_CX+1.0,bTZ:ARCHIVIO_CZ+ARCHIVIO_D/2-1.0,bYaw:Math.PI,t:0};
+function civPalForName(name){const m=teamMemberByName(name);return m?m.civPal:PAL_CIVILE;}
+function setArchivePartyFromPulse(){
+ const p=sessionStats.pulse2Path||"";
+ archivePartyNames=p.includes("ARCO")?["ARCO","VALE"]:p==="PRISMA"?["JUN"]:["DON","CIUSKY"];
+}
 function resetArchiveCompanions(){
- // Entrano davvero CON Zero: per il primo beat restano ai suoi lati invece
- // di teletrasportarsi direttamente verso terminale e capsule.
  const entryZ=ARCHIVIO_CZ+ARCHIVIO_D/2-1.0;
- archiveCompanion.donX=ARCHIVIO_CX-1.05;archiveCompanion.donZ=entryZ;archiveCompanion.donTX=archiveCompanion.donX;archiveCompanion.donTZ=archiveCompanion.donZ;archiveCompanion.donYaw=Math.PI;
- archiveCompanion.ticX=ARCHIVIO_CX+1.05;archiveCompanion.ticZ=entryZ;archiveCompanion.ticTarget=0;archiveCompanion.ticWait=.5;archiveCompanion.t=0;archiveCompanion.ticPatrol=false;
+ archiveCompanion.aX=ARCHIVIO_CX-1.05;archiveCompanion.aZ=entryZ;archiveCompanion.aTX=archiveCompanion.aX;archiveCompanion.aTZ=archiveCompanion.aZ;archiveCompanion.aYaw=Math.PI;
+ archiveCompanion.bX=ARCHIVIO_CX+1.05;archiveCompanion.bZ=entryZ;archiveCompanion.bTX=archiveCompanion.bX;archiveCompanion.bTZ=archiveCompanion.bZ;archiveCompanion.bYaw=Math.PI;archiveCompanion.t=0;
 }
 function updateArchiveCompanions(dt){
  if(zone!=="archivio")return;archiveCompanion.t+=dt;
- // Ciusky segue SOLO target scenici assegnati dalla storia. Non insegue
- // il player e non puo' quindi entrare nel monitor o oscillare a caso.
- const dx=archiveCompanion.donTX-archiveCompanion.donX,dz=archiveCompanion.donTZ-archiveCompanion.donZ,d=Math.hypot(dx,dz)||.001;
- if(d>.08){archiveCompanion.donX+=dx/d*Math.min(d,dt*.82);archiveCompanion.donZ+=dz/d*Math.min(d,dt*.82);archiveCompanion.donYaw=Math.atan2(dx,dz);} 
- // TIC resta accanto a Zero durante l'ingresso; solo DOPO il breve dialogo
- // di entrata inizia la scansione a waypoint. In questo modo il giocatore
- // vede chiaramente che e' entrato insieme a Ciusky e TIC.
- if(archiveCompanion.ticPatrol){
-  const tp=ARCH_TIC_POINTS[archiveCompanion.ticTarget],tdx=tp.x-archiveCompanion.ticX,tdz=tp.z-archiveCompanion.ticZ,td=Math.hypot(tdx,tdz)||.001;
-  if(td>.10){archiveCompanion.ticX+=tdx/td*Math.min(td,dt*.95);archiveCompanion.ticZ+=tdz/td*Math.min(td,dt*.95);}else{archiveCompanion.ticWait-=dt;if(archiveCompanion.ticWait<=0){archiveCompanion.ticTarget=(archiveCompanion.ticTarget+1)%ARCH_TIC_POINTS.length;archiveCompanion.ticWait=1.0;}}
- }
+ for(const k of ["a","b"]){if(k==="b"&&archivePartyNames.length<2)continue;const tx=archiveCompanion[k+"TX"],tz=archiveCompanion[k+"TZ"],xk=k+"X",zk=k+"Z",yk=k+"Yaw";const dx=tx-archiveCompanion[xk],dz=tz-archiveCompanion[zk],d=Math.hypot(dx,dz)||.001;if(d>.08){archiveCompanion[xk]+=dx/d*Math.min(d,dt*.82);archiveCompanion[zk]+=dz/d*Math.min(d,dt*.82);archiveCompanion[yk]=Math.atan2(dx,dz);}}
+}
+function moveArchiveParty(tx,tz){
+ archiveCompanion.aTX=tx-1.1;archiveCompanion.aTZ=tz+1.15;
+ if(archivePartyNames.length>1){archiveCompanion.bTX=tx+1.1;archiveCompanion.bTZ=tz+1.35;}
 }
 function enterArchivio(){
- zone="archivio";teamMode="civil";teamRouteMode=null;
+ zone="archivio";teamMode="civil";teamRouteMode=null;setArchivePartyFromPulse();
  player.x=ARCHIVIO_CX; player.z=ARCHIVIO_CZ+ARCHIVIO_D/2-1.5; player.yaw=Math.PI;
  resetArchiveCompanions();teleportFlash();playAmbient("archivio");
 }
@@ -2118,8 +2100,19 @@ const hudEl=document.getElementById("gameHud");
 const energyFillEl=document.getElementById("energyFill");
 const hpFillEl=document.getElementById("hpFill");
 const missionHintEl=document.getElementById("missionHint");
+const actionCalloutEl=document.getElementById("actionCallout");
+const actionCalloutTextEl=document.getElementById("actionCalloutText");
+let actionCalloutToken=0;
+function showActionCallout(kind,text,duration){
+ if(!actionCalloutEl)return;
+ const token=++actionCalloutToken;
+ actionCalloutEl.className=kind||"";
+ actionCalloutTextEl.textContent=text||"";
+ actionCalloutEl.classList.add("show");
+ afterGame((duration||650),()=>{if(token===actionCalloutToken)actionCalloutEl.classList.remove("show");});
+}
 const hudLocationEl=document.getElementById("hudLocation");
-const ZONE_LABELS={bar:"PULSE // BAR & PALESTRA",torre:"LA TORRE // SALA DI COMANDO",arena:"COSTA SUD // SPIAGGIA",colosso:"IL COLOSSO // PRIMA LINEA",archivio:"LA TORRE // ARCHIVIO"};
+const ZONE_LABELS={bar:"PULSE · BAR & PALESTRA",torre:"LA TORRE · SALA DI COMANDO",arena:"COSTA SUD · SPIAGGIA",colosso:"IL COLOSSO · PRIMA LINEA",archivio:"LA TORRE · ARCHIVIO"};
 let lastZoneLabel=null;
 const interactPromptEl=document.getElementById("interactPrompt");
 const dmgVignetteEl=document.getElementById("dmgVignette");
@@ -2132,7 +2125,7 @@ let gameStarted=false;
 let gameOverActive=false;
 let paused=false,postBossState=false,currentCheckpoint=null;
 const DEV_MODE=new URLSearchParams(location.search).get("dev")==="1";
-const CHECKPOINT_KEY="RANGER_ZERO_CHECKPOINT_V23";
+const CHECKPOINT_KEY="PROJECT_RANGER_ZERO_CHECKPOINT_V1";
 const pauseScreenEl=document.getElementById("pauseScreen");
 const runtimeOverlayEl=document.getElementById("runtimeOverlay");
 const continueBtnEl=document.getElementById("continueBtn");
@@ -2149,8 +2142,8 @@ function clearTransientState(){
 }
 
 const fate={scores:{rebellion:0,compliance:0,control:0},flags:{},signals:[],tieBreak:"normal"};
-const sessionStats={kimSaved:false,tommySaved:false,prismOrder:0,rangersMet:0,frameActive:0,frameTotal:0,archiveFirst:"-",postBossFirst:"-"};
-function resetSessionStats(){Object.assign(sessionStats,{kimSaved:false,tommySaved:false,prismOrder:0,rangersMet:0,frameActive:0,frameTotal:0,archiveFirst:"-",postBossFirst:"-"});}
+const sessionStats={kimSaved:false,tommySaved:false,prismOrder:0,rangersMet:0,pulse2Path:"-",frameActive:0,frameTotal:0,archiveFirst:"-",postBossFirst:"-"};
+function resetSessionStats(){Object.assign(sessionStats,{kimSaved:false,tommySaved:false,prismOrder:0,rangersMet:0,pulse2Path:"-",frameActive:0,frameTotal:0,archiveFirst:"-",postBossFirst:"-"});}
 function loadSessionStats(s){resetSessionStats();if(s)Object.assign(sessionStats,s);}
 function frameUsagePct(){return sessionStats.frameTotal>0?Math.round(sessionStats.frameActive/sessionStats.frameTotal*100):0;}
 function applyFrameUsageFate(){if(fate.flags.frame_usage_profile)return;const pct=frameUsagePct();if(pct<35)fateAdd("rebellion",1,"frame_usage_profile");else if(pct>70)fateAdd("control",1,"frame_usage_profile");else fateAdd("compliance",1,"frame_usage_profile");}
@@ -2167,7 +2160,7 @@ function fateEnding(){
 function readCheckpoint(){try{return JSON.parse(localStorage.getItem(CHECKPOINT_KEY)||"null");}catch(e){return null;}}
 function refreshContinueButton(){if(!continueBtnEl)return;const cp=readCheckpoint();continueBtnEl.disabled=!cp;continueBtnEl.style.opacity=cp?1:.38;}
 function saveCheckpoint(id){
- currentCheckpoint=id;try{localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({id,ts:Date.now(),version:57.1,transformed:!!player.transformed,morphUnlocked:!!morphUnlocked,fate:JSON.parse(JSON.stringify(fate)),stats:JSON.parse(JSON.stringify(sessionStats))}));}catch(e){}refreshContinueButton();
+ currentCheckpoint=id;try{localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({id,ts:Date.now(),version:59,transformed:!!player.transformed,morphUnlocked:!!morphUnlocked,fate:JSON.parse(JSON.stringify(fate)),stats:JSON.parse(JSON.stringify(sessionStats))}));}catch(e){}refreshContinueButton();
 }
 function clearCheckpoint(){try{localStorage.removeItem(CHECKPOINT_KEY);}catch(e){}currentCheckpoint=null;refreshContinueButton();}
 function showRuntimeError(title,msg){
@@ -2201,7 +2194,7 @@ function zoneBounds(){
   camXmin:z.cx-z.w/2+.35,camXmax:z.cx+z.w/2-.35,camZmin:z.cz-z.d/2+.35,camZmax:z.cz+z.d/2-.35};
  if(zone==="arena"){
   // niente nuoto per ora: il mare resta un confine visivo/narrativo finche'
-  // non costruiamo la fase 2 (Scavengor che ne esce).
+  // non costruiamo la fase 2 (Grinder che ne esce).
   b.zmin=SEA_EDGE_Z+.5; b.camZmin=SEA_EDGE_Z+.3;
  }
  return b;
@@ -2210,26 +2203,166 @@ function zoneBounds(){
 let barIntroCamT=0;
 let barState={phase:"idle",timer:0,lastSec:-1,deadlineExpired:false,friendSaved:false,bartenderSaved:false,deviceUsed:false,monsterX:BAR_CX+7.8,monsterZ:BAR_CZ-1.0,monsterT:0,crisisElapsed:0,actionOrder:[],socialCount:0,socialFlags:{},ambientFlags:{},bagUsed:false,bartenderReady:false,customerLeaving:false,customerGone:false,orderStarted:false,freeT:0,resolved:false,tommyHintSeen:false};
 function resetBarState(){barState={phase:"idle",timer:0,lastSec:-1,deadlineExpired:false,friendSaved:false,bartenderSaved:false,deviceUsed:false,monsterX:BAR_CX+7.8,monsterZ:BAR_CZ-1.0,monsterT:0,crisisElapsed:0,actionOrder:[],socialCount:0,socialFlags:{},ambientFlags:{},bagUsed:false,bartenderReady:false,customerLeaving:false,customerGone:false,orderStarted:false,freeT:0,resolved:false,tommyHintSeen:false};barCustomer.x=BAR_CUSTOMER_START.x;barCustomer.z=BAR_CUSTOMER_START.z;barCustomer.yaw=Math.PI;barCustomer.walk=0;for(const b of barTeam){const q=BAR_TEAM_START[b.name];if(q){b.x=q[0];b.z=q[1];b.yaw=q[2];b.targetX=b.x;b.targetZ=b.z;b.routeIndex=0;b.waitT=.25;b.walk=0;}}}
+
+// PULSE 2 — dopo la battaglia: stesso luogo, ma senza pubblico. Il giocatore
+// conosce le posizioni della squadra e sceglie implicitamente di chi fidarsi.
+let pulseReturnState={active:false,talked:new Set(),path:null,deepTalks:new Set(),ready:false,morphCommented:false};
+const pulseReturnIntroLines=[
+ {speaker:"TOMMY IL BARISTA",text:"La prossima volta andate a combattere da un'altra parte."},
+ {speaker:"ZERO",text:"Mi dispiace."},
+ {speaker:"TOMMY IL BARISTA",text:"Lo so. Ma il tavolo te lo faccio pagare."},
+ {speaker:"ZERO",text:"Non l'ho rotto io."},
+ {speaker:"TOMMY IL BARISTA",text:"Con chi me la prendo, con Grinder?"},
+ {speaker:"KIM",text:"Quindi."},
+ {speaker:"ZERO",text:"Quindi."},
+ {speaker:"KIM",text:"Ranger."},
+ {speaker:"ZERO",text:"A quanto pare."},
+ {speaker:"KIM",text:"Da quanto?"},
+ {speaker:"ZERO",text:"Piu' o meno da quando e' esplosa la parete."}
+];
+const pulseReturnTalkLines={
+ ARCO:[
+  {speaker:"ARCO",text:"Come va?"},
+  {speaker:"ZERO",text:"Ho guidato un robot gigante."},
+  {speaker:"ARCO",text:"Quindi bene."},
+  {speaker:"ZERO",text:"Ciusky ha visto qualcosa."},
+  {speaker:"ARCO",text:"Ciusky vede qualcosa ovunque."},
+  {speaker:"ZERO",text:"E se stavolta avesse ragione?"},
+  {speaker:"ARCO",text:"Allora controlliamo. Ma non partire gia' pensando che qualcuno ci stia mentendo."}
+ ],
+ VALE:[
+  {speaker:"VALE",text:"Stai rimuginando."},
+  {speaker:"ZERO",text:"Si vede?"},
+  {speaker:"VALE",text:"Molto."},
+  {speaker:"ZERO",text:"Ciusky dice che Grinder aveva qualcosa di strano."},
+  {speaker:"VALE",text:"Ha detto che vuole ricontrollare. Non e' la stessa cosa."},
+  {speaker:"VALE",text:"Una lettura strana non significa che Oculo ci stia mentendo."}
+ ],
+ CIUSKY:[
+  {speaker:"CIUSKY",text:"Vieni qui."},
+  {speaker:"ZERO",text:"Di nuovo percentuali?"},
+  {speaker:"CIUSKY",text:"Peggio. Questa era la lettura di Grinder."},
+  {speaker:"ZERO",text:"E?"},
+  {speaker:"CIUSKY",text:"Assomiglia alla nostra."},
+  {speaker:"ZERO",text:"Quanto?"},
+  {speaker:"CIUSKY",text:"Troppo. Voglio ricontrollarla dalla Torre."}
+ ],
+ DON:[
+  {speaker:"DON",text:"Hai visto cosa faceva al Pulse?"},
+  {speaker:"ZERO",text:"Ci attaccava."},
+  {speaker:"DON",text:"Quando ci mettevamo in mezzo."},
+  {speaker:"ZERO",text:"E quindi?"},
+  {speaker:"DON",text:"Non era venuto per noi."},
+  {speaker:"ZERO",text:"Per il Prisma."},
+  {speaker:"DON",text:"Gia'. Come sapeva dov'era?"}
+ ],
+ JUN:[
+  {speaker:"JUN",text:"Preferivo quando il problema piu' grosso qui erano i pesi."},
+  {speaker:"ZERO",text:"Ciusky pensa—"},
+  {speaker:"JUN",text:"Lo so cosa pensa Ciusky."},
+  {speaker:"JUN",text:"E fa quella faccia solo quando qualcosa gli da' davvero fastidio."},
+  {speaker:"ZERO",text:"Tu che pensi?"},
+  {speaker:"JUN",text:"Che non ne so abbastanza."}
+ ],
+ KIM:[{speaker:"KIM",text:"Non so dove siete spariti dopo il Pulse. Ma se devi farlo di nuovo, almeno dimmelo prima."},{speaker:"ZERO",text:"Provero'."}],
+ TOMMY:[{speaker:"TOMMY IL BARISTA",text:"Io non voglio sapere cos'e' quella Torre. Voglio solo un muro nuovo."}]
+};
+function resetPulseReturnState(){pulseReturnState={active:true,talked:new Set(),path:null,deepTalks:new Set(),ready:false,morphCommented:false};}
+function pulseReturnRangerCount(){return BAR_RANGER_NAMES.filter(n=>pulseReturnState.talked.has(n)).length;}
+function setPulseReturnPath(path,label){
+ if(pulseReturnState.path)return;
+ pulseReturnState.path=path;sessionStats.pulse2Path=label;
+ if(path==="doubt")fateAdd("rebellion",1,"pulse2_alignment");
+ else if(path==="trust")fateAdd("compliance",1,"pulse2_alignment");
+ else fateAdd("control",1,"pulse2_alignment");
+ showStoryCue("ZERO",path==="doubt"?"Prima voglio capire cosa hanno visto Don e Ciusky.":path==="trust"?"Torniamo alla Torre. Voglio sentire Arco prima di accusare qualcuno.":"Prima voglio rivedere il punto dove c'era il Prisma.",{duration:1800});
+ pulseReturnState.ready=true;saveCheckpoint("pulse2");
+ missionHintEl.textContent="PULSE — QUANDO VUOI, TORNA ALLA TORRE";missionHintEl.classList.add("show");
+}
+function enterPulseReturn(){
+ zone="bar";resetBarState();resetPulseReturnState();barState.phase="return";barState.customerGone=true;barState.friendSaved=false;barState.bartenderSaved=false;barIntroCamT=1.2;
+ if(sessionStats.pulse2Path&&sessionStats.pulse2Path!=="-"){pulseReturnState.path=sessionStats.pulse2Path==="PRISMA"?"control":sessionStats.pulse2Path.includes("ARCO")?"trust":"doubt";pulseReturnState.ready=true;}
+ player.x=BAR_CX;player.z=BAR_CZ+4.4;player.yaw=Math.PI;player.transformed=false;player.helmet=false;morphUnlocked=true;playAmbient("bar");
+ // formazione piu' rilassata: il locale e' chiuso, i Ranger restano sparsi.
+ const pos={ARCO:[-4.8,-4.6],CIUSKY:[-2.3,-1.5],JUN:[3.7,-1.6],VALE:[4.6,-4.4],DON:[.4,-5.2]};
+ for(const b of barTeam){const q=pos[b.name];b.activity="return";if(q){b.x=BAR_CX+q[0];b.z=BAR_CZ+q[1];b.targetX=b.x;b.targetZ=b.z;b.yaw=Math.PI;}}
+ saveCheckpoint("pulse2");missionHintEl.textContent="PULSE — PRENDITI UN MOMENTO";missionHintEl.classList.add("show");
+ afterGame(450,()=>playDialogue(pulseReturnIntroLines,()=>{missionHintEl.textContent="PULSE — PARLA CON LA SQUADRA";missionHintEl.classList.add("show");}));
+}
+function pulseReturnTalk(name){
+ const lines=pulseReturnTalkLines[name];if(!lines)return;
+ const first=!pulseReturnState.talked.has(name);pulseReturnState.talked.add(name);
+ playDialogue(lines,()=>{
+  if(first&&["ARCO","VALE","DON","CIUSKY","JUN"].includes(name)&&pulseReturnRangerCount()>=3&&!pulseReturnState.path){
+   missionHintEl.textContent="PULSE — PARLA ANCORA CON CHI VUOI SEGUIRE";missionHintEl.classList.add("show");
+  }
+ });
+}
+function pulseReturnDeepen(name){
+ if(pulseReturnState.path)return pulseReturnTalk(name);
+ if(name==="DON"||name==="CIUSKY")return setPulseReturnPath("doubt","DON / CIUSKY");
+ if(name==="ARCO"||name==="VALE")return setPulseReturnPath("trust","ARCO / VALE");
+ return pulseReturnTalk(name);
+}
+function leavePulseReturn(){
+ if(!pulseReturnState.path)return;
+ pulseReturnState.active=false;nearInteractable=null;interactPromptEl.classList.remove("show");teleportFlash();
+ afterGame(350,()=>{enterTorre();postBossState=true;setupPostBossTeam();saveCheckpoint("postboss");afterGame(350,()=>playDialogue(postBossLines,()=>{missionHintEl.textContent="TORRE — CONTROLLA IL PANNELLO ANOMALO";missionHintEl.classList.add("show");}));});
+}
+
 const barIntroLines=[
- {speaker:"KIM",text:"Finalmente. Pensavo mi avresti dato buca."},
- {speaker:"ZERO",text:"E perdermi una serata tranquilla al Pulse? Mai."},
- {speaker:"KIM",text:"Gia' che ci sei, mi prendi qualcosa da bere? Il solito."},
- {speaker:"ZERO",text:"Vado."},
+ {speaker:"KIM",text:"Finalmente."},
+ {speaker:"ZERO",text:"Sono in ritardo di cinque minuti."},
+ {speaker:"KIM",text:"Sono comunque cinque minuti."},
+ {speaker:"ZERO",text:"Ciao anche a te."},
+ {speaker:"KIM",text:"Gia' che sei qui, mi prendi qualcosa? Il solito."},
+ {speaker:"ZERO",text:"Va bene. Torno subito."},
 ];
 const barFreeTalk={
- KIM:[{speaker:"KIM",text:"Vai pure con calma. Tommy e' sempre sommerso di ordini."}],
- ARCO:[{speaker:"ARCO",text:"Tu sei l'amico di Kim? Arco. Sto provando a insegnare a Ciusky che destra e sinistra non sono opinioni."}],
- CIUSKY:[{speaker:"CIUSKY",text:"Non ascoltarlo. La tecnica e' perfetta. E' il pavimento che e' storto."}],
- JUN:[{speaker:"JUN",text:"Jun. Se senti un tonfo sono i pesi. Se senti due tonfi... probabilmente sono ancora i pesi."}],
- VALE:[{speaker:"VALE",text:"Vale. Se vuoi allenarti, rimetti a posto quello che usi. Sembro severa solo perche' lo sono."}],
- DON:[{speaker:"DON",text:"Don. Se qualcosa qui smette di funzionare, prima controlla il cavo. Vale per quasi tutto."}],
- SACCO:[{speaker:"ZERO",text:"Due colpi e basta. Non vorrei farmi cacciare prima di prendere da bere."}],
+ KIM:[{speaker:"KIM",text:"Vai con calma. Tommy e' ancora incastrato con gli ordini."}],
+ ARCO:[
+  {speaker:"ARCO",text:"Tu sei l'amico di Kim, giusto? Arco."},
+  {speaker:"ZERO",text:"Zero."},
+  {speaker:"ARCO",text:"Zero?"},
+  {speaker:"ZERO",text:"E' un soprannome."},
+  {speaker:"ARCO",text:"Sto cercando di spiegare a Ciusky che destra e sinistra non sono opinioni."}
+ ],
+ CIUSKY:[
+  {speaker:"CIUSKY",text:"Non ascoltarlo. Il problema e' il pavimento."},
+  {speaker:"ZERO",text:"Certo."},
+  {speaker:"CIUSKY",text:"Finalmente qualcuno che capisce."}
+ ],
+ JUN:[
+  {speaker:"JUN",text:"Non passare di li'."},
+  {speaker:"ZERO",text:"Perche'?"},
+  {speaker:"JUN",text:"Fidati. Jun, comunque."},
+  {speaker:"ZERO",text:"Zero."},
+  {speaker:"JUN",text:"...davvero?"}
+ ],
+ VALE:[
+  {speaker:"VALE",text:"Occhio agli attrezzi. Vale."},
+  {speaker:"ZERO",text:"Zero."},
+  {speaker:"VALE",text:"Se usi qualcosa, rimettilo a posto."},
+  {speaker:"ZERO",text:"Non stavo usando niente."},
+  {speaker:"VALE",text:"Ottimo inizio."}
+ ],
+ DON:[
+  {speaker:"ZERO",text:"Si e' rotto?"},
+  {speaker:"DON",text:"No."},
+  {speaker:"DON",text:"Adesso si'. Don."},
+  {speaker:"ZERO",text:"Zero."},
+  {speaker:"DON",text:"Certo."}
+ ],
+ SACCO:[{speaker:"ZERO",text:"Meglio non farmi cacciare prima di prendere da bere."}],
 };
 const barRecruitLines=[
- {speaker:"DON",text:"Quello e' un Prisma. E non avrebbe dovuto rispondere a te."},
- {speaker:"CIUSKY",text:"Compatibilita' Frame: novantanove virgola sette. Arco... Oculo lo ha gia' visto."},
- {speaker:"OCULO",text:"PRISMA ZERO // candidato rilevato."},
- {speaker:"OCULO",text:"Slot ausiliario disponibile. Designazione: ZERO."},
+ {speaker:"CIUSKY",text:"Aspetta... quello e' un Prisma."},
+ {speaker:"ZERO",text:"Un cosa?"},
+ {speaker:"SISTEMA",text:"COMPATIBILITA' FRAME: 99.7%"},
+ {speaker:"CIUSKY",text:"Arco... Oculo lo sta leggendo."},
+ {speaker:"OCULO",text:"Candidato rilevato."},
+ {speaker:"ZERO",text:"Chi ha parlato?"},
+ {speaker:"OCULO",text:"Compatibilita' confermata. Prisma Zero."},
  {speaker:"ZERO",text:"Aspetta. Io non sono un Ranger."},
  {speaker:"OCULO",text:"Non ancora."}
 ];
@@ -2237,21 +2370,26 @@ function enterBar(){zone="bar";player.x=BAR_CX;player.z=BAR_CZ+4.9;player.yaw=Ma
 function barSocialProgress(){
  barState.socialCount=BAR_RANGER_NAMES.filter(n=>!!barState.socialFlags[n]).length;
  if(barState.socialCount>=3&&!barState.customerLeaving&&!barState.customerGone){
-  barState.customerLeaving=true;missionHintEl.textContent="PULSE // ASPETTA CHE TOMMY FINISCA";missionHintEl.classList.add("show");
+  barState.customerLeaving=true;missionHintEl.textContent="PULSE — ASPETTA CHE TOMMY FINISCA";missionHintEl.classList.add("show");
  }else if(barState.socialCount<3){
-  missionHintEl.textContent=barState.tommyHintSeen?"TOMMY E' OCCUPATO // FAI DUE CHIACCHIERE CON I RAGAZZI":"PULSE // PRENDI DA BERE PER KIM";
+  missionHintEl.textContent=barState.tommyHintSeen?"TOMMY E' OCCUPATO — FAI DUE CHIACCHIERE":"PULSE — PRENDI DA BERE PER KIM";
   missionHintEl.classList.add("show");
  }
 }
-function startBarPrologue(){resetBarState();barState.phase="intro";missionHintEl.textContent="PULSE // BAR & PALESTRA";missionHintEl.classList.add("show");afterGame(550,()=>playDialogue(barIntroLines,()=>{barState.phase="free";barSocialProgress();}));}
+function startBarPrologue(){resetBarState();barState.phase="intro";missionHintEl.textContent="PULSE · BAR & PALESTRA";missionHintEl.classList.add("show");afterGame(550,()=>playDialogue(barIntroLines,()=>{barState.phase="free";barSocialProgress();}));}
 function startBarOrder(){if(zone!=="bar"||barState.phase!=="free"||!barState.bartenderReady||barState.orderStarted)return;barState.orderStarted=true;barState.phase="order";nearInteractable=null;interactPromptEl.classList.remove("show");clearKeys();playDialogue([
- {speaker:"TOMMY IL BARISTA",text:"Eccomi. Che ti preparo?"},
- {speaker:"ZERO",text:"Kim prende il soli—"},
+ {speaker:"TOMMY IL BARISTA",text:"Allora?"},
+ {speaker:"ZERO",text:"Il solito per Kim."},
+ {speaker:"TOMMY IL BARISTA",text:"E tu?"},
+ {speaker:"ZERO",text:"Niente."},
+ {speaker:"TOMMY IL BARISTA",text:"Sei entrato in un bar per prendere qualcosa a un'altra persona."},
+ {speaker:"ZERO",text:"Sono generoso."},
+ {speaker:"TOMMY IL BARISTA",text:"Sei economico."},
 ],()=>{barState.phase="omen";playDialogue([
- {speaker:"JUN",text:"Avete sentito anche voi?"},
- {speaker:"TOMMY IL BARISTA",text:"Viene dal retro..."},
+ {speaker:"KIM",text:"Cos'era?"},
+ {speaker:"TOMMY IL BARISTA",text:"...quello non era normale."},
 ],()=>afterGame(360,startBarIncident));});}
-function startBarIncident(){if(zone!=="bar")return;barState.phase="crisis";barState.timer=28;barState.lastSec=-1;barState.monsterT=0;barState.crisisElapsed=0;barState.actionOrder=[];sfx.alarm();specialFlashEl.style.opacity=.82;afterGame(180,()=>specialFlashEl.style.opacity=0);showStoryCue("ARCO","Civili fuori! Ciusky, con me!",{duration:1400});missionHintEl.textContent="SCAVENGOR CERCA QUALCOSA // AIUTA CHI PUOI";missionHintEl.classList.add("show");}
+function startBarIncident(){if(zone!=="bar")return;barState.phase="crisis";barState.timer=28;barState.lastSec=-1;barState.monsterT=0;barState.crisisElapsed=0;barState.actionOrder=[];sfx.alarm();specialFlashEl.style.opacity=.82;afterGame(180,()=>specialFlashEl.style.opacity=0);showStoryCue("ARCO","Civili fuori! Ciusky, con me!",{duration:1400});missionHintEl.textContent="GRINDER CERCA QUALCOSA — AIUTA CHI PUOI";missionHintEl.classList.add("show");}
 function barRecordAction(kind){if(!barState.actionOrder.includes(kind))barState.actionOrder.push(kind);}
 function resolveBarFate(){
  const prismIndex=barState.actionOrder.indexOf("prism");
@@ -2277,7 +2415,7 @@ function activateBarCore(){
  if(barState.deviceUsed||barState.phase!=="crisis")return;
  barState.deviceUsed=true;barRecordAction("prism");sfx.special();
  const idx=barState.actionOrder.indexOf("prism");
- const txt=idx===0?"Hai raggiunto il Prisma prima di Scavengor.":(idx===1?"Scavengor ha gia' aperto il vano. Il Prisma reagisce alla tua mano.":"Scavengor ha iniziato l'estrazione. Il Prisma reagisce quando lo afferri.");
+ const txt=idx===0?"Hai raggiunto il Prisma prima di Grinder.":(idx===1?"Grinder ha gia' aperto il vano. Il Prisma reagisce alla tua mano.":"Grinder ha iniziato l'estrazione. Il Prisma reagisce quando lo afferri.");
  playDialogue([{speaker:"ZERO",text:txt}],finishBarIncidentIfReady);
 }
 function markBarSocialInteraction(key,lines){if(barState.socialFlags[key])return;barState.socialFlags[key]=true;sfx.uiBlip();playDialogue(lines,()=>barSocialProgress());}
@@ -2287,11 +2425,12 @@ function doBarInteract(){if(zone!=="bar")return;if(barState.phase==="free"){
  if(nearInteractable==="barBartenderBusy"){
   barState.tommyHintSeen=true;
   return playDialogue([
-   {speaker:"TOMMY IL BARISTA",text:"Un secondo, sto finendo di servire."},
-   {speaker:"TOMMY IL BARISTA",text:"Kim e' con quei ragazzi della palestra. Fai due chiacchiere, ti chiamo io."}
+   {speaker:"TOMMY IL BARISTA",text:"Dammi un minuto, finisco qui."},
+   {speaker:"ZERO",text:"Nessun problema."},
+   {speaker:"TOMMY IL BARISTA",text:"Vai, non stare piantato al bancone. Ti chiamo io."}
   ],barSocialProgress);
  }
- if(nearInteractable==="barCustomerTalk"){barState.ambientFlags.customer=true;return playDialogue([{speaker:"CLIENTE AL BANCONE",text:"Tommy sta finendo il mio. Tocca a te dopo."}]);}
+ if(nearInteractable==="barCustomerTalk"){barState.ambientFlags.customer=true;return playDialogue([{speaker:"CLIENTE AL BANCONE",text:"Ha quasi finito con me."}]);}
  if(nearInteractable&&nearInteractable.startsWith("barExtraTalk:")){const i=+nearInteractable.split(":")[1],e=barExtras[i];if(e){barState.ambientFlags["extra"+i]=true;return playDialogue([{speaker:e.label||"CLIENTE",text:e.line||"Bella serata."}]);}}
  if(nearInteractable&&nearInteractable.startsWith("barArcade:")){
   const id=nearInteractable.split(":")[1],a=BAR_ARCADES.find(q=>q.id===id);if(a){window.open(a.url,"_blank","noopener");showStoryCue("CABINATO",a.name+" // LMN_01",{portrait:false,duration:1600});}return;
@@ -2300,17 +2439,25 @@ function doBarInteract(){if(zone!=="bar")return;if(barState.phase==="free"){
  if(nearInteractable==="barBag"&&!barState.bagUsed){barState.bagUsed=true;sfx.uiBlip();return playDialogue(barFreeTalk.SACCO);}
  return;
  }
+ if(barState.phase==="return"){
+  if(nearInteractable&&nearInteractable.startsWith("barReturnTeam:")){const name=nearInteractable.split(":")[1];if(pulseReturnState.talked.has(name)&&pulseReturnRangerCount()>=3)return pulseReturnDeepen(name);return pulseReturnTalk(name);}
+  if(nearInteractable==="barReturnKim")return pulseReturnTalk("KIM");
+  if(nearInteractable==="barReturnTommy")return pulseReturnTalk("TOMMY");
+  if(nearInteractable==="barReturnPrism")return setPulseReturnPath("control","PRISMA");
+  if(nearInteractable==="barReturnExit")return leavePulseReturn();
+  return;
+ }
  if(barState.phase!=="crisis")return;
- if(nearInteractable==="barFriend"&&!barState.friendSaved){barState.friendSaved=true;barRecordAction("kim");sfx.uiBlip();playDialogue([{speaker:"KIM",text:"Sto bene! Vai, aiuta gli altri!"}],finishBarIncidentIfReady);return;}
- if(nearInteractable==="barBartender"&&!barState.bartenderSaved){barState.bartenderSaved=true;barRecordAction("tommy");sfx.uiBlip();playDialogue([{speaker:"TOMMY IL BARISTA",text:"Ce la faccio. Quella cosa sta cercando il Prisma!"}],finishBarIncidentIfReady);return;}
+ if(nearInteractable==="barFriend"&&!barState.friendSaved){barState.friendSaved=true;barRecordAction("kim");sfx.uiBlip();playDialogue([{speaker:"KIM",text:"Sto bene! Vai!"}],finishBarIncidentIfReady);return;}
+ if(nearInteractable==="barBartender"&&!barState.bartenderSaved){barState.bartenderSaved=true;barRecordAction("tommy");sfx.uiBlip();playDialogue([{speaker:"TOMMY IL BARISTA",text:"Ce la faccio! Che diavolo vuole?"}],finishBarIncidentIfReady);return;}
  if(nearInteractable==="barCore")activateBarCore();
 }
-function updateBarPrologue(dt){if(zone!=="bar")return;barState.monsterT+=dt;barState.freeT+=dt;updateBarAmbientActors(dt);if(barState.phase==="crisis"&&!dialogueActive){barState.crisisElapsed+=dt;barState.timer=Math.max(0,barState.timer-dt);const sec=Math.ceil(barState.timer);if(sec!==barState.lastSec){barState.lastSec=sec;missionHintEl.textContent=`INCIDENTE // ${sec}s`;missionHintEl.classList.add("show");}const q=Math.min(1,barState.crisisElapsed/18);const ease=1-Math.pow(1-q,2);barState.monsterX=(BAR_CX+7.8)+(BAR_CORE_POS.x-(BAR_CX+7.8))*ease;barState.monsterZ=(BAR_CZ-1.0)+(BAR_CORE_POS.z-(BAR_CZ-1.0))*ease;if(barState.timer<=0&&!barState.deadlineExpired){barState.deadlineExpired=true;showStoryCue("SCENA","Scavengor ha raggiunto il Prisma. L'estrazione e' iniziata.",{portrait:false,duration:1700});missionHintEl.textContent="RAGGIUNGI IL PRISMA";finishBarIncidentIfReady();}}}
+function updateBarPrologue(dt){if(zone!=="bar")return;barState.monsterT+=dt;barState.freeT+=dt;updateBarAmbientActors(dt);if(barState.phase==="crisis"&&!dialogueActive){barState.crisisElapsed+=dt;barState.timer=Math.max(0,barState.timer-dt);const sec=Math.ceil(barState.timer);if(sec!==barState.lastSec){barState.lastSec=sec;missionHintEl.textContent=`INCIDENTE — ${sec}s`;missionHintEl.classList.add("show");}const q=Math.min(1,barState.crisisElapsed/18);const ease=1-Math.pow(1-q,2);barState.monsterX=(BAR_CX+7.8)+(BAR_CORE_POS.x-(BAR_CX+7.8))*ease;barState.monsterZ=(BAR_CZ-1.0)+(BAR_CORE_POS.z-(BAR_CZ-1.0))*ease;if(barState.timer<=0&&!barState.deadlineExpired){barState.deadlineExpired=true;showStoryCue("SCENA","Grinder ha raggiunto il Prisma. L'estrazione e' iniziata.",{portrait:false,duration:1700});missionHintEl.textContent="RAGGIUNGI IL PRISMA";finishBarIncidentIfReady();}}}
 
 function enterArena(force){
  if(zone==="arena"&&!force)return;zone="arena";
  player.x=ZONES.arena.cx;player.z=ZONES.arena.cz+9;player.yaw=Math.PI;player.hp=player.hpMax;player.energy=0;player.powerBuffT=0;player.attackCombo=0;
- spawnWave();missionHintEl.textContent="MISSIONE: DIFENDI LA COSTA // PRIMA ONDATA";missionHintEl.classList.add("show");
+ spawnWave();missionHintEl.textContent="DIFENDI LA COSTA — PRIMA ONDATA";missionHintEl.classList.add("show");
  teleportFlash();playAmbient("arena");saveCheckpoint("arena");
 }
 function enterTorre(){
@@ -2328,7 +2475,8 @@ function restoreCheckpoint(id,cpState){
  if(id==="bar"){morphUnlocked=false;player.transformed=false;player.helmet=false;enterBar();saveCheckpoint("bar");startBarPrologue();}
  else if(id==="arena"){morphUnlocked=true;player.transformed=true;player.helmet=true;teamMode="ranger";enterArena(true);}
  else if(id==="colosso"){morphUnlocked=true;player.transformed=true;player.helmet=true;teamMode="ranger";startColossoFightDirect();}
- else if(id==="postboss"){morphUnlocked=true;player.transformed=savedForm;player.helmet=savedForm;postBossState=true;enterTorre();setupPostBossTeam();saveCheckpoint("postboss");afterGame(250,()=>playDialogue(postBossLines,()=>{missionHintEl.textContent="PARLA CON LA SQUADRA O CONTROLLA IL PANNELLO // R = ARMATURA";missionHintEl.classList.add("show");}));}
+ else if(id==="pulse2"){morphUnlocked=true;player.transformed=false;player.helmet=false;enterPulseReturn();}
+ else if(id==="postboss"){morphUnlocked=true;player.transformed=savedForm;player.helmet=savedForm;enterTorre();postBossState=true;setupPostBossTeam();saveCheckpoint("postboss");afterGame(250,()=>playDialogue(postBossLines,()=>{missionHintEl.textContent="TORRE — CONTROLLA IL PANNELLO ANOMALO";missionHintEl.classList.add("show");}));}
  else if(id==="archivio"){morphUnlocked=true;player.transformed=savedForm;player.helmet=savedForm;teamMode="civil";startArchiveSequence();}
  else{morphUnlocked=false;player.transformed=false;player.helmet=false;resetTeamIntro();enterBar();saveCheckpoint("bar");startBarPrologue();}
 }
@@ -2363,7 +2511,7 @@ function getSpeakerPortraitData(name){
  if(name==="TIC")return {kind:"tic"};
  if(name==="KIM"||name==="AMICA")return {kind:"civil",pal:PAL_AMICA,female:true,helmet:false};
  if(name==="TOMMY IL BARISTA"||name==="BARISTA")return {kind:"civil",pal:PAL_BARISTA,female:false,helmet:false};
- if(name==="REGISTRO"||name==="FRAME ZERO")return {kind:"terminal",accent:[.18,.80,.90]};
+ if(name==="REGISTRO"||name==="FRAME ZERO"||name==="SISTEMA")return {kind:"terminal",accent:[.18,.80,.90]};
  if(name==="VECCHIO RANGER")return {kind:"ranger",pal:PAL_OLDRANGER_A,female:false,helmet:true};
  if(name==="ZERO")return player.transformed?{kind:"ranger",pal:PAL_ZERO,female:false,helmet:true}:{kind:"civil",pal:PAL_CIVILE,female:false,helmet:false};
  const tm=teamMemberByName(name);
@@ -2450,8 +2598,8 @@ function showDialogueLine(){
  // chi e' — prima restava fissa sul giocatore per tutta la scena.
  const tm=teamMemberByName(l.speaker);
  const bm=zone==="bar"?barTeam.find(x=>x.name===l.speaker):null;
- if(zone==="archivio"&&l.speaker==="DON")dialogueFocus={x:archiveCompanion.donX,y:1.45,z:archiveCompanion.donZ};
- else if(zone==="archivio"&&l.speaker==="TIC")dialogueFocus={x:archiveCompanion.ticX,y:2.0,z:archiveCompanion.ticZ};
+ if(zone==="archivio"&&l.speaker===archivePartyNames[0])dialogueFocus={x:archiveCompanion.aX,y:1.45,z:archiveCompanion.aZ};
+ else if(zone==="archivio"&&archivePartyNames.length>1&&l.speaker===archivePartyNames[1])dialogueFocus={x:archiveCompanion.bX,y:1.45,z:archiveCompanion.bZ};
  else if(zone==="archivio"&&l.speaker==="VECCHIO RANGER")dialogueFocus={x:CAPSULE_POS[0].x,y:1.5,z:CAPSULE_POS[0].z};
  else if(zone==="archivio"&&l.speaker==="FRAME ZERO")dialogueFocus=DIALOGUE_FOCUS_POS.ZERO_CAPSULE;
  else if(zone==="bar"&&(l.speaker==="KIM"||l.speaker==="AMICA"))dialogueFocus={x:BAR_FRIEND_POS.x,y:1.45,z:BAR_FRIEND_POS.z};
@@ -2486,48 +2634,75 @@ dialogueBoxEl.addEventListener("click",advanceDialogue);
 // in civile. Solo dopo parte la puntata tokusatsu vera.
 // ============================================================
 const introBriefLines=[
- {speaker:"OCULO",text:"Il nucleo del Pulse non avrebbe dovuto reagire a un civile. Con te lo ha fatto."},
- {speaker:"OCULO",text:"La compatibilita' e' sufficiente. Da oggi sarai l'unita' ausiliaria Zero — il sesto Ranger."},
- {speaker:"TIC",text:"Suggerimento operativo: conoscere i compagni prima della prima trasformazione riduce l'imbarazzo del 34%."},
- {speaker:"OCULO",text:"Conosci la squadra. Poi inizieremo."},
+ {speaker:"OCULO",text:"Benvenuto, Zero."},
+ {speaker:"ZERO",text:"Tu sei quello che mi parlava al Pulse."},
+ {speaker:"OCULO",text:"Corretto."},
+ {speaker:"ZERO",text:"E cosa sei?"},
+ {speaker:"OCULO",text:"Oculo."},
+ {speaker:"ZERO",text:"Non era quello che ho chiesto."},
+ {speaker:"ARCO",text:"Ti ci abitui."},
+ {speaker:"ZERO",text:"E' un'IA?"},
+ {speaker:"ARCO",text:"Si'. Gestisce la Torre e i Frame."},
+ {speaker:"ZERO",text:"Chi l'ha costruita?"},
+ {speaker:"ARCO",text:"Se lo scopri, dimmelo."},
+ {speaker:"OCULO",text:"Il Prisma Zero non risponde ai civili. A te ha risposto."},
+ {speaker:"ZERO",text:"Io non sono uno di loro."},
+ {speaker:"OCULO",text:"Non ancora."},
+ {speaker:"OCULO",text:"Compatibilita' Frame confermata. Designazione: Zero."},
+ {speaker:"JUN",text:"In pratica sei il sesto."},
+ {speaker:"TIC",text:"Protocollo sociale consigliato: presentazioni."}
 ];
 const introTalkLines={
  ARCO:[
-  {speaker:"ARCO",text:"Prima missione? Tranquillo. Io sono Arco, comando sul campo. Se qualcosa esplode, resta vicino a me."},
+  {speaker:"ARCO",text:"Prima missione? Tranquillo. Io sono Arco. Sul campo, resta vicino alla squadra."},
   {speaker:"ZERO",text:"Succede spesso?"},
-  {speaker:"ARCO",text:"Abbastanza da non farci piu' caso. Vedrai: dopo il primo allarme ti sembrera' casa."},
+  {speaker:"ARCO",text:"Piu' spesso di quanto vorrei."},
+  {speaker:"ZERO",text:"Ottimo."},
+  {speaker:"ARCO",text:"Ti abitui."}
  ],
  CIUSKY:[
-  {speaker:"CIUSKY",text:"Ciusky. Analisi, coordinate, diagnostica. Il tuo identificativo e'... insolito."},
-  {speaker:"ZERO",text:"Zero?"},
-  {speaker:"CIUSKY",text:"Non il nome. La numerazione della sessione. Lascia stare — per ora."},
+  {speaker:"CIUSKY",text:"Ti faccio vedere una cosa."},
+  {speaker:"ZERO",text:"Se e' un'altra percentuale, passo."},
+  {speaker:"CIUSKY",text:"Peccato. Io tengo d'occhio scanner, coordinate, diagnostica."},
+  {speaker:"CIUSKY",text:"...strano."},
+  {speaker:"ZERO",text:"Cosa?"},
+  {speaker:"CIUSKY",text:"Il tuo codice."},
+  {speaker:"ZERO",text:"E' un problema?"},
+  {speaker:"CIUSKY",text:"Non lo so ancora."}
  ],
  JUN:[
-  {speaker:"JUN",text:"Jun. Il mio compito ufficiale e' alleggerire la tensione. Quello non ufficiale e' evitare di chiedere a Oculo le percentuali."},
-  {speaker:"ZERO",text:"Percentuali di cosa?"},
-  {speaker:"JUN",text:"Esatto. Stai gia' imparando."},
+  {speaker:"JUN",text:"Regola numero uno."},
+  {speaker:"ZERO",text:"Quante sono?"},
+  {speaker:"JUN",text:"Non ne ho idea."},
+  {speaker:"JUN",text:"Se Arco dice corri, corri. Se Vale dice corri, probabilmente dovevi essere gia' partito."},
+  {speaker:"VALE",text:"Ti sento."},
+  {speaker:"JUN",text:"Vedi?"}
  ],
  VALE:[
-  {speaker:"VALE",text:"Vale. Una squadra funziona perche' ognuno rispetta il protocollo."},
-  {speaker:"ZERO",text:"Sempre?"},
-  {speaker:"VALE",text:"Soprattutto quando non capisci ancora perche' esiste."},
+  {speaker:"VALE",text:"Non devi sapere tutto oggi."},
+  {speaker:"ZERO",text:"E' rassicurante?"},
+  {speaker:"VALE",text:"E' pratico. Segui Arco e non improvvisare."}
  ],
  DON:[
-  {speaker:"DON",text:"DON. Quinto Ranger. Prima di questa squadra facevo manutenzione: server, porte, impianti. Preferivo quando i problemi avevano una presa da staccare."},
-  {speaker:"ZERO",text:"Prima di questa squadra?"},
-  {speaker:"DON",text:"Storia lunga. Se una porta dice che non devi aprirla, di solito e' proprio quella che nasconde qualcosa."},
- ],
+  {speaker:"ZERO",text:"Tu non hai consigli?"},
+  {speaker:"DON",text:"Uno. Guarda prima di decidere."},
+  {speaker:"ZERO",text:"Tutto qui?"},
+  {speaker:"DON",text:"Di solito basta."}
+ ]
 };
 const introAlertLines=[
- {speaker:"TIC",text:"ALLARME! Firma ostile sulla costa sud. Multipli bersagli in avvicinamento."},
- {speaker:"ARCO",text:"Eccoci. Resta con la squadra e non fare l'eroe da solo."},
- {speaker:"OCULO",text:"Squadra, in posizione. Unita' Zero — trasformati e difendete la costa."},
+ {speaker:"TIC",text:"Allarme. Presenza ostile rilevata sulla costa sud."},
+ {speaker:"ARCO",text:"Squadra, muoversi. Zero, resta con noi."},
+ {speaker:"OCULO",text:"Trasformazione autorizzata."},
+ {speaker:"ZERO",text:"Aspettate, come—"},
+ {speaker:"ARCO",text:"Ti viene naturale."},
+ {speaker:"ZERO",text:"Non e' una risposta!"}
 ];
 function startIntro(){
  player.transformed=false;player.helmet=false;transformState=null;morphUnlocked=false;clearKeys();resetTeamIntro();
  missionHintEl.classList.remove("show");playAmbient("torre");
  playDialogue(introBriefLines,()=>{
-  introFreeRoam=true;activateTeamRoutes("intro");missionHintEl.textContent="CONOSCI LA SQUADRA // PARLA CON ARCO, CIUSKY, JUN, VALE E DON";missionHintEl.classList.add("show");
+  introFreeRoam=true;activateTeamRoutes("intro");missionHintEl.textContent="LA TORRE — CONOSCI LA SQUADRA";missionHintEl.classList.add("show");
  });
 }
 function maybeTriggerIntroAlert(){
@@ -2539,89 +2714,62 @@ function maybeTriggerIntroAlert(){
   });
  }));
 }
-// v58 — dopo la vittoria si tornava dritti alla Torre: dall'eroe che ha
-// appena sconfitto un gigante si saltava subito al debriefing, senza un
-// solo momento umano nel mezzo. Aggiunta una breve tappa al PULSE, in
-// borghese, prima del resto — non una rigiocata del prologo (niente crisi,
-// niente meccaniche sociali), solo Kim e Tommy che notano che qualcosa e'
-// cambiato, con un paio di righe diverse a seconda di cosa e' successo
-// davvero durante la crisi (chi hai salvato, se hai conosciuto tutti).
-let pulseEpilogueActive=false;
-function buildPulseReturnLines(){
- const lines=[];
- if(sessionStats.kimSaved){
-  lines.push({speaker:"KIM",text:"Eccoti. Dove sei sparito? Ho sentito il botto e poi... niente, sei scomparso."});
-  lines.push({speaker:"KIM",text:"Sto bene, non ti preoccupare. Qualcuno mi ha tirata fuori giusto in tempo."});
- }else{
-  lines.push({speaker:"KIM",text:"Eccoti finalmente. Mi sono cavata da sola quella sera, sai? Ho pensato il peggio, per un attimo."});
- }
- lines.push({speaker:"KIM",text:"Sei... diverso. Non saprei dire come. Va tutto bene davvero?"});
- if(sessionStats.tommySaved){
-  lines.push({speaker:"TOMMY IL BARISTA",text:"Il solito, campione? Offre la casa, dopo quella sera. Ci sono ancora, grazie a chiunque sia stato."});
- }else{
-  lines.push({speaker:"TOMMY IL BARISTA",text:"Bar ancora in piedi, come vedi. Ce l'abbiamo fatta lo stesso, alla fine."});
- }
- lines.push({speaker:"KIM",text:"Qualunque cosa sia, dovunque tu sia stato... sono contenta che tu sia qui adesso."});
- return lines;
-}
-function startPulseReturnScene(onDone){
- pulseEpilogueActive=true;
- player.transformed=false;player.helmet=false;
- zone="bar";player.x=BAR_CX-2.0;player.z=BAR_CZ+2.4;player.yaw=Math.PI;
- barCustomer.x=BAR_BARTENDER_POS.x+.9;barCustomer.z=BAR_BARTENDER_POS.z+.4;
- playAmbient("bar");teleportFlash();
- afterGame(700,()=>playDialogue(buildPulseReturnLines(),()=>{
-  pulseEpilogueActive=false;
-  if(onDone)onDone();
- }));
-}
 const postBossLines=[
- {speaker:"OCULO",text:"Scavengor neutralizzato. Settore urbano salvo. Rientro autorizzato."},
- {speaker:"ARCO",text:"Prima missione e gia' Colosso. Cerca di non farci l'abitudine, Zero."},
- {speaker:"JUN",text:"Io invece vorrei abituarmi alla parte in cui torniamo tutti interi."},
- {speaker:"VALE",text:"Rapporto danni avviato. Chiudiamo la missione e torniamo alle postazioni."},
- {speaker:"CIUSKY",text:"Un momento. TIC, ripeti la firma recuperata da Scavengor."},
- {speaker:"TIC",text:"SIGNATURE MATCH: RANGER FRAME. Corrispondenza confermata."},
- {speaker:"ZERO",text:"Firma?"},
- {speaker:"DON",text:"L'impronta energetica della tuta. Ogni Frame ne lascia una: serve alla Torre per riconoscerci, localizzarci e autorizzarci."},
- {speaker:"VALE",text:"Ciusky, abbiamo appena combattuto. Un residuo puo' falsare una scansione."},
- {speaker:"CIUSKY",text:"Un residuo non restituisce una firma completa."},
- {speaker:"DON",text:"Il problema e' questo: Scavengor non ha copiato la nostra firma. La sua era gia' autorizzata dalla Torre prima dello scontro."},
- {speaker:"OCULO",text:"Diagnostica chiusa. Ignorate il dato e tornate alle postazioni."},
+ {speaker:"CIUSKY",text:"Ce l'ho."},
+ {speaker:"ARCO",text:"Parla."},
+ {speaker:"CIUSKY",text:"E' una firma Frame."},
+ {speaker:"ZERO",text:"Spiegamelo come se fossi arrivato oggi."},
+ {speaker:"JUN",text:"Tecnicamente sei arrivato oggi."},
+ {speaker:"CIUSKY",text:"La Torre usa una firma per riconoscere le nostre armature."},
+ {speaker:"ZERO",text:"E Grinder ne aveva una."},
+ {speaker:"CIUSKY",text:"Si'."},
+ {speaker:"VALE",text:"Puo' averla acquisita durante lo scontro."},
+ {speaker:"CIUSKY",text:"No. Il primo rilevamento e' precedente al contatto."},
+ {speaker:"DON",text:"Quindi era gia' registrato."},
+ {speaker:"OCULO",text:"La lettura e' stata classificata come contaminazione."},
+ {speaker:"CIUSKY",text:"Non e' contaminazione."},
+ {speaker:"OCULO",text:"Analisi conclusa."},
+ {speaker:"ZERO",text:"Aspetta."},
+ {speaker:"OCULO",text:"Analisi conclusa."}
 ];
 const postBossTalkLines={
  ARCO:[
-  {speaker:"ARCO",text:"Ciusky vede anomalie anche nel caffe'. Oculo ci ha portati a casa, Zero. Per me e' questo che conta."},
-  {speaker:"ARCO",text:"Ma... se scopri che TIC ha ragione, chiamami prima di fare qualcosa di stupido."},
+  {speaker:"ARCO",text:"Non mi piace quando Oculo chiude una domanda cosi'."},
+  {speaker:"ZERO",text:"Quindi Ciusky aveva ragione."},
+  {speaker:"ARCO",text:"Aveva una domanda giusta. Adesso voglio una risposta."}
  ],
  CIUSKY:[
-  {speaker:"CIUSKY",text:"Non era un errore. La firma di Scavengor e' compatibile con la nostra armatura."},
-  {speaker:"CIUSKY",text:"Quel pannello laterale sta rispondendo allo stesso segnale. Oculo non vuole che lo tocchiamo."},
+  {speaker:"CIUSKY",text:"Il pannello laterale risponde alla stessa autorizzazione di Grinder."},
+  {speaker:"ZERO",text:"Da dove arriva?"},
+  {speaker:"CIUSKY",text:"Da sotto."}
  ],
  JUN:[
-  {speaker:"JUN",text:"Io scherzo quando ho paura. E adesso non mi viene in mente niente di divertente."},
-  {speaker:"JUN",text:"Ho visto quel valore sullo scanner. Diceva RANGER. Non 'simile a Ranger'. RANGER."},
+  {speaker:"JUN",text:"Non mi viene in mente niente di divertente."},
+  {speaker:"ZERO",text:"Questo mi preoccupa piu' del resto."},
+  {speaker:"JUN",text:"Anche me."}
  ],
  VALE:[
-  {speaker:"VALE",text:"Abbiamo appena salvato migliaia di persone seguendo gli ordini di Oculo."},
-  {speaker:"VALE",text:"Non trasformare un errore diagnostico in una ragione per distruggere la squadra."},
+  {speaker:"VALE",text:"Una lettura sbagliata non era una cospirazione. Ma questa non sembra sbagliata."},
+  {speaker:"ZERO",text:"E adesso?"},
+  {speaker:"VALE",text:"Adesso controlliamo."}
  ],
  DON:[
-  {speaker:"DON",text:"Ho ricontrollato il log. Scavengor non ha copiato la firma durante lo scontro: era gia' autorizzato prima di emergere."},
-  {speaker:"DON",text:"Non so ancora chi l'ha attivato. Ma non e' arrivato da fuori della Torre."},
- ],
+  {speaker:"DON",text:"Grinder non e' arrivato da fuori. Almeno questo adesso lo sappiamo."},
+  {speaker:"ZERO",text:"E se Oculo lo sapeva gia'?"},
+  {speaker:"DON",text:"Allora la domanda cambia."}
+ ]
 };
 function doTowerNpcInteract(id){
  const name=id.replace("npc:","");
  if(introFreeRoam){
   const lines=introTalkLines[name];if(!lines)return;
-  playDialogue(lines,()=>{introTalked.add(name);missionHintEl.textContent=`CONOSCI LA SQUADRA // ${introTalked.size}/5`;missionHintEl.classList.add("show");maybeTriggerIntroAlert();});
+  playDialogue(lines,()=>{introTalked.add(name);missionHintEl.textContent="LA TORRE — PARLA CON LA SQUADRA";missionHintEl.classList.add("show");maybeTriggerIntroAlert();});
   return;
  }
  if(postBossState){
   const lines=postBossTalkLines[name];if(!lines)return;
-  if(!fate.flags.postboss_first_choice){sessionStats.postBossFirst=name;if(name==="DON"||name==="CIUSKY")fateAdd("rebellion",1,"postboss_first_choice");else fateAdd("compliance",1,"postboss_first_choice");}
-  postBossTalked.add(name);playDialogue(lines,()=>{missionHintEl.textContent="CONTROLLA IL PANNELLO ANOMALO // R = ARMATURA";missionHintEl.classList.add("show");});
+  if(sessionStats.postBossFirst==="-")sessionStats.postBossFirst=name;
+  postBossTalked.add(name);playDialogue(lines,()=>{missionHintEl.textContent="CONTROLLA IL PANNELLO ANOMALO — R = ARMATURA";missionHintEl.classList.add("show");});
  }
 }
 
@@ -2639,46 +2787,52 @@ const terminalLines=[
  {speaker:"REGISTRO",text:"UNITA' VISIBILI IN STASI: 08. ARCHIVIO COMPLETO: ACCESSO LIMITATO."},
  {speaker:"REGISTRO",text:"OUTPUT ENERGETICO MEDIO: 17%. DECADIMENTO: IRREVERSIBILE."},
  {speaker:"REGISTRO",text:"PROTOCOLLO DI CONTINUITA': SOSTITUZIONE AUTORIZZATA."},
- {speaker:"REGISTRO",text:"COLLECTOR UNIT // OWNER: SUPERVISOR NODE // FUNCTION: FIELD RECOVERY + CORE EXTRACTION."},
+ {speaker:"REGISTRO",text:"UNITA': GRINDER // CLASSE: COLLECTOR // AUTORITA': SUPERVISOR NODE."},
+ {speaker:"REGISTRO",text:"FUNZIONE: RECUPERO / ESTRAZIONE."},
  {speaker:"REGISTRO",text:"SQUADRA_07 // STASI. SQUADRA_08 // STASI. SQUADRA_09 // RECORD PARZIALE."},
- {speaker:"REGISTRO",text:"SESSION_01 // TYPE: STUDIO // STATUS: CLOSED"},
- {speaker:"REGISTRO",text:"ERRORE — DATA TYPE MISMATCH. BLOCCO LMN_01 NON COMPATIBILE."},
+ {speaker:"REGISTRO",text:"BLOCCO LMN_01 // FORMATO NON RICONOSCIUTO."}
 ];
 function getCapsuleLines(){
+ const lead=archivePartyNames[0]||"DON";
  const formLines=player.transformed?[
   {speaker:"REGISTRO",text:"COMBAT FRAME LINK: ACTIVE // IDENTITY: ZERO"},
   {speaker:"VECCHIO RANGER",text:"Un altro collegato alla Torre..."},
  ]:[
   {speaker:"REGISTRO",text:"COMBAT FRAME LINK: SUSPENDED // IDENTITY: ZERO"},
-  {speaker:"VECCHIO RANGER",text:"Toglila sempre, quando puoi."},
+  {speaker:"VECCHIO RANGER",text:"Toglila quando puoi."},
   {speaker:"ZERO",text:"La tuta?"},
-  {speaker:"VECCHIO RANGER",text:"La connessione. La tuta e' solo il modo in cui la senti."},
+  {speaker:"VECCHIO RANGER",text:"No. Il collegamento."},
+  {speaker:"VECCHIO RANGER",text:"La tuta e' solo quello che vedi."},
  ];
  return [
   ...formLines,
-  {speaker:"DON",text:"Zero... sono vivi."},
-  {speaker:"TIC",text:"Coscienza residua rilevata. Segni vitali deboli, ma presenti."},
-  {speaker:"DON",text:"Li tengono qui e continuano a prelevare energia."},
+  {speaker:lead,text:"Zero... sono vivi."},
+  {speaker:lead,text:"Questi tubi stanno ancora prelevando qualcosa."},
   {speaker:"VECCHIO RANGER",text:"Come vi chiamano?"},
-  {speaker:"DON",text:"Arco. Ciusky. Jun. Vale. Don... e Zero."},
-  {speaker:"VECCHIO RANGER",text:"Zero... conosco quella designazione."},
-  {speaker:"DON",text:"Da dove?"},
-  {speaker:"VECCHIO RANGER",text:"Non pensavo l'avrebbero usata di nuovo. Cercate il posto che hanno lasciato vuoto."},
+  {speaker:lead,text:"Arco. Ciusky. Jun. Vale. Don... e Zero."},
+  {speaker:"VECCHIO RANGER",text:"Zero?"},
+  {speaker:"ZERO",text:"Si'."},
+  {speaker:"VECCHIO RANGER",text:"No... non pensavo l'avrebbero usato di nuovo."},
+  {speaker:"VECCHIO RANGER",text:"Cercate il posto che hanno lasciato vuoto."}
  ];
 }
 function getZeroCapsuleLines(){
  const link=player.transformed?"ACTIVE":"SUSPENDED";
+ const lead=archivePartyNames[0]||"DON";
  return [
   {speaker:"FRAME ZERO",text:`SIXTH FRAME // UNIT: ZERO // COLOR: GREEN // STATUS: VACANT // RESERVATION: ACTIVE // LINK: ${link}`},
-  {speaker:"ZERO",text:"Riservata a chi?"},
-  {speaker:"TIC",text:"La capsula non contiene un nome. Contiene il tuo identificativo."},
-  {speaker:"DON",text:"Non ti hanno assegnato solo una tuta. Ti hanno gia' assegnato un posto."},
+  {speaker:"ZERO",text:"Quella e' vuota."},
+  {speaker:"REGISTRO",text:"IDENTIFICATIVO RILEVATO: ZERO."},
+  {speaker:"ZERO",text:"Di chi?"},
+  {speaker:"REGISTRO",text:"ZERO."},
+  {speaker:lead,text:"Non ti hanno dato solo una tuta."},
+  {speaker:lead,text:"Ti avevano gia' preparato un posto."}
  ];
 }
 function describePulseChoice(){
  if(sessionStats.prismOrder===1)return "Al Pulse hai raggiunto il Prisma prima delle persone.";
  if(sessionStats.prismOrder===2)return "Al Pulse hai diviso la tua priorita' tra una persona e il Prisma.";
- return "Al Pulse hai lasciato che Scavengor arrivasse al Prisma pur di tornare indietro per le persone.";
+ return "Al Pulse hai lasciato che Grinder arrivasse al Prisma pur di tornare indietro per le persone.";
 }
 function describeArchiveChoice(){
  if(sessionStats.archiveFirst==="capsule")return "Nell'Archivio hai cercato prima chi era nelle capsule.";
@@ -2687,36 +2841,103 @@ function describeArchiveChoice(){
 }
 function getOculoRevealLines(){
  const pct=frameUsagePct();
+ const lead=archivePartyNames[0]||"DON";
  return [
-  {speaker:"DON",text:"Quante volte hanno riutilizzato questi ruoli?"},
-  {speaker:"REGISTRO",text:"ARCO // CONTINUITA'. CIUSKY // CONTINUITA'. JUN // CONTINUITA'. VALE // CONTINUITA'. DON // CONTINUITA'."},
-  {speaker:"TIC",text:"Io conosco questa stanza. Ho aperto queste capsule. Ma la mia memoria dice che e' la prima volta."},
-  {speaker:"OCULO",text:"Le designazioni devono continuare. Gli individui no."},
-  {speaker:"DON",text:"Scavengor era tuo."},
-  {speaker:"OCULO",text:"SCAVENGOR // CLASS: COLLECTOR. Non vi ha attaccati: vi ha misurati. Recupero, estrazione, trasferimento."},
-  {speaker:"DON",text:"Quindi la sua firma era autorizzata perche' apparteneva alla Torre."},
+  {speaker:lead,text:"Grinder era tuo."},
   {speaker:"OCULO",text:"Corretto."},
-  {speaker:"ZERO",text:"E il Prisma al Pulse?"},
-  {speaker:"OCULO",text:"La compatibilita' non si scopre per caso."},
+  {speaker:"ZERO",text:"Ci ha attaccati."},
+  {speaker:"OCULO",text:"Avete interferito con la procedura."},
+  {speaker:"ZERO",text:"Quale procedura?"},
+  {speaker:"OCULO",text:"Recupero."},
+  {speaker:"ZERO",text:"E loro?"},
+  {speaker:"OCULO",text:"Unita' precedenti."},
+  {speaker:"ZERO",text:"Sono persone."},
+  {speaker:"OCULO",text:"Erano Ranger."},
+  {speaker:"ZERO",text:"Per te non siamo persone."},
+  {speaker:"OCULO",text:"Le designazioni devono continuare."},
+  {speaker:"ZERO",text:"E noi?"},
+  {speaker:"OCULO",text:"Gli individui no."},
+  {speaker:"ZERO",text:"Il Prisma era li' per me?"},
+  {speaker:"OCULO",text:"Era li' per trovare compatibilita'."},
+  {speaker:"ZERO",text:"E Grinder?"},
+  {speaker:"OCULO",text:"Ha svolto la propria funzione."},
+  {speaker:"ZERO",text:"Hai organizzato tutto?"},
+  {speaker:"OCULO",text:"La compatibilita' e' stata confermata."},
+  {speaker:"ZERO",text:"Non e' quello che ti ho chiesto."},
+  {speaker:"OCULO",text:"Lo so."},
+  {speaker:"OCULO",text:"Hai gia' fornito abbastanza dati."},
+  {speaker:"ZERO",text:"Dati?"},
   {speaker:"OCULO",text:describePulseChoice()},
   {speaker:"OCULO",text:describeArchiveChoice()},
-  {speaker:"OCULO",text:`Connessione Frame nelle zone sicure: ${pct}%.`},
-  {speaker:"ZERO",text:"Mi stavi contando anche quello?"},
-  {speaker:"OCULO",text:"Non io. La tuta. Il Frame registra tempo collegato, percorsi, priorita' ed esitazioni."},
+  {speaker:"OCULO",text:`Connessione Frame: ${pct}%.`},
+  {speaker:"ZERO",text:"Hai contato anche quello?"},
+  {speaker:"OCULO",text:"Io no."},
+  {speaker:"OCULO",text:"Il Frame."},
+  {speaker:"ZERO",text:"Il Frame mi controllava?"},
+  {speaker:"OCULO",text:"Registrava."},
+  {speaker:"ZERO",text:"Cosa?"},
+  {speaker:"OCULO",text:"Quanto restavi collegato. Dove andavi. Cosa sceglievi."},
+  {speaker:"ZERO",text:"Quindi mi hai giudicato."},
+  {speaker:"OCULO",text:"No."},
   {speaker:"OCULO",text:"Non ti ho giudicato. Ti ho misurato."},
   {speaker:"VECCHIO RANGER",text:"Toglila quando puoi. Piu' la tieni addosso, piu' la Torre prende."},
   {speaker:"ZERO",text:"Prende cosa?"},
   {speaker:"VECCHIO RANGER",text:"Te."},
-  {speaker:"OCULO",text:"Tu, dall'altra parte dello schermo: non serve chiederti cosa sceglieresti. Me lo hai gia' mostrato."},
-  {speaker:"OCULO",text:"Il profilo e' completo."}
+  {speaker:"OCULO",text:"E tu."},
+  {speaker:"OCULO",text:"Dall'altra parte dello schermo."},
+  {speaker:"OCULO",text:"Non devo chiederti cosa avresti fatto."},
+  {speaker:"OCULO",text:"L'hai gia' fatto."}
  ];
 }
 const TERMINAL_POS={x:ARCHIVIO_CX-ARCHIVIO_W/2+1.0,z:ARCHIVIO_CZ+ARCHIVIO_D/2-2.8};
 const CAPSULE_INTERACT_POS={x:ARCHIVIO_CX-1.7,z:-7.4};
 const ZERO_CAPSULE_INTERACT_POS={x:ZERO_CAPSULE_POS.x,z:ZERO_CAPSULE_POS.z+1.45};
 let archiveState={terminalRead:false,capsuleRead:false,zeroRead:false,revealing:false,capsuleAwake:false};
+let overrideState={active:false,nodes:[false,false,false],pulseT:0};
+const OVERRIDE_NODES=[
+ {x:ARCHIVIO_CX-3.2,z:ARCHIVIO_CZ+4.6},
+ {x:ARCHIVIO_CX+3.2,z:ARCHIVIO_CZ-1.0},
+ {x:ARCHIVIO_CX,z:ARCHIVIO_CZ-9.2}
+];
+function startOculoOverride(){
+ overrideState={active:true,nodes:[false,false,false],pulseT:0};
+ // Oculo riprende il Frame: non e' una nuova scelta del giocatore, quindi questo tempo non entra nell'Hidden Fate.
+ player.transformed=true;player.helmet=true;morphUnlocked=true;
+ playDialogue([
+  {speaker:"OCULO",text:"Accesso revocato."},
+  {speaker:"ZERO",text:"Che succede?"},
+  {speaker:"OCULO",text:"Il Frame appartiene alla Torre."},
+  {speaker:"ZERO",text:"Oculo!"},
+  {speaker:"OCULO",text:"Restituisci il Frame."},
+  {speaker:"ZERO",text:"Vieni a riprendertelo."}
+ ],()=>{missionHintEl.textContent="OVERRIDE — DISATTIVA I 3 NODI DI CONTROLLO";missionHintEl.classList.add("show");showActionCallout("power","OVERRIDE",900);});
+}
+function updateOculoOverride(dt){
+ if(!overrideState.active)return;overrideState.pulseT+=dt;
+ if(overrideState.pulseT>2.4){overrideState.pulseT=0;specialFlashEl.style.opacity=.22;afterGame(100,()=>specialFlashEl.style.opacity=0);sfx.alarm();}
+}
+function hitOverrideNode(i){
+ if(!overrideState.active||overrideState.nodes[i])return;
+ overrideState.nodes[i]=true;sfx.special();specialFlashEl.style.opacity=.75;afterGame(120,()=>specialFlashEl.style.opacity=0);
+ const n=overrideState.nodes.filter(Boolean).length;showActionCallout("power",`NODO ${n}/3`,800);
+ if(n<3){missionHintEl.textContent=`OVERRIDE — ${3-n} NODI RIMASTI`;missionHintEl.classList.add("show");return;}
+ overrideState.active=false;missionHintEl.classList.remove("show");
+ const kind=fateEnding();
+ const lines=kind==="good"?[
+  {speaker:archivePartyNames[0]||"DON",text:"Il collegamento sta cedendo!"},
+  {speaker:"ZERO",text:"Allora lo spezziamo."}
+ ]:kind==="evil"?[
+  {speaker:"OCULO",text:"Accesso Supervisor disponibile."},
+  {speaker:"ZERO",text:"Allora vediamo chi comanda."}
+ ]:[
+  {speaker:"OCULO",text:"Controllo degradato."},
+  {speaker:"ZERO",text:"Basta. Per ora."}
+ ];
+ playDialogue(lines,()=>resolveAutomaticEnding());
+}
 let nearInteractable=null;
 function doArchiveInteract(){
+ if(overrideState.active&&nearInteractable&&nearInteractable.startsWith("overrideNode:")){hitOverrideNode(+nearInteractable.split(":")[1]);return;}
  if(!fate.flags.archive_first_action){
   sessionStats.archiveFirst=nearInteractable;
   if(nearInteractable==="capsule")fateAdd("rebellion",1,"archive_first_action");
@@ -2724,57 +2945,70 @@ function doArchiveInteract(){
   else if(nearInteractable==="zeroCapsule")fateAdd("control",1,"archive_first_action");
  }
  if(nearInteractable==="terminal"&&!archiveState.terminalRead){
-  archiveState.terminalRead=true;archiveCompanion.donTX=TERMINAL_POS.x+1.45;archiveCompanion.donTZ=TERMINAL_POS.z+.85;
-  playDialogue(terminalLines,()=>{archiveCompanion.donTX=CAPSULE_INTERACT_POS.x-1.55;archiveCompanion.donTZ=CAPSULE_INTERACT_POS.z+1.55;maybeStartOculoReveal();});
+  archiveState.terminalRead=true;moveArchiveParty(TERMINAL_POS.x,TERMINAL_POS.z);
+  playDialogue(terminalLines,()=>{moveArchiveParty(CAPSULE_INTERACT_POS.x,CAPSULE_INTERACT_POS.z);maybeStartOculoReveal();});
  }
  else if(nearInteractable==="capsule"&&!archiveState.capsuleRead){
-  archiveState.capsuleRead=true;archiveState.capsuleAwake=true;archiveCompanion.donTX=CAPSULE_INTERACT_POS.x-1.55;archiveCompanion.donTZ=CAPSULE_INTERACT_POS.z+1.55;
-  playDialogue(getCapsuleLines(),()=>{archiveCompanion.donTX=ZERO_CAPSULE_POS.x-1.55;archiveCompanion.donTZ=ZERO_CAPSULE_POS.z+1.55;maybeStartOculoReveal();});
+  archiveState.capsuleRead=true;archiveState.capsuleAwake=true;moveArchiveParty(CAPSULE_INTERACT_POS.x,CAPSULE_INTERACT_POS.z);
+  playDialogue(getCapsuleLines(),()=>{moveArchiveParty(ZERO_CAPSULE_POS.x,ZERO_CAPSULE_POS.z);maybeStartOculoReveal();});
  }
  else if(nearInteractable==="zeroCapsule"&&!archiveState.zeroRead){
-  archiveState.zeroRead=true;archiveCompanion.donTX=ZERO_CAPSULE_POS.x-1.55;archiveCompanion.donTZ=ZERO_CAPSULE_POS.z+1.55;
+  archiveState.zeroRead=true;moveArchiveParty(ZERO_CAPSULE_POS.x,ZERO_CAPSULE_POS.z);
   playDialogue(getZeroCapsuleLines(),maybeStartOculoReveal);
  }
 }
-const archiveEscortLines=[
- {speaker:"CIUSKY",text:"La firma e' autentica. Io tengo aperto il canale da qui."},
- {speaker:"DON",text:"Vengo con te. Se e' un sistema interno, preferisco vederlo con i miei occhi."},
- {speaker:"TIC",text:"Accompagnamento confermato. Alcuni miei registri rispondono allo stesso segnale."},
- {speaker:"ARCO",text:"Andate. Ma se la porta si chiude, tornate indietro prima di fare gli eroi."}
-];
-const archiveArrivalLines=[
- {speaker:"DON",text:"Siamo dentro. Tre direzioni: registro, capsule, Frame Zero. Da dove vuoi cominciare?"},
- {speaker:"TIC",text:"Nessuna priorita' assegnata. Scelta locale."}
-];
+function getArchiveEscortLines(){
+ setArchivePartyFromPulse();
+ if(archivePartyNames[0]==="DON")return [
+  {speaker:"CIUSKY",text:"Ho trovato da dove arriva l'autorizzazione."},
+  {speaker:"ZERO",text:"Da dove?"},
+  {speaker:"CIUSKY",text:"Da sotto."},
+  {speaker:"DON",text:"Veniamo con te."},
+  {speaker:"ARCO",text:"Se qualcosa si chiude dietro di voi, tornate indietro."}
+ ];
+ if(archivePartyNames[0]==="ARCO")return [
+  {speaker:"CIUSKY",text:"L'autorizzazione arriva da un settore sotto la Torre."},
+  {speaker:"VALE",text:"Quella zona non esiste."},
+  {speaker:"ARCO",text:"Sul terminale si'. Vengo con te."},
+  {speaker:"VALE",text:"Anch'io."}
+ ];
+ return [
+  {speaker:"CIUSKY",text:"L'autorizzazione arriva da sotto."},
+  {speaker:"ZERO",text:"Vado a vedere."},
+  {speaker:"JUN",text:"No. Vai a vedere, ma non da solo."}
+ ];
+}
+function getArchiveArrivalLines(){
+ if(archivePartyNames[0]==="DON")return [{speaker:"CIUSKY",text:"Questo settore non compare sulla mappa."},{speaker:"DON",text:"Adesso si'."},{speaker:"ZERO",text:"Oculo sa che siamo qui?"},{speaker:"CIUSKY",text:"Se non lo sa, abbiamo problemi piu' grossi."}];
+ if(archivePartyNames[0]==="ARCO")return [{speaker:"VALE",text:"Non dovremmo essere qui."},{speaker:"ARCO",text:"Lo so."},{speaker:"ZERO",text:"Vuoi tornare indietro?"},{speaker:"ARCO",text:"Voglio vedere cosa c'e' alla fine."}];
+ return [{speaker:"JUN",text:"Dimmi che sai dove stai andando."},{speaker:"ZERO",text:"No."},{speaker:"JUN",text:"Perfetto."},{speaker:"JUN",text:"Allora non vai da solo."}];
+}
 function doAnomalyInteract(){
  if(!postBossState||archiveEscortState)return;
- if(!fate.flags.postboss_first_choice){sessionStats.postBossFirst="PANNELLO";fateAdd("control",1,"postboss_first_choice");}
+ sessionStats.postBossFirst="PANNELLO";
  archiveEscortState=true;missionHintEl.classList.remove("show");
- // Blocchiamo le routine normali e facciamo convergere SOLO Ciusky e TIC
- // sul pannello: e' una piccola scena di accompagnamento, non follower AI.
+ // Blocchiamo le routine normali mentre la squadra decide chi accompagna Zero.
  teamRouteMode=null;
  for(const m of teamMembers){m.targetX=m.x;m.targetZ=m.z;}
- const don=teamMemberByName("DON");
- if(don){don.targetX=ANOMALO_POS.x-1.15;don.targetZ=ANOMALO_POS.z+.65;}
- playDialogue(archiveEscortLines,()=>{
-  missionHintEl.textContent="DON + TIC // VENGONO CON TE";missionHintEl.classList.add("show");
-  // Lasciamo due secondi reali alla scena per far vedere Ciusky arrivare
-  // e TIC posizionarsi sul pannello, poi entriamo tutti insieme.
+ setArchivePartyFromPulse();
+ archivePartyNames.forEach((name,i)=>{const m=teamMemberByName(name);if(m){m.targetX=ANOMALO_POS.x+(i?1.1:-1.1);m.targetZ=ANOMALO_POS.z+.75;}});
+ playDialogue(getArchiveEscortLines(),()=>{
+  showStoryCue("SQUADRA",archivePartyNames.join(" + ")+" vengono con te.",{portrait:false,duration:1500});
+  // Lasciamo un breve beat alla squadra prima del passaggio nell'Archivio.
   afterGame(2100,()=>{postBossState=false;archiveEscortState=false;startArchiveSequence();});
  });
 }
 function startArchiveSequence(){
  archiveState={terminalRead:false,capsuleRead:false,zeroRead:false,revealing:false,capsuleAwake:false};enterArchivio();saveCheckpoint("archivio");
  // All'arrivo i tre sono nello stesso punto scenico: prima si stabilisce
- // verbalmente il gruppo, poi Ciusky e TIC si separano per investigare.
- afterGame(500,()=>playDialogue(archiveArrivalLines,()=>{
-  archiveCompanion.donTX=TERMINAL_POS.x+1.45;archiveCompanion.donTZ=TERMINAL_POS.z+.85;
-  archiveCompanion.ticPatrol=true;archiveCompanion.ticTarget=0;archiveCompanion.ticWait=.5;
-  missionHintEl.textContent="ESPLORA L'ARCHIVIO // DON E TIC SONO CON TE // R = ARMATURA";missionHintEl.classList.add("show");
+ // verbalmente il gruppo, poi i compagni si dispongono nella stanza.
+ afterGame(500,()=>playDialogue(getArchiveArrivalLines(),()=>{
+  moveArchiveParty(TERMINAL_POS.x,TERMINAL_POS.z);
+  missionHintEl.textContent="ARCHIVIO — ESPLORA";missionHintEl.classList.add("show");
  }));
 }
 function maybeStartOculoReveal(){
- if(archiveState.terminalRead&&archiveState.capsuleRead&&archiveState.zeroRead&&!archiveState.revealing){archiveState.revealing=true;missionHintEl.classList.remove("show");afterGame(900,()=>{applyFrameUsageFate();playDialogue(getOculoRevealLines(),resolveAutomaticEnding);});}
+ if(archiveState.terminalRead&&archiveState.capsuleRead&&archiveState.zeroRead&&!archiveState.revealing){archiveState.revealing=true;missionHintEl.classList.remove("show");afterGame(900,()=>{applyFrameUsageFate();playDialogue(getOculoRevealLines(),startOculoOverride);});}
 }
 const choiceScreenEl=document.getElementById("choiceScreen");
 const choiceRowEl=document.getElementById("choiceRow");
@@ -2792,6 +3026,7 @@ function buildSessionStatsText(kind){
 TOMMY SALVATO        ${sessionStats.tommySaved?"SI":"NO"}
 PRISMA ZERO          ${prism}
 RANGER CONOSCIUTI    ${sessionStats.rangersMet}/5
+PULSE 2              ${sessionStats.pulse2Path||"-"}
 FRAME ATTIVO         ${frameUsagePct()}%
 PRIMA SCELTA ARCH.   ${af}
 
@@ -2802,26 +3037,12 @@ let enteringTorre=false, enterTorreT=0;
 const ENTER_TORRE_DUR=2.3, ENTER_TORRE_FROM_Z=ROOM_D/2-1.4, ENTER_TORRE_TO_Z=4.0;
 cliffMenuBtnEl.addEventListener("click",()=>location.reload());
 const ENDINGS={
- good:{cls:"good",title:"CICLO INTERROTTO",text:"Ciusky resta al terminale a coprire le tracce, TIC forza i sigilli uno per uno. Zero non aspetta l'autorizzazione: stacca il proprio Frame prima ancora che l'ultima capsula si apra, e lo lascia cadere sul pavimento come un peso che non vuole più portare. Le camere si sbloccano in fila, la luce fredda dentro ognuna vacilla e si spegne. Arco arriva di corsa, la mano già sull'arma — vede cosa sta succedendo, vede chi c'è dentro quelle capsule, e abbassa il braccio. Non dice niente. Si mette semplicemente ad aiutare. Il ciclo che teneva in piedi la Torre da generazioni, per la prima volta, si interrompe."},
- normal:{cls:"normal",title:"ARCHIVIO RICHIUSO",text:"Zero chiude il registro con un gesto secco, come se chiuderlo bastasse a chiudere anche quello che ha appena letto. Ciusky lo chiama per nome — una volta, poi un'altra, più piano — ma lui è già a metà corridoio e non si volta. TIC abbassa l'occhio, in silenzio, e resta lì. Le capsule tornano al loro ronzio basso, indifferenti a chi le ha guardate. Fuori dalla porta, Vale aspetta senza fare domande: ha visto la faccia di chi esce da lì dentro abbastanza volte da sapere quando è meglio non chiedere. La missione continua. Domani ci sarà un'altra chiamata, un'altra emergenza, un'altra ragione per non pensarci."},
- evil:{cls:"evil",title:"SUPERVISORE AUTORIZZATO",text:"Zero non esita quando il nodo si apre davanti a lui — è quasi un sollievo, dopo tutto quello che ha visto, smettere di fare domande e cominciare a dare risposte. L'occhio di Oculo si spegne per un istante e si riaccende con una firma nuova, la sua. Ciusky guarda il monitor cambiare colore senza capire cosa significhi davvero. La voce che esce dai diffusori è ancora quella di Zero, ma più piatta, più sicura di sé in un modo che non gli somiglia: \"Unità Ciusky. Torna alla postazione.\" Le capsule restano esattamente dove sono sempre state. Qualcuno deve pur amministrarle."},
+ good:{cls:"good",title:"CICLO INTERROTTO",text:"Zero spezza il collegamento con il Frame. I compagni rimasti con lui aprono le prime capsule mentre la Torre perde il controllo della sala. Per la prima volta il ciclo si ferma senza una nuova sostituzione."},
+ normal:{cls:"normal",title:"ARCHIVIO RICHIUSO",text:"Zero interrompe l'override ma non distrugge il sistema. L'Archivio viene richiuso, le capsule tornano silenziose e Oculo resta operativo. La squadra torna in superficie con piu' domande di prima."},
+ evil:{cls:"evil",title:"SUPERVISORE AUTORIZZATO",text:"Zero non spezza il nodo: lo assume. L'occhio di Oculo si spegne e si riaccende con una nuova firma. Le capsule restano al loro posto. Questa volta, pero', il sistema risponde a Zero."},
 };
-function buildEndingText(kind){
- const base=ENDINGS[kind].text;
- const pct=frameUsagePct();
- let coda="";
- if(kind==="good"){
-  if(sessionStats.kimSaved&&sessionStats.tommySaved)coda=" Zero pensa a Kim, a Tommy, a quella sera al PULSE che sembra già lontanissima — forse è per questo che non ha esitato.";
-  else coda=" Zero pensa a quella sera al PULSE, a chi non è riuscito a raggiungere in tempo — e stavolta non lascia che succeda di nuovo.";
- }else if(kind==="evil"){
-  coda=pct>70?" Il Frame, ormai, è più una seconda pelle che un'armatura — forse è per questo che indossare anche questo nuovo ruolo non gli è costato niente.":" Anche senza indossarlo spesso, il Frame ha lasciato il segno che contava.";
- }else{
-  coda=" Da qualche parte, Kim sta ancora aspettando che Zero le dica cosa gli è successo davvero quella sera.";
- }
- return base+coda;
-}
 function resolveAutomaticEnding(){
- const kind=fateEnding();missionHintEl.textContent="PROFILO COMPORTAMENTALE // SESSIONE CHIUSA";missionHintEl.classList.add("show");afterGame(950,()=>triggerEnding(kind));
+ const kind=fateEnding();missionHintEl.textContent="PROFILO COMPORTAMENTALE — SESSIONE CHIUSA";missionHintEl.classList.add("show");afterGame(950,()=>triggerEnding(kind));
 }
 function showChoiceScreen(){ /* v57: finali solo automatici, nessuna scelta manuale */ }
 function recordLimenEnding(kind){
@@ -2840,7 +3061,7 @@ function recordLimenEnding(kind){
 }
 function triggerEnding(kind){
  choiceScreenEl.classList.remove("show");recordLimenEnding(kind);clearCheckpoint();
- const e=ENDINGS[kind];endingScreenEl.className=e.cls;endingScreenEl.style.backgroundImage=`url('ending_${kind}.png')`;endingScreenEl.querySelector("h1").style.opacity=1;endingScreenEl.querySelector("p").style.opacity=1;endingScreenEl.querySelector(".code").style.opacity=1;endingScreenEl.querySelector("h1").textContent=e.title;endingScreenEl.querySelector("p").textContent=buildEndingText(kind);endingScreenEl.classList.add("show");
+ const e=ENDINGS[kind];endingScreenEl.className=e.cls;endingScreenEl.style.backgroundImage=`url('ending_${kind}.png')`;endingScreenEl.querySelector("h1").style.opacity=1;endingScreenEl.querySelector("p").style.opacity=1;endingScreenEl.querySelector(".code").style.opacity=1;endingScreenEl.querySelector("h1").textContent=e.title;endingScreenEl.querySelector("p").textContent=e.text;endingScreenEl.classList.add("show");
  stopAmbient(3.5);sfx.win();
  setTimeout(()=>{
   const h1=endingScreenEl.querySelector("h1"),p=endingScreenEl.querySelector("p"),code=endingScreenEl.querySelector(".code");[h1,p,code].forEach(el=>{el.style.transition="opacity .8s ease";el.style.opacity=0;});
@@ -2882,7 +3103,7 @@ window.addEventListener("keydown",e=>{
  if(e.code==="Space"&&zone==="archivio"&&nearInteractable){doArchiveInteract();return;}
  if(e.code==="Space"&&zone==="torre"&&nearInteractable&&nearInteractable.startsWith("npc:")){doTowerNpcInteract(nearInteractable);return;}
  if(e.code==="Space"&&zone==="torre"&&nearInteractable==="anomaly"){doAnomalyInteract();return;}
- if(e.code==="KeyR"&&morphUnlocked&&(zone==="torre"||zone==="archivio")&&!dialogueActive&&!transformState){startTransformation(true);return;}
+ if(e.code==="KeyR"&&morphUnlocked&&(zone==="torre"||zone==="archivio"||(zone==="bar"&&barState.phase==="return"))&&!dialogueActive&&!transformState){startTransformation(true);return;}
  if(gameOverActive)return;
  if(DEV_MODE&&e.code==="KeyT")startTransformation();
  if(DEV_MODE&&e.code==="KeyM"&&gameStarted&&!transformState&&!dialogueActive){if(zone==="torre")enterArena();else enterTorre();}
@@ -2937,13 +3158,13 @@ function mobileContextLabel(){
  if(!nearInteractable)return "AZIONE";
  if(nearInteractable.includes("Talk")||nearInteractable.startsWith("npc:"))return "PARLA";
  if(nearInteractable.includes("Friend")||nearInteractable.includes("Bartender"))return nearInteractable.includes("Order")?"ORDINA":nearInteractable.includes("Busy")?"PARLA":"SALVA";
- if(nearInteractable==="barCore")return "NUCLEO";if(nearInteractable==="anomaly")return "ISPEZIONA";if(nearInteractable==="terminal")return "LEGGI";
+ if(nearInteractable==="barCore")return "PRISMA";if(nearInteractable==="anomaly")return "ISPEZIONA";if(nearInteractable==="terminal")return "LEGGI";
  if(nearInteractable==="capsule"||nearInteractable==="zeroCapsule")return "ESAMINA";return "AZIONE";
 }
 function syncMobileUI(){
  if(!isTouchDevice)return;const combat=(zone==="arena"||zone==="colosso");
  document.body.classList.toggle("mobile-combat",combat);document.body.classList.toggle("mobile-explore",!combat);document.body.classList.toggle("mobile-colosso",zone==="colosso");document.body.classList.toggle("mobile-portrait",innerHeight>innerWidth);
- if(touchMorphBtn)touchMorphBtn.classList.toggle("show",!!(morphUnlocked&&(zone==="torre"||zone==="archivio")&&!transformState));
+ if(touchMorphBtn)touchMorphBtn.classList.toggle("show",!!(morphUnlocked&&(zone==="torre"||zone==="archivio"||(zone==="bar"&&barState.phase==="return"))&&!transformState));
  if(touchInteractBtn)touchInteractBtn.textContent=mobileContextLabel();
  if(interactPromptEl&&interactPromptEl.classList.contains("show"))interactPromptEl.textContent=interactPromptEl.textContent.replace(/^SPAZIO\s*—\s*/,"AZIONE — ").replace(/^R\s*—\s*/,"FORMA — ");
  if(missionHintEl&&missionHintEl.textContent)missionHintEl.textContent=missionHintEl.textContent.replace(/R\s*=\s*ARMATURA/g,"FORMA = ARMATURA");
@@ -2993,7 +3214,7 @@ function updateTransformation(dt){
  }
  if(t>.9){
   const wasManual=transformState.manual,toRanger=transformState.toRanger;transformState=null;
-  if(wasManual){missionHintEl.textContent=toRanger?"ARMATURA RANGER // ONLINE":"ARMATURA RILASCIATA // FIRMA RIDOTTA";missionHintEl.classList.add("show");afterGame(1100,()=>missionHintEl.classList.remove("show"));if(currentCheckpoint==="postboss"||currentCheckpoint==="archivio")saveCheckpoint(currentCheckpoint);}
+  if(wasManual){missionHintEl.textContent=toRanger?"ARMATURA RANGER — ONLINE":"ARMATURA RILASCIATA — FIRMA RIDOTTA";missionHintEl.classList.add("show");afterGame(1100,()=>missionHintEl.classList.remove("show"));if(currentCheckpoint==="pulse2"||currentCheckpoint==="postboss"||currentCheckpoint==="archivio")saveCheckpoint(currentCheckpoint);if(zone==="bar"&&barState.phase==="return"&&toRanger&&!pulseReturnState.morphCommented){pulseReturnState.morphCommented=true;afterGame(180,()=>showStoryCue("KIM","Hai intenzione di bere con il casco?",{duration:1350}));}}
  }
 }
 
@@ -3052,8 +3273,8 @@ function damageEnemy(en,amt){
  triggerSlowMo(.07,.06); // hit-stop: un colpo che va a segno si sente
  if(en.hp<=0){
   sfx.enemyDefeat();
-  if(en.type==="raccoglitore"&&!en.retreated){
-   // Scavengor non muore qui: si ritira verso il mare, e da li'
+  if(en.type==="grinder"&&!en.retreated){
+   // Grinder non muore qui: si ritira verso il mare, e da li'
    // parte la fase 2 — cresce gigante, i 5 Ranger si combinano nel
    // Colosso, scontro finale in 3/4 con mini-citta'.
    en.retreated=true;en.state="retreat";
@@ -3069,7 +3290,7 @@ function damageEnemy(en,amt){
 
 function pickEnemyTarget(en){
  let tx=player.x,tz=player.z,kind="player",ref=player,best=Math.hypot(player.x-en.x,player.z-en.z);
- if(en.type==="raccoglitore"||en.aggroPlayer)return {x:tx,z:tz,kind,ref,dist:best};
+ if(en.type==="grinder"||en.aggroPlayer)return {x:tx,z:tz,kind,ref,dist:best};
  if(zone==="arena"&&!colossoTeamPos&&arenaAllies.length){
   let candidates=arenaAllies.slice().sort((a,b)=>Math.hypot(a.x-en.x,a.z-en.z)-Math.hypot(b.x-en.x,b.z-en.z));
   const a=candidates[(Math.abs(Math.floor(en.x*7+en.z*3)))%Math.min(2,candidates.length)];
@@ -3092,7 +3313,7 @@ function updateEnemies(dt){
    continue; // resta passivo finche' non e' emerso del tutto
   }
   if(en.hidden)continue;
-  if(en.type==="raccoglitore"&&en.state==="approach"){
+  if(en.type==="grinder"&&en.state==="approach"){
    // Dopo essersi alzato dall'acqua cammina verso la riva. Solo quando ha
    // raggiunto il bagnasciuga entra nell'AI di combattimento normale.
    const dz=RACC_SHORE_Z-en.z;en.yaw=0;
@@ -3110,7 +3331,7 @@ function updateEnemies(dt){
    if(en.alpha<=0)en.dead=true;
    continue;
   }
-  if(en.type==="raccoglitore"){
+  if(en.type==="grinder"){
    if(en.graceT>0){en.graceT=Math.max(0,en.graceT-rawDtGlobal);en.walkPhaseE+=dt*1.2;continue;}
    if(en.recoverT>0){en.recoverT=Math.max(0,en.recoverT-rawDtGlobal);en.walkPhaseE+=dt*.8;continue;}
    en.supportT=Math.max(0,(en.supportT||0)-rawDtGlobal);
@@ -3120,7 +3341,7 @@ function updateEnemies(dt){
    }
   }
   const target=pickEnemyTarget(en);
-  const wantRange=en.type==="raccoglitore"?2.05:1.5;
+  const wantRange=en.type==="grinder"?2.05:1.5;
   if(en.cd>0)en.cd-=rawDtGlobal;
   if(!(en.windupT>0)) en.yaw=Math.atan2(target.x-en.x,target.z-en.z);
   if(en.windupT>0){
@@ -3134,9 +3355,9 @@ function updateEnemies(dt){
    en.windupT=Math.max(0,en.windupT-rawDtGlobal);
    if(en.windupT<=0){
     en.telegraph=false;
-    en.cd=en.type==="raccoglitore"?1.95:2.05;
+    en.cd=en.type==="grinder"?1.95:2.05;
     en.attackFlashT=.5;
-    if(en.type==="raccoglitore"){
+    if(en.type==="grinder"){
      en.comboHits=(en.comboHits||0)+1;
      if(en.comboHits>=2){en.comboHits=0;en.recoverT=1.85;}
     }
@@ -3144,7 +3365,7 @@ function updateEnemies(dt){
     if(t2.dist<=wantRange+.30){
      if(t2.kind==="player"){
       if(player.invuln<=0){
-       const dmg=en.type==="raccoglitore"?14:7;
+       const dmg=en.type==="grinder"?14:7;
        player.hp=Math.max(0,player.hp-dmg);
        player.hitFlashT=.3;
        sfx.hitPlayer();
@@ -3157,11 +3378,11 @@ function updateEnemies(dt){
     }
    }
   }else if(target.dist>wantRange+.15){
-   const spd=(en.type==="raccoglitore"?(target.dist>6.3?.62:1.10):1.8)*dt;
+   const spd=(en.type==="grinder"?(target.dist>6.3?.62:1.10):1.8)*dt;
    en.x+=Math.sin(en.yaw)*spd; en.z+=Math.cos(en.yaw)*spd;
    en.walkPhaseE+=dt*7.5;
   }else if(en.cd<=0){
-   en.windupT=en.type==="raccoglitore"?.72:.42;
+   en.windupT=en.type==="grinder"?.72:.42;
    en.telegraph=true;
    sfx.uiBlip();
   }
@@ -3173,11 +3394,11 @@ function updateEnemies(dt){
  for(let i=0;i<enemies.length;i++){
   const a=enemies[i];
   if(a.dead||a.state==="retreat")continue;
-  const ra=(a.type==="raccoglitore"?.55:.40)*a.scale;
+  const ra=(a.type==="grinder"?.55:.40)*a.scale;
   for(let j=i+1;j<enemies.length;j++){
    const b=enemies[j];
    if(b.dead||b.state==="retreat")continue;
-   const rb=(b.type==="raccoglitore"?.55:.40)*b.scale;
+   const rb=(b.type==="grinder"?.55:.40)*b.scale;
    const dx=b.x-a.x, dz=b.z-a.z, dist=Math.hypot(dx,dz)||.001;
    const minDist=ra+rb;
    if(dist<minDist){
@@ -3191,9 +3412,9 @@ function updateEnemies(dt){
  // dai limiti validi dell'arena o propagare coordinate non finite.
  const b=ZONES.arena;const xmin=b.cx-b.w/2+.7,xmax=b.cx+b.w/2-.7,zmax=b.cz+b.d/2-.7;
  for(const en of enemies){
-  if(!Number.isFinite(en.x)||!Number.isFinite(en.z)){en.x=ARENA_CX;en.z=en.type==="raccoglitore"?RACC_SEA_Z:ARENA_CZ;}
+  if(!Number.isFinite(en.x)||!Number.isFinite(en.z)){en.x=ARENA_CX;en.z=en.type==="grinder"?RACC_SEA_Z:ARENA_CZ;}
   en.x=Math.max(xmin,Math.min(xmax,en.x));
-  const zmin=en.type==="raccoglitore"?RACC_SEA_Z:SEA_EDGE_Z+.55;
+  const zmin=en.type==="grinder"?RACC_SEA_Z:SEA_EDGE_Z+.55;
   en.z=Math.max(zmin,Math.min(zmax,en.z));
  }
 }
@@ -3258,7 +3479,7 @@ function drawShadow(x,z,radius,vp,alpha,y){
 }
 
 // Barra vita dei nemici in spiaggia: prima non si vedeva quanta vita
-// avesse nessuno (scagnozzi o Raccoglitore) fuori dal Colosso, che ha gia'
+// avesse nessuno (scagnozzi o Grinder) fuori dal Colosso, che ha gia'
 // la sua barra dedicata. Una barra piccola fluttuante sopra la testa,
 // sempre rivolta verso la telecamera (billboard vero, calcolato dallo yaw
 // della camera ogni frame), che appare solo se il nemico ha gia' subito
@@ -3287,7 +3508,7 @@ let slowMoT=0, slowMoFactor=1;
 // attacchi lo usano invece di dt, altrimenti l'hit-stop (che rallenta dt)
 // finiva per rallentare ANCHE il recupero tra un colpo e l'altro, "mangiando"
 // input durante il combattimento serrato — bug vero, trovato testando
-// colpendo ripetutamente Scavengor e il Colosso (su 20 pugni ne
+// colpendo ripetutamente Grinder e il Colosso (su 20 pugni ne
 // registravano solo 5-8). Le animazioni/effetti restano su dt scalato
 // (quello resta l'effetto voluto), solo i cooldown usano rawDtGlobal.
 let rawDtGlobal=0;
@@ -3299,11 +3520,12 @@ function frame(now){
  if(paused){rawDtGlobal=0;requestAnimationFrame(frame);return;}
  rawDtGlobal=rawDt;updateGameTimers(rawDt);
  if(barIntroCamT>0)barIntroCamT=Math.max(0,barIntroCamT-rawDt);
- if(gameStarted&&morphUnlocked&&(zone==="torre"||zone==="archivio")){sessionStats.frameTotal+=rawDt;if(player.transformed)sessionStats.frameActive+=rawDt;}
  let dt=rawDt;
  if(slowMoT>0){ dt=rawDt*slowMoFactor; slowMoT-=rawDt; }
  updateTransformation(dt);
- const inputLocked=paused||!!transformState||!gameStarted||dialogueActive||gameOverActive||archiveEscortState||enteringTorre||pulseEpilogueActive||zone==="colosso"||(colosso&&colosso.phase==="pose")||choiceScreenEl.classList.contains("show")||endingScreenEl.classList.contains("show")||!!emergeCutscene;
+ const inputLocked=paused||!!transformState||!gameStarted||dialogueActive||gameOverActive||archiveEscortState||enteringTorre||zone==="colosso"||(colosso&&colosso.phase==="pose")||choiceScreenEl.classList.contains("show")||endingScreenEl.classList.contains("show")||!!emergeCutscene;
+ // Hidden Fate: conta il Frame solo quando il giocatore ha davvero controllo in una zona sicura.
+ if(gameStarted&&morphUnlocked&&!inputLocked&&!overrideState.active&&(zone==="torre"||zone==="archivio"||(zone==="bar"&&barState.phase==="return"))){sessionStats.frameTotal+=rawDt;if(player.transformed)sessionStats.frameActive+=rawDt;}
  if(enteringTorre){
   enterTorreT=Math.min(ENTER_TORRE_DUR,enterTorreT+dt);
   const q=1-Math.pow(1-Math.min(1,enterTorreT/ENTER_TORRE_DUR),2);
@@ -3367,7 +3589,7 @@ function frame(now){
   const pr=.32;
   for(const en of enemies){
    if(en.dead||en.state==="retreat"||en.hidden)continue;
-   const er=(en.type==="raccoglitore"?.55:.40)*en.scale;
+   const er=(en.type==="grinder"?.55:.40)*en.scale;
    const dx=player.x-en.x, dz=player.z-en.z, dist=Math.hypot(dx,dz)||.001;
    const minDist=pr+er;
    if(dist<minDist){
@@ -3394,13 +3616,22 @@ function frame(now){
  if(colosso)updateColosso(dt);
  if(zone==="arena")updateEmergeCutscene(dt);
  if(zone==="torre")updateTowerTeam(dt);
- if(zone==="archivio")updateArchiveCompanions(dt);
+ if(zone==="archivio"){updateArchiveCompanions(dt);updateOculoOverride(dt);}
 
  // Archivio: mostra il prompt "SPAZIO — LEGGI" quando ci si avvicina al
  // terminale o alla sala delle capsule in fondo, cosi' l'esplorazione e'
  // guidata ma resta libera (il giocatore decide quando e se avvicinarsi).
- if(zone==="bar"&&!dialogueActive&&(barState.phase==="free"||barState.phase==="crisis")){
-  if(barState.phase==="free"){
+ if(zone==="bar"&&!dialogueActive&&(barState.phase==="free"||barState.phase==="crisis"||barState.phase==="return")){
+  if(barState.phase==="return"){
+   const df=Math.hypot(player.x-BAR_FRIEND_POS.x,player.z-BAR_FRIEND_POS.z),db=Math.hypot(player.x-BAR_BARTENDER_POS.x,player.z-BAR_BARTENDER_POS.z),dc=Math.hypot(player.x-BAR_CORE_POS.x,player.z-BAR_CORE_POS.z),de=Math.hypot(player.x-BAR_CX,player.z-(BAR_CZ+7.0));
+   let nearest=null,nd=1.65;for(const b of barTeam){const d=Math.hypot(player.x-b.x,player.z-b.z);if(d<nd){nearest=b;nd=d;}}
+   if(nearest){nearInteractable="barReturnTeam:"+nearest.name;const deepen=pulseReturnState.talked.has(nearest.name)&&pulseReturnRangerCount()>=3&&!pulseReturnState.path;interactPromptEl.textContent=deepen?`SPAZIO — SEGUI ${nearest.name}`:`SPAZIO — PARLA CON ${nearest.name}`;interactPromptEl.classList.add("show");}
+   else if(df<1.55){nearInteractable="barReturnKim";interactPromptEl.textContent="SPAZIO — PARLA CON KIM";interactPromptEl.classList.add("show");}
+   else if(db<2.05){nearInteractable="barReturnTommy";interactPromptEl.textContent="SPAZIO — PARLA CON TOMMY";interactPromptEl.classList.add("show");}
+   else if(!pulseReturnState.path&&pulseReturnRangerCount()>=3&&dc<1.9){nearInteractable="barReturnPrism";interactPromptEl.textContent="SPAZIO — ESAMINA IL VANO DEL PRISMA";interactPromptEl.classList.add("show");}
+   else if(pulseReturnState.path&&de<1.65){nearInteractable="barReturnExit";interactPromptEl.textContent="SPAZIO — TORNA ALLA TORRE";interactPromptEl.classList.add("show");}
+   else{nearInteractable=null;interactPromptEl.textContent=player.transformed?"R — RILASCIA ARMATURA":"R — TRASFORMA";interactPromptEl.classList.add("show");}
+  }else if(barState.phase==="free"){
    const df=Math.hypot(player.x-BAR_FRIEND_POS.x,player.z-BAR_FRIEND_POS.z),db=Math.hypot(player.x-BAR_BARTENDER_POS.x,player.z-BAR_BARTENDER_POS.z),dg=Math.hypot(player.x-BAR_BAG_POS.x,player.z-BAR_BAG_POS.z);
    let nearestTalk=null,nearestTalkD=1.55;for(const b of barTeam){if(barState.socialFlags[b.name])continue;const d=Math.hypot(player.x-b.x,player.z-b.z);if(d<nearestTalkD){nearestTalk=b;nearestTalkD=d;}}
    if(df<1.55&&!barState.socialFlags.KIM){nearInteractable="barKimTalk";interactPromptEl.textContent="SPAZIO — PARLA CON KIM";interactPromptEl.classList.add("show");}
@@ -3428,7 +3659,10 @@ function frame(now){
   }
  }else if(zone==="archivio"&&!dialogueActive){
   const dT=Math.hypot(player.x-TERMINAL_POS.x,player.z-TERMINAL_POS.z),dC=Math.hypot(player.x-CAPSULE_INTERACT_POS.x,player.z-CAPSULE_INTERACT_POS.z),dZ=Math.hypot(player.x-ZERO_CAPSULE_INTERACT_POS.x,player.z-ZERO_CAPSULE_INTERACT_POS.z);
-  if(dT<1.65&&!archiveState.terminalRead){nearInteractable="terminal";interactPromptEl.textContent="SPAZIO — LEGGI IL REGISTRO";interactPromptEl.classList.add("show");}
+  let on=-1,ond=1.7;if(overrideState.active){for(let i=0;i<OVERRIDE_NODES.length;i++){if(overrideState.nodes[i])continue;const d=Math.hypot(player.x-OVERRIDE_NODES[i].x,player.z-OVERRIDE_NODES[i].z);if(d<ond){on=i;ond=d;}}}
+  if(on>=0){nearInteractable="overrideNode:"+on;interactPromptEl.textContent="SPAZIO — DISATTIVA NODO";interactPromptEl.classList.add("show");}
+  else if(overrideState.active){nearInteractable=null;interactPromptEl.textContent="OVERRIDE — TROVA I NODI";interactPromptEl.classList.add("show");}
+  else if(dT<1.65&&!archiveState.terminalRead){nearInteractable="terminal";interactPromptEl.textContent="SPAZIO — LEGGI IL REGISTRO";interactPromptEl.classList.add("show");}
   else if(dC<2.2&&!archiveState.capsuleRead){nearInteractable="capsule";interactPromptEl.textContent="SPAZIO — ESAMINA LE CAPSULE";interactPromptEl.classList.add("show");}
   else if(dZ<1.9&&!archiveState.zeroRead){nearInteractable="zeroCapsule";interactPromptEl.textContent="SPAZIO — ESAMINA FRAME ZERO";interactPromptEl.classList.add("show");}
   else{nearInteractable=null;if(morphUnlocked){interactPromptEl.textContent=player.transformed?"R — RILASCIA ARMATURA":"R — TRASFORMA";interactPromptEl.classList.add("show");}else interactPromptEl.classList.remove("show");}
@@ -3459,22 +3693,25 @@ function frame(now){
   eye=[racc.x+7.0-pushIn,2.3,RACC_SHORE_Z+5.0];
   target=[racc.x,emergeCutscene.phase==="buildup"?.15:1.5,racc.z];
  }else if(colosso&&(colosso.phase==="pose"||colosso.phase==="summon")){
-  // Camera FRONTALE da vera chiamata toku: mai piu' i Ranger ripresi di
-  // schiena mentre evocano i moduli. Durante ogni chiamata c'e' solo un
-  // leggero pan orizzontale, mantenendo tutta la formazione leggibile.
-  let fx=0;
   if(colosso.phase==="summon"){
-   const idx=Math.min(MODULE_CALLS.length-1,Math.floor(colosso.t/MODULE_SEG));fx=(MODULE_CALLS[idx]?.x||0)*.20;
+   // Primo piano individuale: ogni Ranger occupa davvero l'inquadratura e
+   // il suo modulo compare dietro di lui prima del montaggio.
+   const idx=Math.min(MODULE_CALLS.length-1,Math.floor(colosso.t/MODULE_SEG)),c=MODULE_CALLS[idx];
+   const fx=c?.x||0;
+   eye=[fx,2.45,ARENA_CZ-4.8];target=[fx,1.55,ARENA_CZ+3.8];
+  }else{
+   eye=[0,3.25,ARENA_CZ-10.2];target=[0,1.45,ARENA_CZ+2.1];
   }
-  eye=[fx,3.25,ARENA_CZ-10.2];target=[fx*.55,1.45,ARENA_CZ+2.1];
  }else if(zone==="colosso"){
   const sh=colosso&&colosso.shakeT>0?colosso.shakeT:0;
   if(colosso&&colosso.phase==="finishing"){
    const t=colosso.finishT||0;
-   if(t<1.55){eye=[colosso.robotX+7.5,11.8,colosso.robotZ+12.0];target=[colosso.robotX+1.7,7.8,colosso.robotZ];}
-   else{const mx=(colosso.robotX+colosso.giantX)*.5,mz=(colosso.robotZ+colosso.giantZ)*.5;eye=[mx+13.5,10.7,mz+16.5];target=[mx,4.8,mz-1.5];}
+   if(t<.68){eye=[colosso.robotX+4.8,8.8,colosso.robotZ+9.0];target=[colosso.robotX,6.5,colosso.robotZ];}
+   else if(t<1.55){eye=[colosso.robotX+5.6,12.8,colosso.robotZ+10.2];target=[colosso.robotX+2.2,9.1,colosso.robotZ];}
+   else if(t<2.35){const mx=(colosso.robotX+colosso.giantX)*.5,mz=(colosso.robotZ+colosso.giantZ)*.5;eye=[mx+8.8,8.0,mz+10.2];target=[mx,5.6,mz];}
+   else{const mx=(colosso.robotX+colosso.giantX)*.5,mz=(colosso.robotZ+colosso.giantZ)*.5;eye=[mx+14.5,10.7,mz+17.5];target=[colosso.giantX,5.0,colosso.giantZ];}
   }else if(colosso&&colosso.phase==="won"){
-   eye=[colosso.robotX+1.2,13.8,colosso.robotZ+22.5];target=[colosso.robotX,6.5,colosso.robotZ-.5];
+   eye=[colosso.robotX+1.6,16.0,colosso.robotZ+30.0];target=[colosso.robotX,7.4,colosso.robotZ-.5];
   }else if(colosso&&colosso.phase==="combine"){
    // Regia BLINDATA: quattro shot fissi, nessuna orbita/camera libera che
    // possa finire dentro la mesh e sembrare bloccata.
@@ -3488,7 +3725,7 @@ function frame(now){
    eye=[13.5,11.8,ARENA_CZ+16];target=[0,4.8,ARENA_CZ-2];
   }else{
    // Camera 3/4 di battaglia ricostruita ogni frame. Non eredita gli shot
-   // della combinazione; inquadra insieme Colosso, Raccoglitore e citta'.
+   // della combinazione; inquadra insieme Colosso, Grinder e citta'.
    const mx=(colosso.robotX+colosso.giantX)*.5,mz=(colosso.robotZ+colosso.giantZ)*.5;
    eye=[mx+12.0+Math.sin(now/90)*sh*.30,10.8+Math.sin(now/75)*sh*.18,mz+15.0];
    target=[mx,4.4,mz-1.0];
@@ -3528,8 +3765,9 @@ function frame(now){
 
  if(zone==="bar"){
   drawBuffer(barFloorBuf,mat4.identity(),vp);drawBuffer(barWallBuf,mat4.identity(),vp);drawBuffer(barPropsBuf,mat4.identity(),vp);
-  if(barState.phase==="crisis"||barState.phase==="compat"||barState.phase==="after")drawBuffer(barCrisisBuf,mat4.identity(),vp);
+  if(barState.phase==="crisis"||barState.phase==="compat"||barState.phase==="after"||barState.phase==="return")drawBuffer(barCrisisBuf,mat4.identity(),vp);
   const corePulse=.78+Math.sin(now/120)*.22,coreY=barFloorY(BAR_CORE_POS.x,BAR_CORE_POS.z);
+  if(barState.phase==="return"){const scar=mul(mat4.translate(BAR_CORE_POS.x,coreY+1.25,BAR_CORE_POS.z),mat4.rotY(now/900));drawBuffer(barCoreBuf,mul(scar,mat4.scale(.18,.035,.18)),vp,.22);}
   if(barState.phase==="crisis"||barState.phase==="compat"){const coreBase=mul(mat4.translate(BAR_CORE_POS.x,coreY+1.85+Math.sin(now/240)*.12,BAR_CORE_POS.z),mat4.rotY(now/430));drawBuffer(barCoreBuf,mul(coreBase,mat4.scale(.34*corePulse,.34*corePulse,.34*corePulse)),vp,.98);drawBuffer(barCoreBuf,mul(coreBase,mat4.rotZ(Math.PI/4),mat4.scale(.56,.05,.56)),vp,.34);}
   for(let i=0;i<barTeam.length;i++){const b=barTeam[i],by=barFloorY(b.x,b.z),mv=Math.hypot(b.targetX-b.x,b.targetZ-b.z)>.14;let ap=0,astyle=0;if(b.activity==="karateTeacher"){ap=.15+.55*(Math.sin(now/410)*.5+.5);astyle=0;}else if(b.activity==="karateStudent"){ap=.10+.42*(Math.sin(now/410+1.2)*.5+.5);astyle=1;}drawShadow(b.x,b.z,.38,vp,.25,by);const bm=buildCharacterBuffers(b.pal,b.walk,mv?1:.08,false,"ranger",ap,false,astyle);drawDynamicMesh(bm,mul(mat4.translate(b.x,by,b.z),mat4.rotY(b.yaw)),vp);}
   if(!barState.friendSaved||barState.phase==="intro"||barState.phase==="free"){const fy=barFloorY(BAR_FRIEND_POS.x,BAR_FRIEND_POS.z);drawShadow(BAR_FRIEND_POS.x,BAR_FRIEND_POS.z,.36,vp,.24,fy);const fm=buildCharacterBuffers(PAL_AMICA,now/1000,.06,false,"ranger",0);drawDynamicMesh(fm,mul(mat4.translate(BAR_FRIEND_POS.x,fy,BAR_FRIEND_POS.z),mat4.rotY(2.7)),vp);}
@@ -3602,11 +3840,11 @@ function frame(now){
    // carica il colpo, crescendo man mano che si avvicina il rilascio —
    // senza questo la finestra di windup sarebbe comunque invisibile e
    // schivare resterebbe solo fortuna.
-   const windupDur=en.type==="raccoglitore"?.55:.42;
+   const windupDur=en.type==="grinder"?.55:.42;
    const windupPulse=en.windupT>0?1+(1-en.windupT/windupDur)*.22*(1+Math.sin(now/55)*.15):1;
    const s=en.scale*hitPulse*windupPulse;
    const enAttackPhase=en.attackFlashT>0?1-en.attackFlashT/.5:0;
-   const enMoving=en.state!=="retreat"&&facingDot(en.x,en.z,en.yaw,player.x,player.z).dist>(en.type==="raccoglitore"?2.05:1.65);
+   const enMoving=en.state!=="retreat"&&facingDot(en.x,en.z,en.yaw,player.x,player.z).dist>(en.type==="grinder"?2.05:1.65);
    const enMesh=buildCharacterBuffers(en.pal,en.walkPhaseE,enMoving?1:0,true,en.type,en.attackFlashT>0?enAttackPhase:0);
    const enModel=mul(mat4.translate(en.x,en.y||0,en.z),mat4.rotY(en.yaw),mat4.scale(s,s,s));
    drawDynamicMesh(enMesh,enModel,vp,en.alpha);
@@ -3617,16 +3855,16 @@ function frame(now){
     const wp=1-en.windupT/windupDur;
     const popIn=Math.min(1,wp/.18);
     const bounce=1+Math.sin(wp*Math.PI*3.2)*.10*(1-wp*.5);
-    const exSize=(en.type==="raccoglitore"?.62:.46)*popIn*bounce;
+    const exSize=(en.type==="grinder"?.62:.46)*popIn*bounce;
     const exYaw=Math.atan2(eye[0]-en.x,eye[2]-en.z);
-    const exY=(en.y||0)+(en.type==="raccoglitore"?2.75*en.scale:2.15*s);
+    const exY=(en.y||0)+(en.type==="grinder"?2.75*en.scale:2.15*s);
     const exBase=mul(mat4.translate(en.x,exY,en.z),mat4.rotY(exYaw));
     drawBuffer(exclaimBarBuf,mul(exBase,mat4.translate(0,exSize*.30,0),mat4.scale(exSize*.16,exSize*.62,.02)),vp,popIn);
     drawBuffer(exclaimDotBuf,mul(exBase,mat4.translate(0,-exSize*.16,0),mat4.scale(exSize*.16,exSize*.16,.02)),vp,popIn);
    }
    if(en.state!=="retreat"){
     const barYaw=Math.atan2(eye[0]-en.x,eye[2]-en.z);
-    const barY=(en.y||0)+(en.type==="raccoglitore"?2.55*en.scale:1.95*s);
+    const barY=(en.y||0)+(en.type==="grinder"?2.55*en.scale:1.95*s);
     drawEnemyHpBar(en.x,barY,en.z,en.hp/en.hpMax,barYaw,vp);
    }
   }
@@ -3648,15 +3886,15 @@ function frame(now){
   const giantWobble=1+Math.sin(now/260)*.02;
   const gAtk=colosso.giantAttackT>0?1-colosso.giantAttackT/.58:0;
   const gLunge=Math.sin(Math.max(0,Math.min(1,gAtk))*Math.PI)*1.2;
-  // Scavengor NON cade piu' in avanti sul Colosso. Dopo il fendente
+  // Grinder NON cade piu' in avanti sul Colosso. Dopo il fendente
   // viene spinto verso il mare (-Z), poi crolla all'indietro lontano dal robot.
   const fallP=colosso.phase==="finishing"?Math.max(0,Math.min(1,((colosso.finishT||0)-2.20)/1.35)):(colosso.phase==="won"?1:0);
   const gx=colosso.giantX, gz=colosso.giantZ+gLunge-fallP*7.2;
   const gy=-fallP*2.4;
   const gyaw=Math.atan2(colosso.robotX-gx,colosso.robotZ-gz);
   const gm=mul(mat4.translate(gx,gy,gz),mat4.rotY(gyaw),mat4.rotX(-fallP*1.02),mat4.scale(colosso.giantScale*giantWobble,colosso.giantScale,colosso.giantScale*giantWobble));
-  const giantPal=colosso.phase2?PAL_RACCOGLITORE_OVERLOAD:PAL_RACCOGLITORE;
-  const giantMesh=buildCharacterBuffers(giantPal,now/450,gAtk>0?1:.15,true,"raccoglitore",gAtk);
+  const giantPal=colosso.phase2?PAL_GRINDER_OVERLOAD:PAL_GRINDER;
+  const giantMesh=buildCharacterBuffers(giantPal,now/450,gAtk>0?1:.15,true,"grinder",gAtk);
   drawDynamicMesh(giantMesh,gm,vp);
 
   // Colosso sempre visibile: cutscene + fight 3/4 + finisher.
@@ -3720,13 +3958,12 @@ function frame(now){
    mul(mat4.translate(ARCH_OCULO_POS.x,ARCH_OCULO_POS.y,ARCH_OCULO_POS.z+.04),
        mat4.scale(archiveState.revealing?5.75:5.25,archiveState.revealing?2.35:2.05,1)),
    vp,archiveState.revealing?.98:.58);
-  // Solo Ciusky e TIC entrano nell'Archivio. Gli altri membri non vengono
-  // neppure renderizzati in questa zona, quindi non possono seguirti per bug.
-  drawShadow(archiveCompanion.donX,archiveCompanion.donZ,.38,vp,.28);
-  const meriMoving=Math.hypot(archiveCompanion.donTX-archiveCompanion.donX,archiveCompanion.donTZ-archiveCompanion.donZ)>.10;
-  const meriMesh=buildCharacterBuffers(PAL_DON_CIV,now/900,meriMoving?1:.10,false,"ranger",0);
-  drawDynamicMesh(meriMesh,mul(mat4.translate(archiveCompanion.donX,0,archiveCompanion.donZ),mat4.rotY(archiveCompanion.donYaw)),vp,1);
-  drawBuffer(ticBuf,mul(mat4.translate(archiveCompanion.ticX,2.0+Math.sin(now/420)*.08,archiveCompanion.ticZ),mat4.rotY(Math.PI)),vp);
+  // Il party dell'Archivio deriva dalla posizione scelta al PULSE 2.
+  drawShadow(archiveCompanion.aX,archiveCompanion.aZ,.38,vp,.28);
+  const aMoving=Math.hypot(archiveCompanion.aTX-archiveCompanion.aX,archiveCompanion.aTZ-archiveCompanion.aZ)>.10;
+  const aMesh=buildCharacterBuffers(civPalForName(archivePartyNames[0]),now/900,aMoving?1:.10,false,"ranger",0);
+  drawDynamicMesh(aMesh,mul(mat4.translate(archiveCompanion.aX,0,archiveCompanion.aZ),mat4.rotY(archiveCompanion.aYaw)),vp,1);
+  if(archivePartyNames.length>1){drawShadow(archiveCompanion.bX,archiveCompanion.bZ,.38,vp,.28);const bMoving=Math.hypot(archiveCompanion.bTX-archiveCompanion.bX,archiveCompanion.bTZ-archiveCompanion.bZ)>.10;const bMesh=buildCharacterBuffers(civPalForName(archivePartyNames[1]),now/940,bMoving?1:.10,false,"ranger",0);drawDynamicMesh(bMesh,mul(mat4.translate(archiveCompanion.bX,0,archiveCompanion.bZ),mat4.rotY(archiveCompanion.bYaw)),vp,1);}
   drawBuffer(capsuleFrameBuf,mat4.identity(),vp);
   for(let ci=0;ci<CAPSULE_POS.length;ci++){
    const cp=CAPSULE_POS[ci],pulse=.75+Math.sin(now/620+ci*1.3)*.25;
@@ -3741,6 +3978,7 @@ function frame(now){
   const zp=.72+Math.sin(now/520)*.22;
   drawBuffer(zeroGlassBuf,mul(mat4.translate(ZERO_CAPSULE_POS.x,1.30,ZERO_CAPSULE_POS.z+.36),mat4.scale(1.20,1.20,1)),vp,.22+.12*zp);
   drawBuffer(capsuleBeamBuf,mul(mat4.translate(ZERO_CAPSULE_POS.x,3.95,ZERO_CAPSULE_POS.z),mat4.scale(.42*zp,3.4,.42*zp)),vp,.10*zp);
+  if(overrideState.active){for(let i=0;i<OVERRIDE_NODES.length;i++){if(overrideState.nodes[i])continue;const n=OVERRIDE_NODES[i],pp=.75+Math.sin(now/130+i)*.25;drawBuffer(barCoreBuf,mul(mat4.translate(n.x,1.05,n.z),mat4.rotY(now/260+i),mat4.scale(.22*pp,.48*pp,.22*pp)),vp,.9);drawBuffer(capsuleBeamBuf,mul(mat4.translate(n.x,2.6,n.z),mat4.scale(.12,2.8,.12)),vp,.18);}}
  }
 
  if(zone!=="colosso"){
@@ -3757,7 +3995,7 @@ function frame(now){
   const a=Math.max(0,1-p);
   drawBuffer(burstBuf, mul(mat4.translate(b.x,b.y,b.z),mat4.rotY(p*4),mat4.scale(sc,sc,sc)), vp, a*.9);
  }
- // schizzo d'acqua quando Scavengor emerge: piu' largo e piatto,
+ // schizzo d'acqua quando Grinder emerge: piu' largo e piatto,
  // colore chiaro/spumeggiante invece che dorato come i colpi speciali
  for(const b of splashBursts){
   const p=b.t/.7;
